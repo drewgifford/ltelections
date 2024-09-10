@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/image', "@nuxt/fonts"],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/image'],
   app: {
     head: {
       title: "Let's Talk Elections",
@@ -16,6 +16,11 @@ export default defineNuxtConfig({
       path: "~/components",
       pathPrefix: false
     }
+  ],
+
+  css: [
+    '~/assets/fonts/OpenSauceSans.css',
+    '~/assets/css/style.css'
   ],
 
   

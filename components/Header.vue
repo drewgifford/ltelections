@@ -20,7 +20,7 @@
                 <NuxtLink to="/">Home</NuxtLink>
             </li>
             <li>
-                <NuxtLink to="/">Election Results <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header">LIVE</span></NuxtLink>
+                <NuxtLink to="/results">Election Results <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header">LIVE</span></NuxtLink>
             </li>
             <li>
                 <NuxtLink to="/about">About</NuxtLink>

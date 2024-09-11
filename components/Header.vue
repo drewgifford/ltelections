@@ -26,7 +26,7 @@
                 <NuxtLink to="/about">About</NuxtLink>
             </li>
             <li>
-                <NuxtLink to="https://discord.gg/lte" target="_blank" class="flex items-center"><FaDiscord/>&nbsp;Discord</NuxtLink>
+                <NuxtLink to="https://discord.gg/lte" target="_blank" class="flex items-center"><!--<FaDiscord/>-->&nbsp;Discord</NuxtLink>
             </li>
         </ul>
     </div>

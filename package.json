@@ -13,7 +13,10 @@
     "@nuxt/fonts": "^0.7.2",
     "@nuxt/image": "^1.8.0",
     "@nuxtjs/tailwindcss": "^6.12.1",
+    "ioredis": "^5.4.1",
     "nuxt": "^3.13.0",
+    "redis": "^4.7.0",
+    "sqlite3": "^5.1.7",
     "vue": "latest",
     "vue-router": "latest"
   }

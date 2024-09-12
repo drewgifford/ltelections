@@ -2,7 +2,7 @@ import cron from "node-cron";
 import Race from "../Race";
 import State from "../State";
 
-const REFRESH_TIME = 15
+const REFRESH_TIME = 60
 
 const gatherOtherData = async (date: string, json: any) => {
 

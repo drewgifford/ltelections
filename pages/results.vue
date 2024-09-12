@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type Race from '~/server/Race';
+import { getUniqueRaceId } from '~/server/Race';
 import type State from '~/server/State';
+import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 
-    const statePostal = ref("*");
-    const officeID = ref("*");
+    const statePostal = ref('CA');
+    const officeID = ref('*');
+
     const raceView = ref<Race | null>(null);
     const pinnedRaces = ref<Race[]>([]);
 
@@ -11,18 +14,23 @@ import type State from '~/server/State';
         transform: (states: State[]) => { return states }
     });
 
-    const { data: races, status, error, refresh } = useLazyFetch("/api/searchRaces", {
-
+    const { data: races, status, error, refresh } = useFetch("/api/searchRaces", {
 
         query: {
             statePostal: statePostal,
-            officeID: officeID
+            officeID: officeID,
+            include: LocalStorageHandler.getItem("pinnedRaces") || []
         },
 
         transform: (races: Race[]) => {
-            console.log(races[0]);
+
+            const pins = LocalStorageHandler.getItem("pinnedRaces");
 
             races.map(race => {
+
+                if((pins || []).includes(getUniqueRaceId(race))){
+                    togglePin(race);
+                }
 
                 for(var reportingUnit of race.reportingUnits){
                     reportingUnit.candidates.sort((a,b) => a.voteCount > b.voteCount ? -1 : 1);
@@ -40,32 +48,42 @@ import type State from '~/server/State';
 
     
 
-    const togglePin = (race: Race, isPinned: boolean) => {
+    const togglePin = (race: Race) => {
 
-        
+        var localRaces = LocalStorageHandler.getItem("pinnedRaces") || [];
+        const raceUUID = getUniqueRaceId(race);
 
-        if(isPinned){
+        race.isPinned = !race.isPinned;
+        if(race.isPinned){
             console.log("PINNED RACE!", race);
             pinnedRaces.value.push(race);
 
-            //races.value = races.value?.filter(x => !(pinnedRaces.value.includes(x))) || null;
+            if(!localRaces.includes(raceUUID)) localRaces?.push(raceUUID);
+            
         } else {
             console.log("UNPINNED RACE!", race);
             pinnedRaces.value.splice(pinnedRaces.value.indexOf(race), 1);
+
+            localRaces.splice(localRaces.indexOf(raceUUID), 1);
         }
+
+        LocalStorageHandler.setItem("pinnedRaces", localRaces);
     }
 
     const setView = (race: Race) => {
         raceView.value = race;
     }
 
-    const isRacePinned = (race: Race) => {
-        for(var r of pinnedRaces.value){
-            if(`${race.stateID}-${race.raceID}` === `${r.stateID}-${r.raceID}`)
-            return true;
-        }
-        return false;
-    }
+    watch(statePostal, (s) => {
+        let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
+        a.statePostal = statePostal.value;
+        LocalStorageHandler.setItem("lastSearch", a);
+    })
+    watch(officeID, (s) => {
+        let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
+        a.officeID = officeID.value;
+        LocalStorageHandler.setItem("lastSearch", a);
+    })
 
 
 </script>
@@ -121,13 +139,26 @@ import type State from '~/server/State';
                 <!-- Pinned races -->
                 <div v-if="(pinnedRaces.length > 0)" class="flex flex-col gap-3 w-full">
                     <p>{{ pinnedRaces?.length }} races pinned</p>
-                    <MiniRaceView v-for="(race, index) in pinnedRaces?.values()" @select="setView(race)" @pin="togglePin(race, false)" :pinned="true" :race="race" class="race relative transition-colors"/>
+                    <MiniRaceView 
+                        v-for="(race, index) in pinnedRaces?.values()"
+                        :data-race="getUniqueRaceId(race)"
+                        @select="setView(race)"
+                        @pin="togglePin(race)"
+                        :race="race"
+                        class="race relative transition-colors"
+                    />
                 </div>
 
                 <!-- Non-pinned races -->
                 <div v-if="status !== 'pending'" class="flex flex-col gap-3 w-full pb-24">
                     <p>Showing {{ races?.length }} results</p>
-                    <MiniRaceView v-for="(race, index) in races?.values()" @select="setView(race)" @pin="togglePin(race, true)" :pinned="false" :race="race" class="race relative transition-colors"/>
+                    <MiniRaceView 
+                        v-for="(race, index) in races?.values()"
+                        :data-race="getUniqueRaceId(race)"
+                        @select="setView(race)"
+                        @pin="togglePin(race)"
+                        :race="race"
+                        class="race relative transition-colors"/>
                 </div>
 
                 <!-- Loader for non-pinned races -->

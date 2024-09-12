@@ -1,5 +1,5 @@
 import { LTE_API_KEY } from "../config";
-import Race from "../Race";
+import Race, { getUniqueRaceId, raceIsEqual } from "../Race";
 
 let STALE_TIME = 30
 
@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
   type BodyRes = {
     statePostal: string,
     officeID: string,
+    include: string[]
   }
 
   type RedisQuery = {
@@ -15,7 +16,6 @@ export default defineEventHandler(async (event) => {
     data: object,
   }
 
-  const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
   const query: BodyRes = getQuery(event);
 
   // Check if the query is in the Redis database and not stale
@@ -26,9 +26,13 @@ export default defineEventHandler(async (event) => {
 
   // Check date
   let data: any = item as any;
+  console.log(query.include);
   
   return data.races == null ? [] : (data.races as Race[]).filter(race => {
     if (query.officeID == "*" || race.officeID == query.officeID) return true;
+
+    else if((query.include || []).includes(getUniqueRaceId(race))) return true;
+    
     return false;
 
   })

@@ -3,7 +3,6 @@
 
   defineProps<{
     race: Race,
-    pinned: boolean,
   }>();
 
   const getRaceTitle = (race: Race) => {
@@ -34,8 +33,8 @@
   <a class="race relative transition-colors">
 
     <!-- Pin Button -->
-    <div @click="$emit('pin')" :class="[pinned ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
-        <Icon :name="pinned ? 'pajamas:thumbtack-solid' : 'pajamas:thumbtack'"/>
+    <div @click="$emit('pin')" :class="[race.isPinned ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
+        <Icon :name="race.isPinned ? 'pajamas:thumbtack-solid' : 'pajamas:thumbtack'"/>
     </div>
 
     <div @click="$emit('select')" class="card p-4 pl-6 hover:bg-slate-800 hover:cursor-pointer">
@@ -45,14 +44,7 @@
 
         <div class="flex w-full justify-between items-start">
             <div class="flex-1">
-                <div class="flex">
-                  <h4 class="text-lg">{{ race.reportingUnits[0].statePostal }} - {{ getRaceTitle(race) }}</h4>
-                  <div class="flex-1">
-                    <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span>
-                  </div>
-                  
-                </div>
-                
+                <h4 class="text-lg">{{ race.reportingUnits[0].statePostal }} - {{ getRaceTitle(race) }} <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
                 <p class="text-sm">{{ getRaceDescription(race) }}</p>
             </div>
 
@@ -83,7 +75,7 @@
         <div class="flex gap-2 items-center mt-2">
 
             <div class="bg-slate-700 w-full h-1">
-                <div class="h-full bg-slate-200" :style="{'height': race.reportingUnits[0].eevp + '%'}"></div>
+                <div class="h-full bg-slate-200" :style="{'width': race.reportingUnits[0].eevp + '%'}"></div>
             </div>
 
             <p class="text-xs text-nowrap">{{race.reportingUnits[0].eevp}}% reporting</p>

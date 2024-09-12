@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
 
   // Check date
   let data: any;
+  //if (query.statePostal == "*") query.statePostal = "None";
 
   if (item == null || difference >= STALE_TIME * 1000){
 
@@ -57,12 +58,25 @@ export default defineEventHandler(async (event) => {
     console.log("Using cached data.");
     data = item.data;
   }
-  return (data.races as Race[]).filter(race => {
+  return data.races == null ? [] : (data.races as Race[]).filter(race => {
 
     console.log(race.officeID);
 
     if (query.officeID == "*" || race.officeID == query.officeID) return true;
     return false;
+
+  }).map((race) => {
+
+    for (var unit of race.reportingUnits) {
+
+      unit.candidates = unit.candidates.sort((a,b) => {
+        return a.voteCount < b.voteCount ? 1 : -1
+      });
+
+    }
+
+    return race;
+
 
   });
   

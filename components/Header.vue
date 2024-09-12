@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full backdrop-blur text-slate-200 bg-slate-900/50 h-20 flex items-center">
+  <div class="w-full backdrop-blur text-slate-200 bg-slate-900/75 h-20 flex items-center sticky top-0 z-20">
 
     <div class="flex flex-wrap items-center container mx-auto">
 

@@ -5,6 +5,7 @@ type ReportingUnit = {
     stateName: string,
     level: string,
     electTotal: number,
+    eevp: number,
 
     candidates: Candidate[]
 }
@@ -23,8 +24,6 @@ type Race = {
     seatNum: string,
 
     reportingUnits: ReportingUnit[];
-
-
 
 }
 

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
 
 body {
@@ -13,12 +17,20 @@ body {
 body::before {
     content: "";
 
-    @apply absolute top-0 left-0 block min-h-screen w-full -z-10;
+    @apply fixed top-0 left-0 block min-h-screen w-full -z-10;
     @apply bg-gradient-to-tr;
     @apply from-slate-900;
     @apply to-slate-700;
     @apply from-50%;
     @apply to-100%;
+}
+
+body::after, .bottom-gradient {
+    content: "";
+    @apply fixed bottom-0 left-0 w-full h-36 z-10 pointer-events-none bg-gradient-to-t from-slate-950 to-slate-900/0;
+}
+.top-gradient {
+    @apply absolute -top-full left-0 w-full h-36 z-10 pointer-events-none bg-gradient-to-t from-slate-950 to-slate-900/0;
 }
 
 h1,h2,h3,h4,h5,.font-header {
@@ -52,5 +64,21 @@ h1,h2,h3,h4,h5,.font-header {
 }
 
 .card {
-    @apply shadow-lg rounded-md bg-slate-900/75;
+    @apply shadow-md rounded-md bg-slate-900;
+}
+
+@layer utilities {
+    .scrollbar::-webkit-scrollbar {
+
+    }
+    .scrollbar::-webkit-scrollbar-track {
+        
+    }
+    .scrollbar::-webkit-scrollbar-thumb {
+        background: red !important;
+        
+    }
+    .scrollbar::-webkit-scrollbar-thumb:hover {
+        background: red !important;
+    }
 }

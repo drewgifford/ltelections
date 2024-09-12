@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   type BodyRes = {
     statePostal: string,
     officeID: string,
-    include: string[]
+    raceUUIDs: string[]
   }
 
   type RedisQuery = {
@@ -26,17 +26,32 @@ export default defineEventHandler(async (event) => {
 
   // Check date
   let data: any = item as any;
-  console.log(query.include);
+
+  let races = data.races == null ? [] : (data.races as Race[]);
   
-  return data.races == null ? [] : (data.races as Race[]).filter(race => {
-    if (query.officeID == "*" || race.officeID == query.officeID) return true;
+  let filtered = races;
 
-    else if((query.include || []).includes(getUniqueRaceId(race))) return true;
-    
-    return false;
+  if(query.officeID != null){
+    filtered = filtered.filter(race => {
+      if (query.officeID == "*" || race.officeID == query.officeID) return true;
+      return false;
+    });
+  }
 
-  })
+  if(query.statePostal != null){
+    filtered = filtered.filter(race =>
+      query.statePostal == "*" || race.reportingUnits.length >= 1 && race.reportingUnits[0].statePostal == query.statePostal
+    );
+  }
+
+  if(query.raceUUIDs != null && query.raceUUIDs.length > 0){
+    filtered = filtered.filter(race => 
+      query.raceUUIDs.includes(getUniqueRaceId(race))
+    )
+  }
+  
   // State filter
-  .filter(race => query.statePostal == "*" || race.reportingUnits.length >= 1 && race.reportingUnits[0].statePostal == query.statePostal);
+ 
+  return [... new Set(filtered)];
   
 })

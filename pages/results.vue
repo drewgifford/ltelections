@@ -1,36 +1,30 @@
 <script setup lang="ts">
 import type Race from '~/server/Race';
-import { getUniqueRaceId } from '~/server/Race';
+import { getUniqueRaceId, raceIsEqual } from '~/server/Race';
 import type State from '~/server/State';
 import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 
-    const statePostal = ref('CA');
+    const statePostal = ref('MI');
     const officeID = ref('*');
 
     const raceView = ref<Race | null>(null);
-    const pinnedRaces = ref<Race[]>([]);
 
     const { data: states } = useFetch("/api/getStates", {
         transform: (states: State[]) => { return states }
     });
 
-    const { data: races, status, error, refresh } = useFetch("/api/searchRaces", {
+    const pinnedRaces = ref<Race[]>([]);
+
+    const { data: races, status, error, refresh } = useLazyFetch("/api/searchRaces", {
 
         query: {
             statePostal: statePostal,
             officeID: officeID,
-            include: LocalStorageHandler.getItem("pinnedRaces") || []
         },
 
         transform: (races: Race[]) => {
 
-            const pins = LocalStorageHandler.getItem("pinnedRaces");
-
             races.map(race => {
-
-                if((pins || []).includes(getUniqueRaceId(race))){
-                    togglePin(race);
-                }
 
                 for(var reportingUnit of race.reportingUnits){
                     reportingUnit.candidates.sort((a,b) => a.voteCount > b.voteCount ? -1 : 1);
@@ -38,32 +32,45 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                     reportingUnit.totalVotes = reportingUnit.candidates.reduce(((sum, cand) => sum + cand.voteCount), 0);
                 }
 
-            });
+                // Check if there is an existing pin, make sure to mark this one
+                var isRacePinned = pinnedRaces.value.find(x => raceIsEqual(x, race)) != null || false;
+                race.isPinned = isRacePinned;
 
-            console.log("PINNED RACES: ", pinnedRaces.value);
+
+            });
 
             return races;
         }
     });
 
-    
+    const filterFullList = () => {
+        return races.value?.filter(x => (x.officeID == officeID.value  || officeID.value == '*') && (x.reportingUnits[0].statePostal == statePostal.value || statePostal.value == '*'));
+    }
 
     const togglePin = (race: Race) => {
 
         var localRaces = LocalStorageHandler.getItem("pinnedRaces") || [];
+        var raceInList = races.value?.find(x => raceIsEqual(x, race)) || null;
+
         const raceUUID = getUniqueRaceId(race);
 
         race.isPinned = !race.isPinned;
         if(race.isPinned){
             console.log("PINNED RACE!", race);
+
+            if(raceInList) raceInList.isPinned = true;
+
             pinnedRaces.value.push(race);
 
             if(!localRaces.includes(raceUUID)) localRaces?.push(raceUUID);
             
         } else {
-            console.log("UNPINNED RACE!", race);
-            pinnedRaces.value.splice(pinnedRaces.value.indexOf(race), 1);
 
+            console.log("UNPINNED RACE!", race);
+
+            if(raceInList) raceInList.isPinned = false;
+
+            pinnedRaces.value.splice(pinnedRaces.value.indexOf(race), 1);
             localRaces.splice(localRaces.indexOf(raceUUID), 1);
         }
 
@@ -83,7 +90,23 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
         let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
         a.officeID = officeID.value;
         LocalStorageHandler.setItem("lastSearch", a);
-    })
+    });
+
+
+    onMounted(async () => {
+
+        /* Load pins on page load */
+        let data = await fetch(`/api/searchRaces?raceUUIDs=${JSON.stringify({raceUUIDs: LocalStorageHandler.getItem("pinnedRaces") || []})}`, {
+
+        });
+
+        let json: Race[] = await data.json() || [];
+
+        for(var race of json){
+            togglePin(race);
+        }
+
+    });
 
 
 </script>
@@ -153,7 +176,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                 <div v-if="status !== 'pending'" class="flex flex-col gap-3 w-full pb-24">
                     <p>Showing {{ races?.length }} results</p>
                     <MiniRaceView 
-                        v-for="(race, index) in races?.values()"
+                        v-for="(race, index) in filterFullList()"
                         :data-race="getUniqueRaceId(race)"
                         @select="setView(race)"
                         @pin="togglePin(race)"
@@ -191,7 +214,8 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                         <a class="bg-lte-yellow px-4 py-2 text-slate-900 rounded-lg" href="/">See Detailed Results</a>
                     </div>
                     <div class="bg-slate-950/25 p-4 rounded-md shadow-inner">
-                        <img class="mx-auto" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Ohio_Presidential_Election_Results_2020.svg/500px-Ohio_Presidential_Election_Results_2020.svg.png"/>
+                        
+                        <ZoomableMap svg-url="https://upload.wikimedia.org/wikipedia/commons/0/06/Map_of_Texas_highlighting_Webb_County.svg"/>
                         <p class="px-4 text-right">Last updated 11/5/2024 at 8:25PM EST</p>
                     </div>
                 </div>

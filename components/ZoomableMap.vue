@@ -1,8 +1,13 @@
 <script setup lang="ts">
 
+import * as d3 from "d3";
+
 let props = defineProps<{
     svgUrl: string,
   }>();
+
+
+let mapUrl = "~/assets/topojson/counties-10m.json";
 
 import { Canvg } from "canvg";
 import Panzoom from "@panzoom/panzoom"

@@ -50,7 +50,39 @@
 
             <div class="flex gap-2">
 
-                <div v-for="candidate in race.reportingUnits[0].candidates.slice(0,2)" class="flex w-32 bg-lte-red/75 rounded-sm gap-2 items-center pr-2">
+              <div class="w-80">
+                
+                <div class="flex w-full">
+                  <div class=" bg-lte-blue rounded-l-sm text-xs px-1 flex items-center font-header text-center">D</div>
+
+                  <div class="flex flex-1 px-2 py-1 bg-lte-blue/25 justify-between items-center rounded-r-sm">
+
+                    <p class="text-sm text-slate-200">Glusenkamp-Perez</p>
+
+                    <div class="text-right">
+                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">104,333</span>&nbsp;43.7%</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex w-full">
+                  <div class=" bg-lte-red rounded-l-sm text-xs px-1 flex items-center font-header">R</div>
+
+                  <div class="flex bg-lte-red/25 flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
+
+                    <p class="text-sm text-slate-200">Glusenkamp-Perez</p>
+
+                    <div class="text-right">
+                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">1,444,444</span>&nbsp;43.7%</p>
+                    </div>
+                  </div>
+                </div>
+
+
+
+              </div>
+
+                <!--<div v-for="candidate in race.reportingUnits[0].candidates.slice(0,2)" class="flex w-32 bg-lte-red/75 rounded-sm gap-2 items-center pr-2">
                     <div class="relative">
                         <NuxtImg
                             src="/img/donald_trump.png"
@@ -68,7 +100,7 @@
                         <p class="text-xs text-slate-200/75">{{ candidate.voteCount.toLocaleString() }}</p>
                     </div>
                     
-                </div>
+                </div>-->
             </div>
         </div>
 

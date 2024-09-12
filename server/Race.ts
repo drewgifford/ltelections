@@ -6,6 +6,7 @@ type ReportingUnit = {
     level: string,
     electTotal: number,
     eevp: number,
+
     totalVotes: number,
 
     candidates: Candidate[]
@@ -13,9 +14,13 @@ type ReportingUnit = {
 
 type Race = {
 
-    raceId: string,
+    eventID: string,
+    raceID: string,
     raceTypeID: string,
     hasForecast: boolean,
+    stateID: string,
+
+    
 
     officeID: string,
     tabulationStatus: string,

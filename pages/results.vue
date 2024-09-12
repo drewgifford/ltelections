@@ -1,32 +1,18 @@
 <script setup lang="ts">
 import type Race from '~/server/Race';
+import type State from '~/server/State';
 
     const statePostal = ref("*");
     const officeID = ref("*");
+    const raceView = ref<Race | null>(null);
+    const pinnedRaces = ref<Race[]>([]);
 
-    const getRaceTitle = (race: Race) => {
+    const { data: states } = useFetch("/api/getStates", {
+        transform: (states: State[]) => { return states }
+    });
 
-        if(race.officeID == "P"){
-            return race.officeName;
-        }
-        if(race.officeID = "H"){
-            return race.seatName;
-        }
-        if(race.officeID = "")
+    const { data: races, status, error, refresh } = useLazyFetch("/api/searchRaces", {
 
-        return race.officeName;
-
-    }
-    const getRaceDescription = (race: Race) => {
-        if(race.officeID == "P"){
-            return `Presidential Race`;
-        }
-        if(race.officeID = "H"){
-            return `${race.officeName} race - ${race.reportingUnits[0].stateName}'s ${race.seatNum}st district`;
-        }
-    }
-
-    const { data: races, status, error, refresh } = useFetch("/api/searchRaces", {
 
         query: {
             statePostal: statePostal,
@@ -46,13 +32,41 @@ import type Race from '~/server/Race';
 
             });
 
-            return races
+            console.log("PINNED RACES: ", pinnedRaces.value);
+
+            return races;
         }
     });
 
-    const updateView = (race: Race) => {
-        console.log("New race!")
+    
+
+    const togglePin = (race: Race, isPinned: boolean) => {
+
+        
+
+        if(isPinned){
+            console.log("PINNED RACE!", race);
+            pinnedRaces.value.push(race);
+
+            //races.value = races.value?.filter(x => !(pinnedRaces.value.includes(x))) || null;
+        } else {
+            console.log("UNPINNED RACE!", race);
+            pinnedRaces.value.splice(pinnedRaces.value.indexOf(race), 1);
+        }
     }
+
+    const setView = (race: Race) => {
+        raceView.value = race;
+    }
+
+    const isRacePinned = (race: Race) => {
+        for(var r of pinnedRaces.value){
+            if(`${race.stateID}-${race.raceID}` === `${r.stateID}-${r.raceID}`)
+            return true;
+        }
+        return false;
+    }
+
 
 </script>
 
@@ -75,10 +89,7 @@ import type Race from '~/server/Race';
 
                             <select v-model="statePostal" id="location" class="block w-full px-4 py-2 bg-slate-800 rounded-lg transition-all outline-none hover:bg-slate-700">
                                 <option value="*" selected>National</option>
-                                <option value="AL">Alabama</option>
-                                <option value="AK">Alaska</option>
-                                <option value="AZ">Arizona</option>
-                                <option value="OH">Ohio</option>
+                                <option v-for="(state) of states" :value="(state.postalCode)">{{ state.name }}</option>
                             </select>
                         </div>
                     </div>
@@ -107,57 +118,40 @@ import type Race from '~/server/Race';
 
                 </form>
 
-                <div class="flex flex-col gap-6 w-full pb-24">
-
-                    <a v-for="(race, index) in races?.values()" @click="updateView(race)" class="race card p-4 pl-6 relative hover:bg-slate-800 hover:cursor-pointer transition-colors">
-                        <div class="absolute left-0 top-0 h-full w-2 bg-lte-yellow rounded-l-md"></div>
-
-                        <div class="flex w-full justify-between items-start">
-                            <div class="flex-1">
-                                <h3 class="text-2xl">{{ race.reportingUnits[0].statePostal }} - {{ getRaceTitle(race) }} <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h3>
-                                <p>{{ getRaceDescription(race) }}</p>
-                            </div>
-
-                            <div class="flex gap-2">
-                                <div v-for="candidate in race.reportingUnits[0].candidates.slice(0,2)" class="flex w-36 bg-lte-red/75 rounded-md gap-2 items-center pr-2">
-                                    <div class="relative">
-                                        <NuxtImg
-                                            src="/img/donald_trump.png"
-                                            alt=""
-                                            class="w-14 aspect-square"
-                                        />
-                                        <div class="absolute bottom-0 left-0 bg-lte-red px-1 rounded-tr-md rounded-bl-md shadow-inner">
-                                            <p class="font-header text-sm">R</p>
-                                        </div>
-                                    </div>
-                                    
-
-                                    <div class="text-right flex-1">
-                                        <h3 class="text-xl">{{ (((candidate.voteCount / race.reportingUnits[0].totalVotes) * 100) || 0).toFixed(2) }}%</h3>
-                                        <p class="text-sm text-slate-200/75">{{ candidate.voteCount.toLocaleString() }}</p>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-2 items-center mt-2">
-
-                            <div class="bg-slate-700 w-full h-1">
-                                <div class="h-full bg-slate-200" :style="{'height': race.reportingUnits[0].eevp + '%'}"></div>
-                            </div>
-
-                            <p class="text-xs text-nowrap">{{race.reportingUnits[0].eevp}}% reporting</p>
-                        </div>
-                        
-                    </a>
+                <!-- Pinned races -->
+                <div v-if="(pinnedRaces.length > 0)" class="flex flex-col gap-3 w-full">
+                    <p>{{ pinnedRaces?.length }} races pinned</p>
+                    <MiniRaceView v-for="(race, index) in pinnedRaces?.values()" @select="setView(race)" @pin="togglePin(race, false)" :pinned="true" :race="race" class="race relative transition-colors"/>
                 </div>
+
+                <!-- Non-pinned races -->
+                <div v-if="status !== 'pending'" class="flex flex-col gap-3 w-full pb-24">
+                    <p>Showing {{ races?.length }} results</p>
+                    <MiniRaceView v-for="(race, index) in races?.values()" @select="setView(race)" @pin="togglePin(race, true)" :pinned="false" :race="race" class="race relative transition-colors"/>
+                </div>
+
+                <!-- Loader for non-pinned races -->
+                <div class="flex-1 relative card !bg-slate-950/25" v-else>
+
+                    <div role="status" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+
+                        <svg aria-hidden="true" class="inline w-12 h-12 text-slate-800 animate-spin fill-lte-blue" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                        </svg>
+
+                        <span class="sr-only">Loading...</span>
+                    </div>
+
+                </div>
+
+                
 
             </div>
 
             <div class="w-1/2">
                 
-                <div class="card sticky top-24">
+                <div class="card sticky top-24" v-if="(raceView != null)">
                     <CandidateBattle/>
 
                     <div class="p-4">

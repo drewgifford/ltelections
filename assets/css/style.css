@@ -4,10 +4,16 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+    width: 100vw;
+    overflow-x: hidden;
+}
+
 body {
     @apply bg-slate-900 text-slate-400 tracking-tight;
     font-family: "Open Sauce Sans", "Manrope", sans-serif;
     position: relative;
+    
 }
 
 * {
@@ -64,21 +70,5 @@ h1,h2,h3,h4,h5,.font-header {
 }
 
 .card {
-    @apply shadow-md rounded-md bg-slate-900;
-}
-
-@layer utilities {
-    .scrollbar::-webkit-scrollbar {
-
-    }
-    .scrollbar::-webkit-scrollbar-track {
-        
-    }
-    .scrollbar::-webkit-scrollbar-thumb {
-        background: red !important;
-        
-    }
-    .scrollbar::-webkit-scrollbar-thumb:hover {
-        background: red !important;
-    }
+    @apply shadow-md rounded-sm bg-slate-900;
 }

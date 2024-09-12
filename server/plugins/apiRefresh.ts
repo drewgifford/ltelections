@@ -1,15 +1,37 @@
 import cron from "node-cron";
 import Race from "../Race";
+import State from "../State";
 
 const REFRESH_TIME = 15
 
-const gatherPartyData = async (json: any) => {
+const gatherOtherData = async (date: string, json: any) => {
 
-    var races: Race[] = json.races;
+    let postalsTaken: string[] = [];
+    let states: State[] = [];
 
-    var parties: string[] = [];
+    for(var race of json.races as Race[]){
 
-    console.log("Done querying parties: ", parties);
+        for(var reportingUnit of race.reportingUnits){
+
+            let id = reportingUnit.statePostal;
+
+            if(!postalsTaken.includes(id)){
+                states.push({
+                    name: reportingUnit.stateName,
+                    postalCode: id,
+                });
+                postalsTaken.push(id);
+            }
+        }
+    }
+
+    await useStorage("redis").setItem(`${date}-states`, states);
+
+    console.log(`Built out ${states.length} states.`);
+
+    
+
+
 
 }
 
@@ -35,7 +57,7 @@ export default defineNitroPlugin((nitroApp) => {
             let json = await res.json();
 
             // TODO : Populate races with LTE data (whether or not we have a forecast available, candidate images, etc.)
-            await gatherPartyData(json);
+            await gatherOtherData(date, json);
 
             useStorage("redis").setItem(date, json);
 

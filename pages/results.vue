@@ -34,13 +34,27 @@ import type Race from '~/server/Race';
         },
 
         transform: (races: Race[]) => {
-            console.log(races);
+            console.log(races[0]);
+
+            races.map(race => {
+
+                for(var reportingUnit of race.reportingUnits){
+                    reportingUnit.candidates.sort((a,b) => a.voteCount > b.voteCount ? -1 : 1);
+
+                    reportingUnit.totalVotes = reportingUnit.candidates.reduce(((sum, cand) => sum + cand.voteCount), 0);
+                }
+
+            });
+
             return races
         }
     });
 
-</script>
+    const updateView = (race: Race) => {
+        console.log("New race!")
+    }
 
+</script>
 
 <template>
 
@@ -93,19 +107,19 @@ import type Race from '~/server/Race';
 
                 </form>
 
-                <div class="flex flex-col gap-6 w-full">
+                <div class="flex flex-col gap-6 w-full pb-24">
 
-                    <a v-for="(race, index) in races?.values()" class="race card p-4 pl-6 relative hover:bg-slate-800 hover:cursor-pointer transition-colors">
+                    <a v-for="(race, index) in races?.values()" @click="updateView(race)" class="race card p-4 pl-6 relative hover:bg-slate-800 hover:cursor-pointer transition-colors">
                         <div class="absolute left-0 top-0 h-full w-2 bg-lte-yellow rounded-l-md"></div>
 
-                        <div class="flex w-full justify-between">
-                            <div>
+                        <div class="flex w-full justify-between items-start">
+                            <div class="flex-1">
                                 <h3 class="text-2xl">{{ race.reportingUnits[0].statePostal }} - {{ getRaceTitle(race) }} <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h3>
                                 <p>{{ getRaceDescription(race) }}</p>
                             </div>
 
                             <div class="flex gap-2">
-                                <div class="flex bg-lte-red/75 rounded-md gap-2 items-center pr-3">
+                                <div v-for="candidate in race.reportingUnits[0].candidates.slice(0,2)" class="flex w-36 bg-lte-red/75 rounded-md gap-2 items-center pr-2">
                                     <div class="relative">
                                         <NuxtImg
                                             src="/img/donald_trump.png"
@@ -118,28 +132,9 @@ import type Race from '~/server/Race';
                                     </div>
                                     
 
-                                    <div class="text-right">
-                                        <h3 class="text-xl">50.5%</h3>
-                                        <p class="text-sm text-slate-200/75">1,500,523</p>
-                                    </div>
-                                    
-                                </div>
-
-                                <div class="flex bg-lte-blue/25 rounded-md gap-2 items-center pr-3">
-                                    <div class="relative">
-                                        <NuxtImg
-                                            src="/img/donald_trump.png"
-                                            alt=""
-                                            class="w-14 aspect-square"
-                                        />
-                                        <div class="absolute bottom-0 left-0 bg-lte-blue px-1 rounded-tr-md rounded-bl-md shadow-inner">
-                                            <p class="font-header text-sm">D</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-right">
-                                        <h3 class="text-xl">49.5%</h3>
-                                        <p class="text-sm text-slate-200/75">1,451,743</p>
+                                    <div class="text-right flex-1">
+                                        <h3 class="text-xl">{{ (((candidate.voteCount / race.reportingUnits[0].totalVotes) * 100) || 0).toFixed(2) }}%</h3>
+                                        <p class="text-sm text-slate-200/75">{{ candidate.voteCount.toLocaleString() }}</p>
                                     </div>
                                     
                                 </div>
@@ -149,7 +144,7 @@ import type Race from '~/server/Race';
                         <div class="flex gap-2 items-center mt-2">
 
                             <div class="bg-slate-700 w-full h-1">
-                                <div class="h-full bg-slate-200" style="width: {{ race.reportingUnits[0].eevp }}%"></div>
+                                <div class="h-full bg-slate-200" :style="{'height': race.reportingUnits[0].eevp + '%'}"></div>
                             </div>
 
                             <p class="text-xs text-nowrap">{{race.reportingUnits[0].eevp}}% reporting</p>

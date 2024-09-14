@@ -9,7 +9,10 @@ type Candidate = {
     ballotOrder: number,
     polId: string,
     polNum: string,
-    voteCount: number
+    voteCount: number,
+
+    partyData: Party | undefined,
+    percent: number | undefined,
 
 }
 

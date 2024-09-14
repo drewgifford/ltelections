@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
   // Check if the query is in the Redis database and not stale
 
   let item = await useStorage("redis").getItem("2024-11-05") as RedisQuery | null;
+  let lteData = await useStorage("redis").getItem("lteData") as any;
 
   if(item == null) return [] as Race[];
 
@@ -49,6 +50,20 @@ export default defineEventHandler(async (event) => {
       query.raceUUIDs.includes(getUniqueRaceId(race))
     )
   }
+
+  filtered.forEach(x => {
+    x.reportingUnits.forEach(unit => {
+
+      unit.candidates.forEach(cand => {
+
+        for(var party of lteData.parties){
+          if(party.partyId === cand.party){
+            cand.partyData = party;
+          }
+        }
+      });
+    });
+  });
   
   // State filter
  

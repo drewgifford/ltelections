@@ -27,6 +27,20 @@
     }
   }
 
+  const topTwo = (race: Race) => {
+
+    let reportingUnit = race.reportingUnits[0];
+
+    let cands = reportingUnit.candidates.map(c => {
+      c.percent = (c.voteCount / reportingUnit.totalVotes);
+      return c;
+    }).sort((a, b) => {
+      return a.voteCount > b.voteCount ? -1 : 1;
+    }).splice(0, 2)
+
+    return cands;
+  }
+
 </script>
 
 <template>
@@ -52,28 +66,15 @@
 
               <div class="w-80">
                 
-                <div class="flex w-full">
-                  <div class=" bg-lte-blue rounded-l-sm text-xs px-1 flex items-center font-header text-center">D</div>
+                <div class="flex w-full" v-for="candidate of topTwo(race)">
+                  <div :style="[{backgroundColor: candidate.partyData?.color}]" class="rounded-l-sm text-xs px-1 flex items-center font-header text-center">{{ candidate.partyData?.shorthand }}</div>
 
-                  <div class="flex flex-1 px-2 py-1 bg-lte-blue/25 justify-between items-center rounded-r-sm">
+                  <div :style="[{backgroundColor: candidate.partyData?.color +'40'}]" class="flex flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
 
-                    <p class="text-sm text-slate-200">Glusenkamp-Perez</p>
-
-                    <div class="text-right">
-                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">104,333</span>&nbsp;43.7%</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex w-full">
-                  <div class=" bg-lte-red rounded-l-sm text-xs px-1 flex items-center font-header">R</div>
-
-                  <div class="flex bg-lte-red/25 flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
-
-                    <p class="text-sm text-slate-200">Glusenkamp-Perez</p>
+                    <p class="text-sm text-slate-200">{{ candidate.last }}</p>
 
                     <div class="text-right">
-                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">1,444,444</span>&nbsp;43.7%</p>
+                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ candidate.voteCount.toLocaleString() }}</span>&nbsp;{{ ((candidate.percent as number)*100).toFixed(2) }}%</p>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,9 @@
 type Party = {
-    partyCode: string,
+    partyId: string,
+    shorthand: string,
+    name: string,
+    demonym: string,
+    color: string
 }
 
 export default Party;

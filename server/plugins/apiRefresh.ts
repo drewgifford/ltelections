@@ -29,6 +29,46 @@ const gatherOtherData = async (date: string, json: any) => {
 
     console.log(`Built out ${states.length} states.`);
 
+    // TEMPORARY DATA
+    let partyData = {
+
+        parties: [
+            {
+                partyId: "Dem",
+                shorthand: "D",
+                name: "Democratic",
+                demonym: "Democrat",
+                color: "#0041E9"
+            },
+            {
+                partyId: "GOP",
+                shorthand: "R",
+                name: "Republican",
+                demonym: "Republican",
+                color: "#E7004A"
+            },
+            {
+                partyId: "IND",
+                shorthand: "I",
+                name: "Inpdenendent",
+                demonym: "Independent",
+                color: "#FFD300"
+            },
+            {
+                partyId: "OTH",
+                shorthand: "O",
+                name: "Other",
+                demonym: "Other",
+                color: "#94A3B8"
+            }
+        ]
+
+
+
+    }
+
+    useStorage("redis").setItem("lteData", partyData);
+
     
 
 

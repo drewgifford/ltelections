@@ -23,13 +23,6 @@ export default defineNuxtConfig({
     }
   },
 
-  io: {
-    sockets: [{
-      name: 'main',
-      url: 'http://localhost:3001'
-    }]
-  },
-
   components: [
     {
       path: "~/components",

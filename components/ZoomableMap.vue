@@ -14,7 +14,7 @@ import Panzoom from "@panzoom/panzoom"
 const canvasRef = ref(null);
 let v = null;
 
-watch(canvasRef, async () => {
+/*watch(canvasRef, async () => {
     const canvas: any = canvasRef.value;
     const ctx = canvas.getContext("2d");
 
@@ -27,7 +27,7 @@ watch(canvasRef, async () => {
     })
 
     canvas.addEventListener('wheel', pz.zoomWithWheel)
-})
+})*/
   
 
 </script>

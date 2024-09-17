@@ -2,6 +2,7 @@ import { LTE_API_KEY } from "../config";
 import Race, { getUniqueRaceId, raceIsEqual } from "../Race";
 
 let STALE_TIME = 30
+let ELECTION_DATE = process.env.ELECTION_DATE
 
 export default defineEventHandler(async (event) => {
 
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   // Check if the query is in the Redis database and not stale
 
-  let item = await useStorage("redis").getItem("2024-11-05") as RedisQuery | null;
+  let item = await useStorage("redis").getItem(ELECTION_DATE || "") as RedisQuery | null;
   let lteData = await useStorage("redis").getItem("lteData") as any;
 
   if(item == null) return [] as Race[];

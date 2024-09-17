@@ -5,6 +5,7 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "mapgen": "node ./mapgen/mapgen.js",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -22,17 +23,24 @@
     "@types/d3": "^7.4.3",
     "@types/node-cron": "^3.0.11",
     "@vesp/nuxt-fontawesome": "^1.1.0",
+    "adm-zip": "^0.5.16",
+    "axios": "^1.7.7",
     "canvg": "^4.0.2",
+    "cli-progress": "^3.12.0",
     "d3": "^7.9.0",
+    "glob": "^11.0.0",
     "ioredis": "^5.4.1",
     "node-cron": "^3.0.3",
     "nuxt": "^3.13.0",
     "nuxt-socket-io": "^3.0.13",
     "redis": "^4.7.0",
     "sqlite3": "^5.1.7",
+    "topojson-server": "^3.0.1",
     "vue": "latest",
     "vue-router": "latest",
-    "vuedraggable": "^2.24.3"
+    "vuedraggable": "^2.24.3",
+    "yesno": "^0.4.0",
+    "yocto-spinner": "^0.1.0"
   },
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }

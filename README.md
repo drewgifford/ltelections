@@ -10,7 +10,7 @@ Create a `.env` file in the root directory, and add the following contents:
 LTE_API_KEY = your_api_key_here
 REDIS_HOST = redis-host-some-website.com
 REDIS_PASSWORD = some_password
-PORT = 1234
+REDIS_PORT = 1234
 ```
 
 Next, make sure all dependencies are installed.

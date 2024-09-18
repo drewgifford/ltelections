@@ -215,7 +215,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                     </div>
                     <div class="bg-slate-950/25 p-4 rounded-md shadow-inner">
                         
-                        <ZoomableMap svg-url="https://upload.wikimedia.org/wikipedia/commons/0/06/Map_of_Texas_highlighting_Webb_County.svg"/>
+                        <ZoomableMap/>
                         <p class="px-4 text-right">Last updated 11/5/2024 at 8:25PM EST</p>
                     </div>
                 </div>

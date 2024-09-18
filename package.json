@@ -23,6 +23,7 @@
     "@turf/turf": "^7.1.0",
     "@types/d3": "^7.4.3",
     "@types/node-cron": "^3.0.11",
+    "@types/topojson-client": "^3.1.5",
     "@vesp/nuxt-fontawesome": "^1.1.0",
     "adm-zip": "^0.5.16",
     "axios": "^1.7.7",

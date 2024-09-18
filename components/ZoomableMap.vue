@@ -1,42 +1,48 @@
 <script setup lang="ts">
 
-import * as d3 from "d3";
+    import * as d3 from "d3";
+    import * as topojsonClient from "topojson-client";
 
-let props = defineProps<{
-    svgUrl: string,
-  }>();
+    const elem = useTemplateRef("svg");
+
+    onMounted(async () => {
+
+        const data: any = (await d3.json("/api/topojson?postalCode=OH&mapType=counties"));
 
 
-let mapUrl = "~/assets/topojson/counties-10m.json";
 
-import { Canvg } from "canvg";
-import Panzoom from "@panzoom/panzoom"
-const canvasRef = ref(null);
-let v = null;
+        let features = Object.keys(data.objects).map((key) => {
 
-/*watch(canvasRef, async () => {
-    const canvas: any = canvasRef.value;
-    const ctx = canvas.getContext("2d");
+            let obj = data.objects[key];
 
-    v = await Canvg.from(ctx, props.svgUrl);
-    v.start();
+            return topojsonClient.feature(data, obj);
 
-    const pz = Panzoom(canvas, {
-        maxScale: 5,
-        minScale: 0.1
-    })
+        })
+        console.log(features);
 
-    canvas.addEventListener('wheel', pz.zoomWithWheel)
-})*/
-  
+        let projection = d3.geoAlbersUsa().scale(1).translate([0,0]);
+
+        projection.fitExtent([[20,20],[elem.value?.clientWidth || 100, elem.value?.clientHeight || 200]], features[0]);
+
+        let geoGenerator = d3.geoPath()
+            .projection(projection);
+        
+        d3.select(elem.value).selectAll('path').data(features).join('path').attr('d', geoGenerator);
+
+        
+
+    });
+
+
+
+
+
 
 </script>
 
 <template>
 
 
-    <canvas ref="canvasRef">
-
-    </canvas>
+    <svg class="w-full min-h-60" ref="svg"></svg>
                         
 </template>

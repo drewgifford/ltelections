@@ -101,7 +101,7 @@ export default defineNitroPlugin((nitroApp) => {
 
             let reqQuery = `https://api.ltelections.com/?resultsType=t&level=fipscode&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
 
-            try {
+            /*try {
                 let res = await fetch(reqQuery);
                 let json = await res.json();
 
@@ -118,7 +118,7 @@ export default defineNitroPlugin((nitroApp) => {
             } catch (e) {
                 
                 console.error(e)
-            }
+            }*/
         }
 
         

@@ -59,7 +59,7 @@ const statesData = await axios({
     url: statesUrl,
     responseType: "json",
 });
-fse.outputFile(extractFolder + `/us-states.json`, Buffer.from(JSON.stringify(statesData.data)));
+fse.outputFile(extractFolder + `/US/states.json`, Buffer.from(JSON.stringify(statesData.data)));
 spinner.success();
 
 /* DOWNLOAD COUNTY MAP */
@@ -70,7 +70,7 @@ const countiesData = await axios({
     url: countiesUrl,
     responseType: "json",
 });
-fse.outputFile(extractFolder + `/us-counties.json`, Buffer.from(JSON.stringify(countiesData.data)));
+fse.outputFile(extractFolder + `/US/counties.json`, Buffer.from(JSON.stringify(countiesData.data)));
 
 // Convert to geojson since we are using it for to make individual state county maps
 
@@ -114,44 +114,52 @@ async function generateMaps(){
 
 
         spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) - ${key} - Converting to topoJSON...`;
-        
-        let gjson = await shapefile.read(`${extractFolder}/temp/${FILE_NAME}.shp`, `${extractFolder}/temp/${FILE_NAME}.dbf`);
 
-        gjson.features = gjson.features.map(feature => {
-            feature = turf.intersect(turf.featureCollection([feature, turf.feature(nationMesh)]))
+        /* Create geojson */
+        let cdGeojson = await shapefile.read(`${extractFolder}/temp/${FILE_NAME}.shp`, `${extractFolder}/temp/${FILE_NAME}.dbf`);
 
+        cdGeojson.features = cdGeojson.features.map(feature => {
+
+            let f = turf.intersect(turf.featureCollection([feature, turf.feature(nationMesh)]));
+            feature.geometry = f.geometry;
             return feature;
+
         });
 
-        let tjson = topojson.topology(gjson.features);
+        let cdCollection = turf.featureCollection(cdGeojson.features)
+        let cdJson = topojson.topology({cds: cdCollection});
         
-        fse.outputFile(extractFolder + `/${key}/cds.json`, Buffer.from(JSON.stringify(tjson)));
+        fse.outputFile(extractFolder + `/${key}/cds.json`, Buffer.from(JSON.stringify(cdJson)));
 
 
         /* Get individual state county map */
         spinner.text = `${spinnerText} ${key} - Extracting counties... (${index}/${Object.keys(FIPS_CODES).length})`;
 
-        let countyGjson = topojsonClient.feature(countiesData.data, countiesData.data.objects.counties);
-        countyGjson.features = countyGjson.features.filter(feature => {
+        let countyGeojson = topojsonClient.feature(countiesData.data, countiesData.data.objects.counties);
+        countyGeojson.features = countyGeojson.features.filter(feature => {
             return feature.id.substr(0, 2) == FIPS_CODES[key];
         });
 
-        fse.outputFile(extractFolder + `/${key}/counties.json`, Buffer.from(JSON.stringify(topojson.topology(countyGjson.features))));
+        let countiesCollection = turf.featureCollection(countyGeojson.features);
+        let countiesJson = topojson.topology({counties: countiesCollection});
+        fse.outputFile(extractFolder + `/${key}/counties.json`, Buffer.from(JSON.stringify(countiesJson)));
 
         index++;
 
         if(!generateIndividualCDs) continue;
-        let objects = tjson.objects;
+
+        let objects = cdCollection.features;
 
         for(var x in objects){
 
             spinner.text = `${spinnerText} (${index}/${Object.keys(objects).length}) - ${key} - Generating congressional district files...`;
 
-            let object = objects[x];
+            let feature = objects[x];
 
-            let cd = topojsonClient.feature(tjson, object);
+            let cd = turf.featureCollection([feature]);
+            let individualJson = topojson.topology({cds: cd});
 
-            fse.outputFile(extractFolder + `/${key}/cd-${Number(x)+1}.json`, Buffer.from(JSON.stringify(cd)));
+            fse.outputFile(extractFolder + `/${key}/cd-${Number(x)+1}.json`, Buffer.from(JSON.stringify(individualJson)));
 
         }
 

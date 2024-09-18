@@ -1,75 +1,40 @@
-# Nuxt 3 Minimal Starter
+# LTElections Website
+If you're seeing this - you're part of an exclusive club that only Toadally lets see! Within this project there are a few programs -
+* Nuxt.JS API server
+* Nuxt.JS routes/SSR server
+* Mapgen
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
-
-## Setup
-
-Make sure to install the dependencies:
-
+## Starting the Website
+Create a `.env` file in the root directory, and add the following contents:
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+LTE_API_KEY = your_api_key_here
+REDIS_HOST = redis-host-some-website.com
+REDIS_PASSWORD = some_password
+PORT = 1234
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
+Next, make sure all dependencies are installed.
 ```bash
-# npm
-npm run dev
+yarn
+```
 
-# pnpm
-pnpm run dev
-
-# yarn
+Once installed, run the server with
+```bash
 yarn dev
-
-# bun
-bun run dev
 ```
-
-## Production
-
-Build the application for production:
-
+Or, if you want to expose the website,
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+yarn dev --host
 ```
+You can connect to the website with localhost:3000.
 
-Locally preview production build:
-
+## Using the Mapgen tool
+Built in to the repository is a tool to generate all necessary `.topojson` files to use with D3.js. Before running, make sure all dependencies are installed.
 ```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+yarn
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Next, to run the mapgen tool, run the following command:
+```bash
+yarn mapgen
+```
+All files will be outputted in the `maps/` directory.

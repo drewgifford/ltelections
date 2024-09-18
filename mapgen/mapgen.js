@@ -90,6 +90,8 @@ generateMaps().then(() => {
 
 async function generateMaps(){
 
+    let congressionalDistricts = [];
+
     var index = 1;
     for(var key of Object.keys(FIPS_CODES)){
 
@@ -146,6 +148,8 @@ async function generateMaps(){
 
         index++;
 
+        congressionalDistricts = [...congressionalDistricts, ...cdCollection.features];
+
         if(!generateIndividualCDs) continue;
 
         let objects = cdCollection.features;
@@ -160,9 +164,14 @@ async function generateMaps(){
             let individualJson = topojson.topology({cds: cd});
 
             fse.outputFile(extractFolder + `/${key}/cd-${Number(x)+1}.json`, Buffer.from(JSON.stringify(individualJson)));
-
         }
 
     }
+
+    // Generate congressional district map
+    let fullCongressionalMap = turf.featureCollection(congressionalDistricts);
+    let fullCongressJson = topojson.topology({cds: fullCongressionalMap});
+
+    fse.outputFile(extractFolder + `/US/cds.json`, Buffer.from(JSON.stringify(fullCongressJson)));
 }
 

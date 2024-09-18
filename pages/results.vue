@@ -78,6 +78,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
     }
 
     const setView = (race: Race) => {
+        raceView.value = null;
         raceView.value = race;
     }
 
@@ -85,12 +86,19 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
         let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
         a.statePostal = statePostal.value;
         LocalStorageHandler.setItem("lastSearch", a);
-    })
+    });
+
     watch(officeID, (s) => {
         let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
         a.officeID = officeID.value;
         LocalStorageHandler.setItem("lastSearch", a);
     });
+
+    var d = 0;
+
+    watch(raceView, (s) => {
+        d++;
+    })
 
 
     onMounted(async () => {
@@ -107,6 +115,10 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
         }
 
     });
+
+    const getPostal = () => {
+        return raceView.value?.reportingUnits[0].statePostal || "";
+    }
 
 
 </script>
@@ -209,13 +221,13 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                     <CandidateBattle/>
 
                     <div class="p-4">
-                        <p>Ohio &gt; President</p>
+                        <p>{{ raceView.reportingUnits[0].statePostal }} &gt; President</p>
                         <h3 class="text-2xl mb-4">Donald Trump is leading Kamala Harris in Ohio.</h3>
                         <a class="bg-lte-yellow px-4 py-2 text-slate-900 rounded-lg" href="/">See Detailed Results</a>
                     </div>
                     <div class="bg-slate-950/25 p-4 rounded-md shadow-inner">
                         
-                        <ZoomableMap/>
+                        <ZoomableMap :key="(d)" :race-data="(raceView)" :state-postal=(getPostal()) map-type="counties"/>
                         <p class="px-4 text-right">Last updated 11/5/2024 at 8:25PM EST</p>
                     </div>
                 </div>

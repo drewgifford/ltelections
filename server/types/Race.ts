@@ -81,9 +81,7 @@ export default class Race {
                 if(!c) cands.push(cand);
 
                 else if(cand instanceof ReportingCandidate && c instanceof ReportingCandidate){
-
                     c.voteCount += cand.voteCount;
-
                 }
 
                 

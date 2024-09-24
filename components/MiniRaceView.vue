@@ -42,7 +42,7 @@
                     <p class="text-sm text-slate-200">{{ candidate.last }}</p>
 
                     <div class="text-right">
-                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ candidate.polID.toLocaleString() }}</span>&nbsp;{{ ((candidate.percent as number)*100).toFixed(2) }}%</p>
+                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ candidate.voteCount.toLocaleString() }}</span>&nbsp;{{ ((candidate.voteCount / r.parameters.vote?.total as number)*100).toFixed(2) }}%</p>
                     </div>
                   </div>
                 </div>

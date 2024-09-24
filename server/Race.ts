@@ -6,6 +6,7 @@ type ReportingUnit = {
     level: string,
     electTotal: number,
     eevp: number,
+    reportingunitLevel: number,
 
     totalVotes: number,
 

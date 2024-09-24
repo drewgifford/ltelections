@@ -32,7 +32,7 @@
     let reportingUnit = race.reportingUnits[0];
 
     let cands = reportingUnit.candidates.map(c => {
-      c.percent = (c.voteCount / reportingUnit.totalVotes);
+      c.percent = (c.voteCount / (reportingUnit.totalVotes == 0 ? 1 : reportingUnit.totalVotes));
       return c;
     }).sort((a, b) => {
       return a.voteCount > b.voteCount ? -1 : 1;

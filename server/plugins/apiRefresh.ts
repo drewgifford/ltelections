@@ -129,8 +129,41 @@ type CandidateData = {
     id: number
 }
 let candidateData: CandidateData[] = [];
+let apiResponse: ApiResponse;
+
+export function getApiResponse(){
+    return apiResponse;
+}
 export function getCandidateData(){
     return candidateData;
+}
+export function getPartyData(){
+    return [
+        {
+            id: "Dem",
+            name: "Democratic",
+            demonym: "Democrat",
+            colors: ["#00000ff"]
+        },
+        {
+            id: "GOP",
+            name: "Republican",
+            demonym: "Republican",
+            colors: ["#ff0000"]
+        },
+        {
+            id: "Yes",
+            name: "Yes",
+            demonym: "Supporter",
+            colors: ["#00ff00"]
+        },
+        {
+            id: "No",
+            name: "No",
+            demonym: "Opponent",
+            colors: ["#ff0000"]
+        }
+    ]
 }
 
 export default defineNitroPlugin((nitroApp) => {
@@ -164,7 +197,7 @@ export default defineNitroPlugin((nitroApp) => {
             let res = await fetch(req);
             let json = await res.json();
             
-            let apiResponse = new ApiResponse(json);
+            apiResponse = new ApiResponse(json);
 
             /* Use .nextrequest per AP standard */
             if (apiResponse.nextrequest) {

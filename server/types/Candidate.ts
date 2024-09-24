@@ -1,13 +1,14 @@
+import Party from "@/server/types/Party"
 import { getCandidateData } from "../plugins/apiRefresh"
 
 export class Candidate {
 
-    first: string | undefined
-    last: string | undefined
-    party: string | undefined
-    candidateID: string | undefined
-    polID: string | undefined
-    polNum: string | undefined
+    first?: string
+    last?: string
+    party: Party | null = null;
+    candidateID?: string
+    polID?: string
+    polNum?: string
 
     imageURL: string | null = null;
     description: string | null = null;
@@ -25,7 +26,14 @@ export class Candidate {
             this.description = match.description || null;
         }
 
+        // Assign party data
+        if(this.party && typeof this.party === "string"){
+            this.party = new Party(this.party) || null;
+        }
+
     }
+
+    fullName() { return `${this.first} ${this.last}` }
 
 }
 

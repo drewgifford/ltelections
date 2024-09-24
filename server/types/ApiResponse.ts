@@ -2,11 +2,11 @@ import Race from "@/server/types/Race";
 
 export class ApiResponse {
 
-    apiVersion: string | undefined
-    apiBuild: string | undefined
-    timestamp: string | undefined
-    electionDate: string | undefined
-    nextrequest: string | undefined
+    apiVersion?: string
+    apiBuild?: string
+    timestamp?: string
+    electionDate?: string
+    nextrequest?: string
     races: Race[] = []
 
     constructor(props: Partial<ApiResponse>){

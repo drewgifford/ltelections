@@ -1,5 +1,7 @@
 import { LTE_API_KEY } from "../config";
-import Race, { getUniqueRaceId, raceIsEqual } from "../Race";
+import { getApiResponse } from "../plugins/apiRefresh";
+import ApiResponse from "../types/ApiResponse";
+import Race, { OfficeType } from "../types/Race";
 
 let STALE_TIME = 30
 let ELECTION_DATE = process.env.ELECTION_DATE
@@ -8,7 +10,7 @@ export default defineEventHandler(async (event) => {
 
   type BodyRes = {
     statePostal: string,
-    officeID: string,
+    officeID: OfficeType,
     raceUUIDs: string[]
   }
 
@@ -17,6 +19,25 @@ export default defineEventHandler(async (event) => {
     data: object,
   }
 
+  const query: BodyRes = getQuery(event);
+
+  let data: ApiResponse = getApiResponse();
+  let races: Race[] = [];
+
+  races = data.races.filter(race => {
+
+    // Check if it's in the list of UUIDs
+    if(query.raceUUIDs.includes(race.uuid)){
+      return true;
+    }
+
+    // Check if it's in the state
+    if(query.statePostal === race.stateID)
+
+
+  });
+
+  /*
   const query: BodyRes = getQuery(event);
 
   // Check if the query is in the Redis database and not stale
@@ -69,5 +90,6 @@ export default defineEventHandler(async (event) => {
   // State filter
  
   return [... new Set(filtered)];
+  */
   
 })

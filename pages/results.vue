@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type Race from '~/server/Race';
-import { getUniqueRaceId, raceIsEqual } from '~/server/Race';
+import Race from '~/server/types/Race';
 import type State from '~/server/State';
 import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 
@@ -23,22 +22,6 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
         },
 
         transform: (races: Race[]) => {
-
-            races.map(race => {
-
-                for(var reportingUnit of race.reportingUnits){
-                    reportingUnit.candidates.sort((a,b) => a.voteCount > b.voteCount ? -1 : 1);
-
-                    reportingUnit.totalVotes = reportingUnit.candidates.reduce(((sum, cand) => sum + cand.voteCount), 0);
-                }
-
-                // Check if there is an existing pin, make sure to mark this one
-                var isRacePinned = pinnedRaces.value.find(x => raceIsEqual(x, race)) != null || false;
-                race.isPinned = isRacePinned;
-
-
-            });
-
             return races;
         }
     });
@@ -49,7 +32,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 
     const togglePin = (race: Race) => {
 
-        var localRaces = LocalStorageHandler.getItem("pinnedRaces") || [];
+        /*var localRaces = LocalStorageHandler.getItem("pinnedRaces") || [];
         var raceInList = races.value?.find(x => raceIsEqual(x, race)) || null;
 
         const raceUUID = getUniqueRaceId(race);
@@ -74,7 +57,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
             localRaces.splice(localRaces.indexOf(raceUUID), 1);
         }
 
-        LocalStorageHandler.setItem("pinnedRaces", localRaces);
+        LocalStorageHandler.setItem("pinnedRaces", localRaces);*/
     }
 
     const setView = (race: Race) => {
@@ -176,7 +159,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                     <p>{{ pinnedRaces?.length }} races pinned</p>
                     <MiniRaceView 
                         v-for="(race, index) in pinnedRaces?.values()"
-                        :data-race="getUniqueRaceId(race)"
+                        :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
                         :race="race"
@@ -188,8 +171,8 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                 <div v-if="status !== 'pending'" class="flex flex-col gap-3 w-full pb-24">
                     <p>Showing {{ races?.length }} results</p>
                     <MiniRaceView 
-                        v-for="(race, index) in filterFullList()"
-                        :data-race="getUniqueRaceId(race)"
+                        v-for="(race, index) in races?.values()"
+                        :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
                         :race="race"

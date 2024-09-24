@@ -193,7 +193,7 @@ export default defineNitroPlugin((nitroApp) => {
             let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
             const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
             
-            let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=MO&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
+            let req = `https://api.ltelections.com/?resultsType=t&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
             let res = await fetch(req);
             let json = await res.json();
             
@@ -203,6 +203,8 @@ export default defineNitroPlugin((nitroApp) => {
             if (apiResponse.nextrequest) {
                 nextReqDates[date] = "&minDateTime=" + apiResponse.nextrequest.split("&minDateTime=")[1];
             }
+
+            useStorage().setItem(date, JSON.stringify(apiResponse));
 
             console.info("✔ Done");
         }

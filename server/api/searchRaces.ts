@@ -4,7 +4,7 @@ import ApiResponse from "../types/ApiResponse";
 import Race, { OfficeType } from "../types/Race";
 
 let STALE_TIME = 30
-let ELECTION_DATE = process.env.ELECTION_DATE
+let ELECTION_DATE = "2024-11-05"
 
 export default defineEventHandler(async (event) => {
 
@@ -21,21 +21,28 @@ export default defineEventHandler(async (event) => {
 
   const query: BodyRes = getQuery(event);
 
-  let data: ApiResponse = getApiResponse();
-  let races: Race[] = [];
+  const data = new ApiResponse(await useStorage().getItem(ELECTION_DATE || "") || {});
 
-  races = data.races.filter(race => {
+  let d = data.races?.filter(race => {
 
     // Check if it's in the list of UUIDs
-    if(query.raceUUIDs.includes(race.uuid)){
+    if(query.raceUUIDs && query.raceUUIDs.includes(race.uuid)){
       return true;
     }
 
     // Check if it's in the state
-    if(query.statePostal === race.stateID)
+    if(query.statePostal === race.state?.postalCode || query.statePostal == '*'){
 
+      if(query.officeID == race.officeID || query.officeID == OfficeType.Any){
+        return true;
+      }
+
+    }
 
   });
+
+  return d;
+  
 
   /*
   const query: BodyRes = getQuery(event);

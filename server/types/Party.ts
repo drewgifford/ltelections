@@ -1,4 +1,4 @@
-import { getPartyData } from "../plugins/apiRefresh";
+//import { getPartyData } from "../plugins/apiRefresh";
 import Color from "./Color";
 
 
@@ -13,7 +13,7 @@ export default class Party {
 
         if (typeof prop === "string"){
             // Parse as a string, read party db
-            let partyData = getPartyData();
+            let partyData = [];
 
             let party = partyData.find(x => x.id == prop);
 

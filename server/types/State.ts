@@ -114,11 +114,152 @@ let states = [
         name: "Michigan",
         postalCode: "MI",
         fipsCode: "26"
+    },
+    {
+        name: "Minnesota",
+        postalCode: "MN",
+        fipsCode: "27"
+    },
+    {
+        name: "Mississippi",
+        postalCode: "MS",
+        fipsCode: "28"
+    },
+    {
+        name: "Missouri",
+        postalCode: "MO",
+        fipsCode: "29"
+    },
+    {
+        name: "Montana",
+        postalCode: "MT",
+        fipsCode: "30"
+    },
+    {
+        name: "Nebraska",
+        postalCode: "NE",
+        fipsCode: "31"
+    },
+    {
+        name: "Nevada",
+        postalCode: "NV",
+        fipsCode: "32"
+    },
+    {
+        name: "New Hampshire",
+        postalCode: "NH",
+        fipsCode: "33"
+    },
+    {
+        name: "New Jersey",
+        postalCode: "NJ",
+        fipsCode: "34"
+    },
+    {
+        name: "New Mexico",
+        postalCode: "NM",
+        fipsCode: "35"
+    },
+    {
+        name: "New York",
+        postalCode: "NY",
+        fipsCode: "36"
+    },
+    {
+        name: "North Carolina",
+        postalCode: "NC",
+        fipsCode: "37"
+    },
+    {
+        name: "North Dakota",
+        postalCode: "ND",
+        fipsCode: "38"
+    },
+    {
+        name: "Ohio",
+        postalCode: "OH",
+        fipsCode: "39"
+    },
+    {
+        name: "Oklahoma",
+        postalCode: "OK",
+        fipsCode: "40"
+    },
+    {
+        name: "Oregon",
+        postalCode: "OR",
+        fipsCode: "41"
+    },
+    {
+        name: "Pennsylvania",
+        postalCode: "PA",
+        fipsCode: "42"
+    },
+    {
+        name: "Rhode Island",
+        postalCode: "RI",
+        fipsCode: "44"
+    },
+    {
+        name: "South Carolina",
+        postalCode: "SC",
+        fipsCode: "45"
+    },
+    {
+        name: "South Dakota",
+        postalCode: "SD",
+        fipsCode: "46"
+    },
+    {
+        name: "Tennessee",
+        postalCode: "TN",
+        fipsCode: "47"
+    },
+    {
+        name: "Texas",
+        postalCode: "TX",
+        fipsCode: "48"
+    },
+    {
+        name: "Utah",
+        postalCode: "UT",
+        fipsCode: "49"
+    },
+    {
+        name: "Vermont",
+        postalCode: "VT",
+        fipsCode: "50"
+    },
+    {
+        name: "Virginia",
+        postalCode: "VA",
+        fipsCode: "51"
+    },
+    {
+        name: "Washington",
+        postalCode: "WA",
+        fipsCode: "53"
+    },
+    {
+        name: "West Virginia",
+        postalCode: "WV",
+        fipsCode: "54"
+    },
+    {
+        name: "Wisconsin",
+        postalCode: "WI",
+        fipsCode: "55"
+    },
+    {
+        name: "Wyoming",
+        postalCode: "WY",
+        fipsCode: "56"
     }
-
-
 ]
 
+function getStateData(){
+    return states;
+}
 
 export default class State {
 
@@ -131,7 +272,12 @@ export default class State {
         if(typeof props === "string"){
 
             // Get state data
+            let stateData = getStateData();
+            let state = stateData.find(x => x.fipsCode == props);
 
+            if(state){
+                Object.assign(this, state);
+            }
 
         } else {
             Object.assign(this, props);

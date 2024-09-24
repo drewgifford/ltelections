@@ -1,6 +1,6 @@
 import Candidate from "@/server/types/Candidate";
-import ReportingUnit from "./ReportingUnit";
-import State from "@server/types/State";
+import ReportingUnit, { ReportingCandidate } from "./ReportingUnit";
+import State from "@/server/types/State";
 
 export enum OfficeType {
     
@@ -8,7 +8,8 @@ export enum OfficeType {
     House = "H",
     Governor = "G",
     BallotMeasure = "I",
-    President = "P"
+    President = "P",
+    Any = "*"
 }
 
 export interface VoteParameters {
@@ -40,6 +41,7 @@ export default class Race {
     officeID?: OfficeType;
     officeName?: string;
     incumbents: Candidate[] = [];
+    candidates: Candidate[] = [];
     reportingUnits: ReportingUnit[] = [];
 
     eevp: number = 0
@@ -68,6 +70,27 @@ export default class Race {
             this.statewide = this.state;
         }
         this.state = new State(this.stateID)
+
+        // Get candidates from reporting units
+        let cands: Candidate[] = [];
+        for(let ru of this.reportingUnits){
+            for(let cand of ru.candidates){
+
+                let c = cands.find(x => x.candidateID === cand.candidateID);
+
+                if(!c) cands.push(cand);
+
+                else if(cand instanceof ReportingCandidate && c instanceof ReportingCandidate){
+
+                    c.voteCount += cand.voteCount;
+
+                }
+
+                
+            }
+        }
+
+        this.candidates = cands;
         
     }
 

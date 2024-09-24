@@ -1,5 +1,5 @@
 import Party from "@/server/types/Party"
-import { getCandidateData } from "../plugins/apiRefresh"
+//import { getCandidateData } from "../plugins/apiRefresh"
 
 export class Candidate {
 
@@ -16,7 +16,7 @@ export class Candidate {
     constructor(props?: Partial<Candidate>){
         Object.assign(this, props);
 
-        let candidateData = getCandidateData();
+        let candidateData = [];
 
         // Assign candidate image URL and description
         let match = candidateData.find(c => c.name.toLowerCase() == (this.first + ' ' + this.last).toLowerCase());

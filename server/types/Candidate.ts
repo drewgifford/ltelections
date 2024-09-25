@@ -1,35 +1,47 @@
 import Party from "@/server/types/Party"
+import JsonObject from "../utils/JsonObject";
+import { getCandidateData } from "../utils/CandidateData";
 //import { getCandidateData } from "../plugins/apiRefresh"
 
-export class Candidate {
+export class Candidate extends JsonObject {
 
     first?: string
     last?: string
-    party: Party | null = null;
+    party?: string
+    partyData: Party | null = null
     candidateID?: string
     polID?: string
     polNum?: string
+    parsed: boolean = false
 
-    imageURL: string | null = null;
-    description: string | null = null;
+    imageURL: string | null = null
+    description: string | null = null
 
     constructor(props?: Partial<Candidate>){
+        super();
         Object.assign(this, props);
 
-        let candidateData = [];
+        this.partyData = new Party(this.partyData || this.party || "");
 
-        // Assign candidate image URL and description
-        let match = candidateData.find(c => c.name.toLowerCase() == (this.first + ' ' + this.last).toLowerCase());
+        if(!this.parsed){
 
-        if(match){
-            this.imageURL = match.image;
-            this.description = match.description || null;
+            let candidateData = getCandidateData()
+
+            // Assign candidate image URL and description
+            let match = candidateData.find((c: any) => c.name.toLowerCase() == (this.first + ' ' + this.last).toLowerCase());
+    
+            if(match){
+                this.imageURL = match.image;
+                this.description = match.description || null;
+            }
+            this.parsed = true;
+            
         }
 
-        // Assign party data
-        if(this.party && typeof this.party === "string"){
-            this.party = new Party(this.party) || null;
-        }
+        
+
+        
+        
 
     }
 

@@ -1,21 +1,36 @@
 <script lang="ts" setup>
   import Race from '~/server/types/Race';
+import type { Raw } from '~/server/utils/Raw';
 
   const props = defineProps<{
-    race: Race,
+    race: Raw<Race>,
+    isPinned: boolean,
   }>();
 
-  console.log(props.race);
+  let title = "";
+  let desc = "";
+  let mounted = true;
 
-  let r = new Race(props.race);
+  console.log(props.race.candidates);
+
+  /*onMounted(() => {
+    let r = new Race(props.race);
+
+    title = r.getTitle();
+    desc = r.getDescription();
+
+    mounted = true;
+  })*/
+  
+  
 
 </script>
 
 <template>
-  <a class="race relative transition-colors">
+  <a class="race relative transition-colors" v-if="mounted">
 
     <!-- Pin Button -->
-    <div @click="$emit('pin')" :class="[r ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
+    <div @click="$emit('pin')" :class="[isPinned ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
         <Icon :name="race ? 'pajamas:thumbtack-solid' : 'pajamas:thumbtack'"/>
     </div>
 
@@ -26,23 +41,24 @@
 
         <div class="flex w-full justify-between items-start">
             <div class="flex-1">
-                <h4 class="text-lg">{{ r.getTitle() }} <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
-                <p class="text-sm">{{ r.getDescription() }}</p>
+                <h4 class="text-lg">{{ race.title }} <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
+                <p class="text-sm">{{ race.description }}</p>
             </div>
 
             <div class="flex gap-2">
 
               <div class="w-80">
                 
-                <div class="flex w-full" v-for="candidate of r.candidates.slice(0, 2)">
-                  <div :style="[{backgroundColor: candidate.party?.colors[0]}]" class="rounded-l-sm text-xs px-1 flex items-center font-header text-center">{{ candidate.partyData?.shorthand }}</div>
+                <div class="flex w-full" v-for="candidate of race.candidates.slice(0, 2)">
+                  <div :style="[{backgroundColor: candidate.partyData?.colors[0]}]" class="rounded-l-sm text-xs px-1 flex items-center font-header text-center">{{ candidate.partyData?.shorthand }}</div>
 
-                  <div :style="[{backgroundColor: candidate.party?.colors[0] +'40'}]" class="flex flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
-
+                  <div :style="[{backgroundColor: candidate.partyData?.colors[0]+'40'}]" class="flex flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
+                  
+                  
                     <p class="text-sm text-slate-200">{{ candidate.last }}</p>
 
                     <div class="text-right">
-                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ candidate.voteCount.toLocaleString() }}</span>&nbsp;{{ ((candidate.voteCount / r.parameters.vote?.total as number)*100).toFixed(2) }}%</p>
+                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ candidate.voteCount.toLocaleString() }}</span>&nbsp;{{ ((candidate.voteCount / race.parameters.vote?.total as number)*100).toFixed(2) }}%</p>
                     </div>
                   </div>
                 </div>

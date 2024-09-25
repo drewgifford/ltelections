@@ -1,6 +1,7 @@
 import Candidate from "@/server/types/Candidate";
-import ReportingUnit, { ReportingCandidate } from "./ReportingUnit";
+import ReportingUnit, { ReportingCandidate, ReportingUnitLevel } from "./ReportingUnit";
 import State from "@/server/types/State";
+import JsonObject from "../utils/JsonObject";
 
 export enum OfficeType {
     
@@ -25,7 +26,7 @@ export interface RaceParameters {
     vote?: VoteParameters
 }
 
-export default class Race {
+export default class Race extends JsonObject {
 
     uuid: string
 
@@ -49,6 +50,9 @@ export default class Race {
     statewide: boolean = false
     keyRace: boolean = false
     flippedSeat: boolean = false
+
+    title: string
+    description: string
     
     state?: State
 
@@ -58,6 +62,7 @@ export default class Race {
 
 
     constructor(props?: Partial<Race>){
+        super();
         Object.assign(this, props);
 
         this.incumbents = (this.incumbents).map(x => new Candidate(x));
@@ -72,71 +77,87 @@ export default class Race {
         this.state = new State(this.stateID)
 
         // Get candidates from reporting units
-        let cands: Candidate[] = [];
-        for(let ru of this.reportingUnits){
-            for(let cand of ru.candidates){
+        if(props?.candidates instanceof Array){
+            props.candidates = props.candidates.map(x => new ReportingCandidate(x));
+        } else {
 
-                let c = cands.find(x => x.candidateID === cand.candidateID);
+            let cands: ReportingCandidate[] = [];
 
-                if(!c) cands.push(cand);
+            for(let ru of this.reportingUnits){
+                for(let cand of ru.candidates){
 
-                else if(cand instanceof ReportingCandidate && c instanceof ReportingCandidate){
-                    c.voteCount += cand.voteCount;
+                    let c = cands.find(x => x.candidateID === cand.candidateID);
+
+                    if(!c) {
+                        cands.push(cand);
+                    } else if (ru.reportingunitLevel == 1){
+                        c.voteCount += cand.voteCount;
+                    }
                 }
-
-                
             }
+
+            this.candidates = cands.sort((a,b) => {
+                return a.voteCount > b.voteCount ? 1 : 1;
+            }).map(r => new ReportingCandidate(r).toJSON());
+        
         }
 
-        this.candidates = cands;
+        this.title = this.getTitle();
+        this.description = this.getDescription();
+
         
     }
 
-    getTitle() : string | undefined {
+    private getTitle() : string {
+
+        let invalid = "Invalid Race Name";
 
         switch(this.officeID){
 
             case OfficeType.President:
-                return this.officeName;
+                return `${this.state?.postalCode} - President`
 
             case OfficeType.Senate:
-                return this.officeName;
+                return `${this.state?.postalCode} - Senate ${this.seatName}`;
 
             case OfficeType.House:
-                return this.officeName;
+                return `${this.state?.postalCode} - House ${this.seatName}`;
 
             case OfficeType.BallotMeasure:
-                return this.seatName;
+                return `${this.state?.postalCode} - ${this.officeName} ${this.designation}`
 
             case OfficeType.Governor:
-                return this.officeName;
+                return `${this.state?.postalCode} - Governor`
 
             default:
-                return "Invalid Race Name";
+                return invalid;
         }
 
     }
 
-    getDescription() : string | undefined {
+    private getDescription() : string {
+
+        let invalid = "Invalid Race Description";
+
         switch(this.officeID){
 
             case OfficeType.President:
-                return this.officeName;
+                return this.officeName || invalid;
 
             case OfficeType.Senate:
-                return this.officeName;
+                return this.officeName || invalid;
 
             case OfficeType.House:
-                return this.officeName;
+                return this.officeName || invalid;
 
             case OfficeType.BallotMeasure:
-                return this.seatName;
+                return `${this.description}`;
 
             case OfficeType.Governor:
-                return this.officeName;
+                return this.officeName || invalid;
 
             default:
-                return "Invalid Race Description";
+                return invalid;
         }
     }
 }

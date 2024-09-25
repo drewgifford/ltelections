@@ -2,15 +2,83 @@
 import Race from '~/server/types/Race';
 import type State from '~/server/State';
 import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
+import axios from 'axios';
+import type { CanPin, Raw } from '~/server/utils/Raw';
 
-    const statePostal = ref('MI');
+    const statePostal = ref('OH');
     const officeID = ref('*');
+    const pinnedRaceIds = ref<string[]>([]);
+    const pinnedRaces = ref<(Raw<Race>&CanPin)[]>([]);
+
+    // Query races
+    const { data: races, status, error } = useFetch("/api/searchRaces", {
+        query: {
+            statePostal: statePostal,
+            officeID: officeID
+        },
+        transform: (races: Raw<Race>&CanPin[]) => {
+            return races.map(r => {
+                
+                r.pinned = false;
+                return r;
+            });
+            
+        }
+    });
+
+    onMounted(async () => {
+        pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
+
+        // Get initial pinned races
+        pinnedRaces.value = (await axios.get("/api/searchRaces", {
+            params: {
+                raceUUIDs: pinnedRaceIds.value
+            }
+        })).data.map((r: Raw<Race>&CanPin) => {
+            r.pinned = true;
+        });
+    });
+
+    // Pin races functionality
+    const togglePin = (race: Raw<Race>&CanPin) => {
+
+        let index = pinnedRaces.value.indexOf(race);
+        let idIndex = pinnedRaceIds.value.indexOf(race.uuid);
+
+        if(race.pinned){
+
+            // Remove pin
+            pinnedRaces.value.splice(index, 1);
+            pinnedRaceIds.value.splice(idIndex, 1);
+            race.pinned = false;
+            
+        } else {
+
+            // Add pin
+            if(index < 0) pinnedRaces.value.push(race);
+            if(idIndex < 0) pinnedRaceIds.value.push(race.uuid as string);
+            race.pinned = true;
+
+        }
+        
+    }
+
+
+
 
     const raceView = ref<Race | null>(null);
 
     const { data: states } = useFetch("/api/getStates", {
         transform: (states: State[]) => { return states }
     });
+
+    let d = 0;
+    const setView = (race: Raw<Race>) => {
+        raceView.value = race;
+    }
+    watch(raceView, () => d++);
+
+    /*
 
     const pinnedRaces = ref<Race[]>([]);
 
@@ -57,7 +125,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
             localRaces.splice(localRaces.indexOf(raceUUID), 1);
         }
 
-        LocalStorageHandler.setItem("pinnedRaces", localRaces);*/
+        LocalStorageHandler.setItem("pinnedRaces", localRaces);
     }
 
     const setView = (race: Race) => {
@@ -81,27 +149,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 
     watch(raceView, (s) => {
         d++;
-    })
-
-
-    onMounted(async () => {
-
-        /* Load pins on page load */
-        let data = await fetch(`/api/searchRaces?raceUUIDs=${JSON.stringify({raceUUIDs: LocalStorageHandler.getItem("pinnedRaces") || []})}`, {
-
-        });
-
-        let json: Race[] = await data.json() || [];
-
-        for(var race of json){
-            togglePin(race);
-        }
-
-    });
-
-    const getPostal = () => {
-        return raceView.value?.reportingUnits[0].statePostal || "";
-    }
+    })*/
 
 
 </script>
@@ -158,10 +206,11 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                 <div v-if="(pinnedRaces.length > 0)" class="flex flex-col gap-3 w-full">
                     <p>{{ pinnedRaces?.length }} races pinned</p>
                     <MiniRaceView 
-                        v-for="(race, index) in pinnedRaces?.values()"
+                        v-for="(race, index) of pinnedRaces?.values()"
                         :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
+                        :is-pinned="race.pinned"
                         :race="race"
                         class="race relative transition-colors"
                     />
@@ -170,13 +219,16 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                 <!-- Non-pinned races -->
                 <div v-if="status !== 'pending'" class="flex flex-col gap-3 w-full pb-24">
                     <p>Showing {{ races?.length }} results</p>
+
                     <MiniRaceView 
-                        v-for="(race, index) in races?.values()"
+                        v-for="(race, index) of races?.values()"
                         :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
+                        :is-pinned="race.pinned"
                         :race="race"
-                        class="race relative transition-colors"/>
+                        class="race relative transition-colors"
+                    />
                 </div>
 
                 <!-- Loader for non-pinned races -->
@@ -210,7 +262,7 @@ import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
                     </div>
                     <div class="bg-slate-950/25 p-4 rounded-md shadow-inner">
                         
-                        <ZoomableMap :key="(d)" :race-data="(raceView)" :state-postal=(getPostal()) map-type="counties"/>
+                        <ZoomableMap :key="(d)" :race-data="(raceView)" map-type="counties"/>
                         <p class="px-4 text-right">Last updated 11/5/2024 at 8:25PM EST</p>
                     </div>
                 </div>

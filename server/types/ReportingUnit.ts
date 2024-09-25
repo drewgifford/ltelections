@@ -1,31 +1,33 @@
 import Candidate from "@/server/types/Candidate"
 import { RaceParameters } from "./Race";
+import JsonObject from "../utils/JsonObject";
 
-enum ReportingUnitLevel {
+export enum ReportingUnitLevel {
     SubUnit = "subunit",
     State = "state",
 }
 
-interface ReportingUnitParameters extends RaceParameters {
+export interface ReportingUnitParameters extends RaceParameters {
     precinctsReportingActual?: number,
     precinctsReportingProportional?: number
 }
 
 export class ReportingCandidate extends Candidate {
-    voteCount: number = 0
-    ballotOrder: number = -1
+    voteCount?: number
+    ballotOrder?: number
 
     constructor(props?: Partial<ReportingCandidate>){
         super(props);
+        Object.assign(this, props);
     }   
 }
 
-export default class ReportingUnit {
+export default class ReportingUnit extends JsonObject {
 
     statePostal?: string
     stateName?: string
     reportingunitID?: string
-    reportingunitlevel: number = -1
+    reportingunitLevel: number = -1
     pollClosingTime?: string
     level?: ReportingUnitLevel
     lastUpdated?: string
@@ -38,6 +40,8 @@ export default class ReportingUnit {
     parameters: ReportingUnitParameters = {}
 
     constructor(props: Partial<ReportingUnit>){
+        super();
+
         Object.assign(this, props);
 
         this.candidates = this.candidates.map(x => new ReportingCandidate(x));

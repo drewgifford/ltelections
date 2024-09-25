@@ -1,20 +1,21 @@
 <script setup lang="ts">
 
     const props = defineProps<{
-        statePostal: string,
         mapType: string,
-        raceData: Race
+        raceData: Raw<Race>
     }>();
 
     import * as d3 from "d3";
     import * as topojson from "topojson-client";
-import type Race from "~/server/Race";
+    import type Race from "~/server/types/Race";
 
     const elem = useTemplateRef("svg");
 
+    let statePostal = props.raceData.state?.postalCode;
+
     onMounted(async () => {
 
-        const data: any = (await d3.json(`/api/topojson?postalCode=${props.statePostal}&mapType=${props.mapType}`));
+        const data: any = (await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=${props.mapType}`));
 
         let feature: any = topojson.feature(data, data.objects.counties);
 

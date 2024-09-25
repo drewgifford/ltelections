@@ -4,122 +4,14 @@ import State from "../State";
 import { Redis } from "ioredis";
 import ApiResponse from "../types/ApiResponse";
 import yoctoSpinner from "yocto-spinner";
-
-const REFRESH_TIME = 20
-
-const gatherOtherData = async (date: string, json: any) => {
-
-    let postalsTaken: string[] = [];
-    let states: State[] = [];
-
-    for(var race of json.races as Race[]){
-        for(var reportingUnit of race.reportingUnits){
-
-            let id = reportingUnit.statePostal;
-
-            if(!postalsTaken.includes(id)){
-                states.push({
-                    name: reportingUnit.stateName,
-                    postalCode: id,
-                });
-                postalsTaken.push(id);
-            }
-        }
-    }
-
-    setupOverviewJson(json);
-    let countyJson = setupCountyMaps(json);
-    countyJson.races.forEach(async (race: Race, index: number) => {
-
-        let deepCopy = JSON.parse(JSON.stringify(countyJson));
-
-        deepCopy.races = deepCopy.races.filter((r: Race) => raceIsEqual(r, race));
-
-        console.log(`Race ${index}/${countyJson.races.length}`);
-
-        //await useStorage('redis').setItem(`${date}-${getUniqueRaceId(race)}`, deepCopy);
-
-    })
-    
-    
+import { setCandidateData } from "../utils/CandidateData";
+import { JSONFilePreset } from 'lowdb/node'
 
 
 
-    await useStorage("redis").setItem(`${date}-states`, states);
-
-    console.log(`Built out ${states.length} states.`);
-
-    // TEMPORARY DATA
-    let partyData = {
-
-        parties: [
-            {
-                partyId: "Dem",
-                shorthand: "D",
-                name: "Democratic",
-                demonym: "Democrat",
-                color: "#0041E9"
-            },
-            {
-                partyId: "GOP",
-                shorthand: "R",
-                name: "Republican",
-                demonym: "Republican",
-                color: "#E7004A"
-            },
-            {
-                partyId: "IND",
-                shorthand: "I",
-                name: "Inpdenendent",
-                demonym: "Independent",
-                color: "#FFD300"
-            },
-            {
-                partyId: "OTH",
-                shorthand: "O",
-                name: "Other",
-                demonym: "Other",
-                color: "#94A3B8"
-            }
-        ]
 
 
-
-    }
-
-    useStorage("redis").setItem("lteData", partyData);
-
-    
-
-
-
-}
-
-const setupOverviewJson = (j: any) => {
-    let json = JSON.parse(JSON.stringify(j)) // deep copy;
-    let races = json.races as Race[];
-
-    races.forEach((race: Race) => {
-        // Filter reporting units to the first reportingunitlevel
-        race.reportingUnits = race.reportingUnits.filter((reportingUnit) => reportingUnit.reportingunitLevel == 1);
-    });
-
-    return json;
-}
-
-const setupCountyMaps = (j: any) => {
-    let json = JSON.parse(JSON.stringify(j));
-    let races = json.races as Race[];
-
-    races.forEach((race: Race, index: number) => {
-
-        
-        
-        race.reportingUnits = race.reportingUnits.filter((reportingUnit) => reportingUnit.reportingunitLevel == 2);
-    });
-
-    return json;
-}
+const REFRESH_TIME = 60
 
 
 type CandidateData = {
@@ -166,49 +58,54 @@ export function getPartyData(){
     ]
 }
 
-export default defineNitroPlugin((nitroApp) => {
+
+
+export default defineNitroPlugin(async (nitroApp) => {
+
+    const db = await JSONFilePreset('@/db/apiCache.json', { response: {} })
 
     var nextReqDates: any = {}
 
+    // === Grab candidate data
+    const setupCandidateData = async () => {
+
+        console.info("Setting up candidate data...")
+        let req = `https://api.ltelections.com/candidates/`;
+        let res = await fetch(req);
+        let json = await res.json();
+        
+        setCandidateData(json);
+
+        console.info("✔ Done");
+    }
+
+    const setupAPData = async () => {
+        console.info("Setting up AP data...")
+        let date = '2024-11-05';
+        let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
+        const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
+        
+        //TODO: I know i spent all day converting everything to classes, but you need to convert it to types or interfaces :(
+        let req = `https://api.ltelections.com/?resultsType=t&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
+        let res = await fetch(req);
+        let json = await res.json();
+        
+        apiResponse = new ApiResponse(json);
+
+        /* Use .nextrequest per AP standard */
+        if (apiResponse.nextrequest) {
+            nextReqDates[date] = "&minDateTime=" + apiResponse.nextrequest.split("&minDateTime=")[1];
+        }
+
+        //await db.update(({response}) => apiResponse);
+        //useStorage('redis').setItem(date, apiResponse.toJSON());
+
+        console.info("✔ Done");
+    }
+    
 
     // Automatically refresh the database with all races every REFRESH_TIME seconds
     cron.schedule(`*/${REFRESH_TIME} * * * * *`, async () => {
-
-
-        // === Grab candidate data
-        const setupCandidateData = async () => {
-
-            console.info("Setting up candidate data...")
-            let req = `https://api.ltelections.com/candidates/`;
-            let res = await fetch(req);
-            let json = await res.json();
-            candidateData = json;
-
-            console.info("✔ Done");
-        }
-
-        const setupAPData = async () => {
-            console.info("Setting up AP data...")
-            let date = '2024-11-05';
-            let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
-            const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
-            
-            let req = `https://api.ltelections.com/?resultsType=t&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
-            let res = await fetch(req);
-            let json = await res.json();
-            
-            apiResponse = new ApiResponse(json);
-
-            /* Use .nextrequest per AP standard */
-            if (apiResponse.nextrequest) {
-                nextReqDates[date] = "&minDateTime=" + apiResponse.nextrequest.split("&minDateTime=")[1];
-            }
-
-            useStorage().setItem(date, JSON.stringify(apiResponse));
-
-            console.info("✔ Done");
-        }
-
 
         await setupCandidateData();
         await setupAPData();

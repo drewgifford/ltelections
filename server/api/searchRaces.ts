@@ -14,18 +14,12 @@ export default defineEventHandler(async (event) => {
     raceUUIDs: string[]
   }
 
-  type RedisQuery = {
-    timestamp: number,
-    data: object,
-  }
-
   const query: BodyRes = getQuery(event);
 
-  const data = new ApiResponse(await useStorage().getItem(ELECTION_DATE || "") || {});
+  const data = new ApiResponse(await useStorage('redis').getItem(ELECTION_DATE || "") || {});
 
-  let d = data.races?.filter(race => {
+  /*let d = data.races?.filter(race => {
 
-    // Check if it's in the list of UUIDs
     if(query.raceUUIDs && query.raceUUIDs.includes(race.uuid)){
       return true;
     }
@@ -41,7 +35,8 @@ export default defineEventHandler(async (event) => {
 
   });
 
-  return d;
+  return d;*/
+  return [];
   
 
   /*

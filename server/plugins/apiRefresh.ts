@@ -1,11 +1,8 @@
 import cron from "node-cron";
-import Race, { getRaceById, getUniqueRaceId, raceIsEqual } from "../Race";
-import State from "../State";
-import { Redis } from "ioredis";
 import ApiResponse from "../types/ApiResponse";
 import yoctoSpinner from "yocto-spinner";
-import { setCandidateData } from "../utils/CandidateData";
 import { JSONFilePreset } from 'lowdb/node'
+import { attachCandidateData } from "../types/Candidate";
 
 
 
@@ -69,17 +66,16 @@ export default defineNitroPlugin(async (nitroApp) => {
     // === Grab candidate data
     const setupCandidateData = async () => {
 
-        console.info("Setting up candidate data...")
         let req = `https://api.ltelections.com/candidates/`;
         let res = await fetch(req);
         let json = await res.json();
-        
-        setCandidateData(json);
 
         console.info("✔ Done");
+
+        return json;
     }
 
-    const setupAPData = async () => {
+    const setupAPData = async (data: CandidateData[]) => {
         console.info("Setting up AP data...")
         let date = '2024-11-05';
         let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
@@ -92,13 +88,16 @@ export default defineNitroPlugin(async (nitroApp) => {
         
         apiResponse = new ApiResponse(json);
 
+        // Manually attach candidate images here
+        apiResponse.races = attachCandidateData(apiResponse.races, data);
+
         /* Use .nextrequest per AP standard */
         if (apiResponse.nextrequest) {
             nextReqDates[date] = "&minDateTime=" + apiResponse.nextrequest.split("&minDateTime=")[1];
         }
 
         //await db.update(({response}) => apiResponse);
-        //useStorage('redis').setItem(date, apiResponse.toJSON());
+        useStorage().setItem(date, apiResponse.toJSON());
 
         console.info("✔ Done");
     }
@@ -107,8 +106,8 @@ export default defineNitroPlugin(async (nitroApp) => {
     // Automatically refresh the database with all races every REFRESH_TIME seconds
     cron.schedule(`*/${REFRESH_TIME} * * * * *`, async () => {
 
-        await setupCandidateData();
-        await setupAPData();
+        let data = await setupCandidateData();
+        await setupAPData(data);
         
 
 

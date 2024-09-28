@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import Race from '~/server/types/Race';
-import type State from '~/server/State';
+import type State from '~/server/types/State';
 import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 import axios from 'axios';
 import type { CanPin, Raw } from '~/server/utils/Raw';
+import States from '~/server/utils/States';
 
     const statePostal = ref('OH');
     const officeID = ref('*');
@@ -64,13 +65,9 @@ import type { CanPin, Raw } from '~/server/utils/Raw';
     }
 
 
-
+    let states = States;
 
     const raceView = ref<Race | null>(null);
-
-    const { data: states } = useFetch("/api/getStates", {
-        transform: (states: State[]) => { return states }
-    });
 
     let d = 0;
     const setView = (race: Raw<Race>) => {
@@ -251,21 +248,9 @@ import type { CanPin, Raw } from '~/server/utils/Raw';
             </div>
 
             <div class="w-1/2">
-                
-                <div class="card sticky top-24" v-if="(raceView != null)">
-                    <CandidateBattle/>
 
-                    <div class="p-4">
-                        <p>{{ raceView.reportingUnits[0].statePostal }} &gt; President</p>
-                        <h3 class="text-2xl mb-4">Donald Trump is leading Kamala Harris in Ohio.</h3>
-                        <a class="bg-lte-yellow px-4 py-2 text-slate-900 rounded-lg" href="/">See Detailed Results</a>
-                    </div>
-                    <div class="bg-slate-950/25 p-4 rounded-md shadow-inner">
-                        
-                        <ZoomableMap :key="(d)" :race-data="(raceView)" map-type="counties"/>
-                        <p class="px-4 text-right">Last updated 11/5/2024 at 8:25PM EST</p>
-                    </div>
-                </div>
+                <RaceCard :key="(d)" :race="(raceView)" v-if="(raceView != null)"/>
+                
             </div>
 
             

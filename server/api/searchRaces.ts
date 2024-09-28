@@ -1,5 +1,3 @@
-import { LTE_API_KEY } from "../config";
-import { getApiResponse } from "../plugins/apiRefresh";
 import ApiResponse from "../types/ApiResponse";
 import Race, { OfficeType } from "../types/Race";
 
@@ -16,9 +14,9 @@ export default defineEventHandler(async (event) => {
 
   const query: BodyRes = getQuery(event);
 
-  const data = new ApiResponse(await useStorage('redis').getItem(ELECTION_DATE || "") || {});
+  const data = (await useStorage().getItem(ELECTION_DATE || "") || {}) as ApiResponse;
 
-  /*let d = data.races?.filter(race => {
+  let d = data.races?.filter(race => {
 
     if(query.raceUUIDs && query.raceUUIDs.includes(race.uuid)){
       return true;
@@ -35,8 +33,7 @@ export default defineEventHandler(async (event) => {
 
   });
 
-  return d;*/
-  return [];
+  return d;
   
 
   /*

@@ -96,9 +96,7 @@ export default class Race extends JsonObject {
                 }
             }
 
-            this.candidates = cands.sort((a,b) => {
-                return a.voteCount > b.voteCount ? 1 : 1;
-            }).map(r => new ReportingCandidate(r).toJSON());
+            this.candidates = cands.map(r => new ReportingCandidate(r).toJSON());
         
         }
 

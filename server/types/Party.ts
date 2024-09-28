@@ -20,14 +20,14 @@ export default class Party extends JsonObject {
                     id: "Dem",
                     name: "Democratic",
                     demonym: "Democrat",
-                    colors: ["#0041E9"],
+                    colors: ["#0041E9","#5F85FF","#9FB5FF","#B2B8D1"],
                     shorthand: "D"
                 },
                 {
                     id: "GOP",
                     name: "Republican",
                     demonym: "Republican",
-                    colors: ["#E7004A"],
+                    colors: ["#E7004A","#FF7392","#FFA9B6","#CFAAA2"],
                     shorthand: "R"
                 },
                 {

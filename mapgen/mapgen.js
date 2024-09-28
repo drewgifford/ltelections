@@ -9,6 +9,7 @@ import fs from "fs";
 import * as fse from "fs-extra"
 import shapefile from "shapefile";
 import * as turf from "@turf/turf";
+import * as polyclip from "polyclip-ts";
 
 import FIPS_CODES from "./fips.json" with {type: "json"};
 import CONFIG from "./config.json" with {type: "json"};
@@ -124,6 +125,7 @@ async function generateMaps(){
 
             let f = turf.intersect(turf.featureCollection([feature, turf.feature(nationMesh)]));
             feature.geometry = f.geometry;
+            feature.properties.fips = feature.id;
             return feature;
 
         });
@@ -159,11 +161,33 @@ async function generateMaps(){
             spinner.text = `${spinnerText} (${index}/${Object.keys(objects).length}) - ${key} - Generating congressional district files...`;
 
             let feature = objects[x];
+            let features = [];
 
-            let cd = turf.featureCollection([feature]);
-            let individualJson = topojson.topology({cds: cd});
+            // Clip counties map by intersection
+            [...countyGeojson.features].forEach((countyFeature, index) => {
+
+                let poly1 = turf.multiPolygon(countyFeature.geometry.coordinates);
+                let poly2 = turf.multiPolygon(feature.geometry.coordinates);
+
+                
+
+                let coords = turf.multiPolygon(polyclip.intersection(poly1.geometry.coordinates, poly2.geometry.coordinates));
+                
+                if(coords == null) return;
+
+                coords.id = countyFeature.id;
+                coords.properties = countyFeature.properties;
+
+                if(coords.geometry.coordinates.length > 0) features.push(coords);
+
+            });
+
+            let cd = turf.featureCollection(features);
+            let individualJson = topojson.topology({counties: cd}, {cds: turf.featureCollection([feature])});
 
             fse.outputFile(extractFolder + `/${key}/cd-${Number(x)+1}.json`, Buffer.from(JSON.stringify(individualJson)));
+
+            
         }
 
     }

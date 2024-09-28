@@ -1,7 +1,31 @@
 import Party from "@/server/types/Party"
 import JsonObject from "../utils/JsonObject";
-import { getCandidateData } from "../utils/CandidateData";
-//import { getCandidateData } from "../plugins/apiRefresh"
+import Race from "@/server/types/Race";
+
+export function attachCandidateData([...races]: Race[], candidateData: any[]){
+
+    // Candidate data should be attached in only the candidates section
+    console.log("Candidate data:", candidateData);
+
+    for(let race of races){
+
+        for(let candidate of race.candidates){
+
+            // Assign candidate image URL and description
+            let match = candidateData.find((c: any) => c.id == candidate.polID);
+
+            if(match){
+                candidate.imageURL = match.image;
+                candidate.description = match.description || null;
+            }
+        }
+        
+    }
+
+    return races;
+
+    
+}
 
 export class Candidate extends JsonObject {
 
@@ -14,7 +38,7 @@ export class Candidate extends JsonObject {
     polNum?: string
     parsed: boolean = false
 
-    imageURL: string | null = null
+    imageURL: string = 'https://media.discordapp.net/attachments/1212623884948340757/1288587531289497600/Generic.png?ex=66f5ba28&is=66f468a8&hm=a4c2336dd1826facc93c4770f84d3a6722369029344c4fc6aa9244e41040414a&=&format=webp&quality=lossless&width=1164&height=1456'
     description: string | null = null
 
     constructor(props?: Partial<Candidate>){
@@ -22,27 +46,6 @@ export class Candidate extends JsonObject {
         Object.assign(this, props);
 
         this.partyData = new Party(this.partyData || this.party || "");
-
-        if(!this.parsed){
-
-            let candidateData = getCandidateData()
-
-            // Assign candidate image URL and description
-            let match = candidateData.find((c: any) => c.name.toLowerCase() == (this.first + ' ' + this.last).toLowerCase());
-    
-            if(match){
-                this.imageURL = match.image;
-                this.description = match.description || null;
-            }
-            this.parsed = true;
-            
-        }
-
-        
-
-        
-        
-
     }
 
     fullName() { return `${this.first} ${this.last}` }

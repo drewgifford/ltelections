@@ -4010,6 +4010,11 @@ base64id@2.0.0, base64id@~2.0.0:
   resolved "https://registry.yarnpkg.com/base64id/-/base64id-2.0.0.tgz#2770ac6bc47d312af97a8bf9a634342e0cd25cb6"
   integrity sha512-lGe34o6EHj9y3Kts9R4ZYs/Gr+6N7MCaMlIFA3F1R2O5/m7K06AxfSeO5530PEERE6/WyEg3lsuyw4GHlPZHog==
 
+bignumber.js@^9.1.0:
+  version "9.1.2"
+  resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-9.1.2.tgz#b7c4242259c008903b13707983b5f4bbd31eda0c"
+  integrity sha512-2/mKyZH9K85bzOEfhXDBFZTGd1CTs+5IHpeFQo9luiBG7hghdC851Pj2WAhb6E3R6b9tZj/XKhbg4fum+Kepug==
+
 binary-extensions@^2.0.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-2.3.0.tgz#f6e14a97858d327252200242d4ccfe522c445522"
@@ -7410,6 +7415,14 @@ point-in-polygon@^1.1.0:
   resolved "https://registry.yarnpkg.com/point-in-polygon/-/point-in-polygon-1.1.0.tgz#b0af2616c01bdee341cbf2894df643387ca03357"
   integrity sha512-3ojrFwjnnw8Q9242TzgXuTD+eKiutbzyslcq1ydfu82Db2y+Ogbmyrkpv0Hgj31qwT3lbS9+QAAO/pIQM35XRw==
 
+polyclip-ts@^0.16.5:
+  version "0.16.5"
+  resolved "https://registry.yarnpkg.com/polyclip-ts/-/polyclip-ts-0.16.5.tgz#053e073e640449f1b1a1d88471f8758779d0b030"
+  integrity sha512-ZchnG0zGZReHgEo3EYzEUi6UmfQFFzNnj6AFU+gBm+IJJ4qG9gL4CwjtCV6oi/PittUPpJLiLJxcn/AgrCBO+g==
+  dependencies:
+    bignumber.js "^9.1.0"
+    splaytree-ts "^1.0.1"
+
 polygon-clipping@^0.15.3:
   version "0.15.7"
   resolved "https://registry.yarnpkg.com/polygon-clipping/-/polygon-clipping-0.15.7.tgz#3823ca1e372566f350795ce9dd9a7b19e97bdaad"
@@ -8355,6 +8368,11 @@ speakingurl@^14.0.1:
   version "14.0.1"
   resolved "https://registry.yarnpkg.com/speakingurl/-/speakingurl-14.0.1.tgz#f37ec8ddc4ab98e9600c1c9ec324a8c48d772a53"
   integrity sha512-1POYv7uv2gXoyGFpBCmpDVSNV74IfsWlDW216UPjbWufNf+bSU6GdbDsxdcxtfwb4xlI3yxzOTKClUosxARYrQ==
+
+splaytree-ts@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/splaytree-ts/-/splaytree-ts-1.0.1.tgz#4ddcfe2684da017d02b599d53d67f6d07a90745b"
+  integrity sha512-B+VzCm33/KEchi/fzT6/3NRHm8k5+Kf37SBQO3meHHS/tK2xBnIm4ZvusQ1wUpHgKMCCqEWgXnwFXAa1nD289g==
 
 splaytree@^3.1.0:
   version "3.1.2"

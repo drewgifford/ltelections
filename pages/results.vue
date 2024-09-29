@@ -224,7 +224,6 @@ import States from '~/server/utils/States';
                         @pin="togglePin(race)"
                         :is-pinned="race.pinned"
                         :race="race"
-                        class="race relative transition-colors"
                     />
                 </div>
 

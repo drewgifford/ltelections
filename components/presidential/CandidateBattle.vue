@@ -2,7 +2,7 @@
 import type Candidate from '~/server/types/Candidate';
 import type Race from '~/server/types/Race';
 
-const defaultImage = "https://media.discordapp.net/attachments/1212623884948340757/1288587531289497600/Generic.png?ex=66f5ba28&is=66f468a8&hm=a4c2336dd1826facc93c4770f84d3a6722369029344c4fc6aa9244e41040414a&=&format=webp&quality=lossless&width=1164&height=1456"
+const defaultImage = "https://imagedelivery.net/ilUJ6Cy8nNz2i8r1DPuCPg/7d6ef9e9-e998-4839-343c-529df6a61600/public"
 
 const props = defineProps<{
   race: Raw<Race>
@@ -55,16 +55,17 @@ const getTopTwoCandidates = () => {
 
 }
 
-let voteTotal = props.race.parameters.vote?.total || 0;
+let voteTotal = props.race ? (props.race.parameters.vote?.total || 0) : 0
 
 const topTwo = getTopTwoCandidates();
+
 
 
 </script>
 
 <template>
   
-  <div class="min-h-10 w-full flex justify-between">
+  <div class="min-h-10 w-full flex justify-between" v-if="(race)">
             
       <div class="flex justify-between w-full">
 
@@ -91,8 +92,8 @@ const topTwo = getTopTwoCandidates();
 
         <div class="py-2 self-end text-center text-slate-200">
 
-          <p class="text-md">Electoral Votes</p>
-          <p class="text-md mt-1.5">Polling Average</p>
+          <p class="text-md">Percent</p>
+          <p class="text-md mt-1.5">Total Votes</p>
 
         </div>
 

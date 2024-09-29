@@ -98,7 +98,7 @@ async function generateMaps(){
 
         fse.remove(extractFolder + "/" + key);
 
-        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) - ${key} - Downloading...`;
+        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) ${key} - Downloading...`;
 
         const { data } = await axios({
             method: "GET",
@@ -106,7 +106,7 @@ async function generateMaps(){
             responseType: "arraybuffer",
         });
 
-        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) - ${key} - Extracting...`;
+        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) ${key} - Extracting...`;
 
         const zip = new AdmZip(data);
         const FILE_NAME = `tl_${CONFIG.year}_${FIPS_CODES[key]}_cd${CONFIG.congress}`;
@@ -116,7 +116,7 @@ async function generateMaps(){
 
 
 
-        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) - ${key} - Converting to topoJSON...`;
+        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) ${key} - Converting to topoJSON...`;
 
         /* Create geojson */
         let cdGeojson = await shapefile.read(`${extractFolder}/temp/${FILE_NAME}.shp`, `${extractFolder}/temp/${FILE_NAME}.dbf`);
@@ -137,7 +137,7 @@ async function generateMaps(){
 
 
         /* Get individual state county map */
-        spinner.text = `${spinnerText} ${key} - Extracting counties... (${index}/${Object.keys(FIPS_CODES).length})`;
+        spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) ${key} - Extracting counties...`;
 
         let countyGeojson = topojsonClient.feature(countiesData.data, countiesData.data.objects.counties);
         countyGeojson.features = countyGeojson.features.filter(feature => {
@@ -156,15 +156,17 @@ async function generateMaps(){
 
         let objects = cdCollection.features;
 
-        for(var x in objects){
+        let cdIndex = 1;
 
-            spinner.text = `${spinnerText} (${index}/${Object.keys(objects).length}) - ${key} - Generating congressional district files...`;
+        for(var x in objects){
 
             let feature = objects[x];
             let features = [];
 
             // Clip counties map by intersection
-            [...countyGeojson.features].forEach((countyFeature, index) => {
+            [...countyGeojson.features].forEach((countyFeature, countyIndex) => {
+
+                spinner.text = `${spinnerText} (${index}/${Object.keys(FIPS_CODES).length}) ${key} - Generating CDs... (${cdIndex}/${objects.length})${'.'.repeat(countyIndex+1)}`;
 
                 let poly1 = turf.multiPolygon(countyFeature.geometry.coordinates);
                 let poly2 = turf.multiPolygon(feature.geometry.coordinates);
@@ -183,9 +185,15 @@ async function generateMaps(){
             });
 
             let cd = turf.featureCollection(features);
-            let individualJson = topojson.topology({counties: cd}, {cds: turf.featureCollection([feature])});
+            let individualJson = topojson.topology({counties: cd}, 1e4);
 
-            fse.outputFile(extractFolder + `/${key}/cd-${Number(x)+1}.json`, Buffer.from(JSON.stringify(individualJson)));
+            
+
+            let cdNumber = String(feature.properties["CD118FP"]) | "unknown";
+
+            fse.outputFile(extractFolder + `/${key}/cd-${cdNumber}.json`, Buffer.from(JSON.stringify(individualJson)));
+
+            cdIndex++;
 
             
         }

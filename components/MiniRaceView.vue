@@ -34,7 +34,7 @@ import type { Raw } from '~/server/utils/Raw';
         <Icon :name="race ? 'pajamas:thumbtack-solid' : 'pajamas:thumbtack'"/>
     </div>
 
-    <div @click="$emit('select')" class="card p-4 pl-6 hover:bg-slate-800 hover:cursor-pointer">
+    <div @click="$emit('select')" class="card p-3 pl-6 hover:bg-slate-800 hover:cursor-pointer">
         <div class="absolute left-0 top-0 h-full w-2 bg-lte-yellow rounded-l-sm"></div>
 
         

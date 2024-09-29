@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
 
   let state = query.postalCode;
-  let mapType = query.mapType;
+  let mapType: number | 'counties' | 'cds' = query.mapType as any;
 
   console.log(state, mapType);
 

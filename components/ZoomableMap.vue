@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
     const props = defineProps<{
-        mapType: string,
         race: Raw<Race>
     }>();
 
@@ -9,17 +8,53 @@
     import * as topojson from "topojson-client";
 import type Color from "~/server/types/Color";
     import type Race from "~/server/types/Race";
+import { OfficeType } from "~/server/types/Race";
 import type ReportingUnit from "~/server/types/ReportingUnit";
 
     const elem = useTemplateRef("svg");
 
     let statePostal = props.race.state?.postalCode;
+
+    async function populateMap(){
+
+        let race = props.race;
+        let officeType = race.officeID;
+
+        let data: any;
+
+        if(officeType == OfficeType.House){
+            // Return congressional district with only the counties included in the reportingUnits
+
+            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=${race.seatNum}`);
+
+            let countyIds: string[] = []
+            race.reportingUnits.forEach(x => {
+                countyIds.push(x.fipsCode || '');
+            });
+
+            data.objects.counties.geometries = data.objects.counties.geometries.filter((x: any) => {
+                return countyIds.includes(String(x.id));
+            });
+
+            console.log(data);
+
+        } else {
+
+            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=counties`);
+
+        }
+
+        return data;
+
+
+
+    }
     
 
     onMounted(async () => {
 
-        //const data: any = (await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=${props.mapType}`));
-        const data: any = (await d3.json(`/api/topojson?postalCode=AL&mapType=1`));
+        const data = await populateMap();
+        //const data: any = (await d3.json(`/api/topojson?postalCode=AL&mapType=1`));
 
         let feature: any = topojson.feature(data, data.objects.counties);
 
@@ -29,10 +64,12 @@ import type ReportingUnit from "~/server/types/ReportingUnit";
 
         projection.fitExtent([[20,20],[elem.value?.clientWidth || 100, elem.value?.clientHeight || 200]], feature);
 
+
+
         let geoGenerator = d3.geoPath()
             .projection(projection);
 
-        console.log(props.race.reportingUnits);
+        console.log(props.race);
         
         d3.select(elem.value).selectAll('path').data(features).join('path').attr('d', geoGenerator).attr("fill", function(county){
            let countyName = county.properties.name;
@@ -62,10 +99,10 @@ import type ReportingUnit from "~/server/types/ReportingUnit";
             let vt = (voteTotal == 0 ? 1 : voteTotal);
             let difference = ((candidates[0].voteCount || 0)/vt - (candidates[1].voteCount || 0)/vt)*100;
 
-            if(difference >= 15) { console.log(`${countyName}: Safe ${candidates[0].first} ${candidates[0].last}`); return colors[0] }
-            else if (difference >= 7.5) { console.log(`${countyName}: Likely ${candidates[0].first} ${candidates[0].last}`); return colors[1] }
-            else if (difference >= 2) { console.log(`${countyName}: Lean ${candidates[0].first} ${candidates[0].last}`); return colors[2] }
-            else { console.log(`${countyName}: Tilt ${candidates[0].first} ${candidates[0].last}`); return colors[3] };
+            if(difference >= 15) { return colors[0] }
+            else if (difference >= 7.5) { return colors[1] }
+            else if (difference >= 2) { return colors[2] }
+            else { return colors[3] };
 
             return ["#E7004A", "#E7004A", "#E7004A", "#E7004A", "#E7004A", "#cfaaa2", "#ffa9b6", "#ff0052", "#b2b8d1","#b2b8d1","#5f85ff", "#0041E9"][Math.floor(Math.random()*12)];
 

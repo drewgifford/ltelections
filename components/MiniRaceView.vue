@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import Race from '~/server/types/Race';
 import type { Raw } from '~/server/utils/Raw';
+ import { notZero } from '~/server/utils/Util';
 
   const props = defineProps<{
     race: Raw<Race>,
@@ -48,44 +49,10 @@ import type { Raw } from '~/server/utils/Raw';
             <div class="flex gap-2">
 
               <div class="w-80">
-                
-                <div class="flex w-full" v-for="candidate of race.candidates.slice(0, 2)">
-                  <div :style="[{backgroundColor: candidate.partyData?.colors[0]}]" class="rounded-l-sm text-xs px-1 flex items-center font-header text-center">{{ candidate.partyData?.shorthand }}</div>
 
-                  <div :style="[{backgroundColor: candidate.partyData?.colors[0]+'40'}]" class="flex flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
-                  
-                  
-                    <p class="text-sm text-slate-200">{{ candidate.last }}</p>
-
-                    <div class="text-right">
-                      <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ candidate.voteCount.toLocaleString() }}</span>&nbsp;{{ ((candidate.voteCount / race.parameters.vote?.total as number)*100).toFixed(2) }}%</p>
-                    </div>
-                  </div>
-                </div>
-
-
+                <ResultTable :unit="race" :max="2" :reporting="false"/>
 
               </div>
-
-                <!--<div v-for="candidate in race.reportingUnits[0].candidates.slice(0,2)" class="flex w-32 bg-lte-red/75 rounded-sm gap-2 items-center pr-2">
-                    <div class="relative">
-                        <NuxtImg
-                            src="/img/donald_trump.png"
-                            alt=""
-                            class="w-12 aspect-square"
-                        />
-                        <div class="absolute bottom-0 left-0 bg-lte-red px-1 rounded-tr-sm rounded-bl-sm shadow-inner">
-                            <p class="font-header text-sm">R</p>
-                        </div>
-                    </div>
-                    
-
-                    <div class="text-right flex-1">
-                        <h4 class="text-md">{{ (((candidate.voteCount / race.reportingUnits[0].totalVotes) * 100) || 0).toFixed(2) }}%</h4>
-                        <p class="text-xs text-slate-200/75">{{ candidate.voteCount.toLocaleString() }}</p>
-                    </div>
-                    
-                </div>-->
             </div>
         </div>
 

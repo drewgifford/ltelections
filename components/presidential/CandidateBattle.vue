@@ -127,8 +127,8 @@ const topTwo = getTopTwoCandidates();
 
   <div class="bg-slate-800 overflow-hidden h-2 relative">
 
-    <div class="block h-2 absolute left-0" :style="{width: '50.5%', backgroundColor: topTwo[0]?.partyData.colors[0]}"></div>
-    <div class="block h-2 absolute right-0" :style="{width: '41.5%', backgroundColor: topTwo[1]?.partyData.colors[0]}"></div>
+    <div class="block h-2 absolute left-0" :style="{width: `${100*topTwo[0].voteCount/(voteTotal > 0 ? voteTotal : 1)}%`, backgroundColor: topTwo[0]?.partyData.colors[0]}"></div>
+    <div v-if="topTwo.length > 1" class="block h-2 absolute right-0" :style="{width: `${100*topTwo[1].voteCount/(voteTotal > 0 ? voteTotal : 1)}%`, backgroundColor: topTwo[1]?.partyData.colors[0]}"></div>
 
   </div>
 

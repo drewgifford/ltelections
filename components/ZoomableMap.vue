@@ -71,6 +71,8 @@ import ReportingUnit from "~/server/types/ReportingUnit";
 
 
     }
+
+    let ruIdx = 0;
     
 
     onMounted(async () => {
@@ -125,11 +127,11 @@ import ReportingUnit from "~/server/types/ReportingUnit";
 
             let difference = ((cand1Vote-cand2Vote)/vt)*100;
 
-            if(difference >= 15) { return colors[0] }
-            else if (difference >= 7.5) { return colors[1] }
-            else if (difference >= 2) { return colors[2] }
-            else if (difference > 0) { return colors[3] }
-            else return "#1E293B";
+            if(difference >= 15) { return colors[0]+'80' }
+            else if (difference >= 7.5) { return colors[1]+'80' }
+            else if (difference >= 2) { return colors[2]+'80' }
+            else if (difference > 0) { return colors[3]+'80' }
+            else return "#1E293B80";
 
             return ["#E7004A", "#E7004A", "#E7004A", "#E7004A", "#E7004A", "#cfaaa2", "#ffa9b6", "#ff0052", "#b2b8d1","#b2b8d1","#5f85ff", "#0041E9"][Math.floor(Math.random()*12)];
 
@@ -144,7 +146,11 @@ import ReportingUnit from "~/server/types/ReportingUnit";
             // Fill data
             let reportingUnit = props.race.reportingUnits.find(ru => ru.fipsCode == d.id);
 
-            if(reportingUnit) selectedRu.value = reportingUnit;
+            console.log(reportingUnit);
+            if(reportingUnit){
+                selectedRu.value = reportingUnit;
+                ruIdx++;
+            };
 
 
             
@@ -157,8 +163,32 @@ import ReportingUnit from "~/server/types/ReportingUnit";
             let x = event.offsetX;
             let y = event.offsetY;
 
-            t.style.left = `${x+20}px`;
-            t.style.top = `${y}px`;
+            
+
+            // Fix tooltip if it's clipping outside boundaries
+
+            if(!elem.value) return;
+
+            let svgBounds = elem.value.getBoundingClientRect();
+            let tooltipBounds = t.getBoundingClientRect();
+
+            let xOffset = 20;
+            let yOffset = 0;
+
+            console.log(tooltipBounds);
+
+            if(x + svgBounds.x + tooltipBounds.width + 20 > window.innerWidth){
+                // Clip to left side instead
+                xOffset = -20 - tooltipBounds.width;
+            }
+
+            if(y + svgBounds.y + tooltipBounds.height + 40 > window.innerHeight){
+                yOffset = -20 - tooltipBounds.height;
+            }
+
+
+            t.style.left = `${x+xOffset}px`;
+            t.style.top = `${y+yOffset}px`;
 
         }
 
@@ -190,7 +220,7 @@ import ReportingUnit from "~/server/types/ReportingUnit";
 
                 <p class="text-white font-header mb-2">{{ selectedRu.reportingunitName }}</p>
 
-                <ResultTable :unit="selectedRu" :max="5" :reporting="true" class="w-80"/>
+                <ResultTable :key="ruIdx" :unit="selectedRu" :max="5" :reporting="true" class="w-80"/>
 
             </div>
         </div>

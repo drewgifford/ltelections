@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type Candidate from '~/server/types/Candidate';
 import type Race from '~/server/types/Race';
+import type { Raw } from '~/server/utils/Raw';
+import { getTopTwoCandidates } from '~/server/utils/Util';
 
 const defaultImage = "https://imagedelivery.net/ilUJ6Cy8nNz2i8r1DPuCPg/7d6ef9e9-e998-4839-343c-529df6a61600/public"
 
@@ -8,56 +10,9 @@ const props = defineProps<{
   race: Raw<Race>
 }>();
 
-const getTopTwoCandidates = () => {
-
-  let candidates = props.race.candidates;
-
-  if(candidates.length <= 1) return [candidates[0], null];
-
-  let republican = candidates.find(cand => cand.party == "GOP");
-  let democrat = candidates.find(cand => cand.party == "Dem");
-
-  // First action - try polling data
-
-  // Second strategy - Check for an incumbent
-  let incumbents = props.race.incumbents;
-
-  if(incumbents.length > 0){
-
-    let incumbent = incumbents[0];
-
-    let incumbentData = candidates.find(cand => cand.polID == incumbent.polID);
-    let incumbentParty = incumbentData?.party || '';
-
-    // If the incumbent is actually running
-    if(incumbentData) {
-      // If there is both a democrat and republican in this race, and the incumbent is independent
-      if (democrat && republican && !["Dem","GOP"].includes(incumbentParty)) return [incumbentData, republican];
-
-      // If there is a democrat in this race and the incumbent is republican
-      else if(democrat && incumbentParty == 'GOP') return [democrat, incumbentData];
-      else if(republican && incumbentParty == 'Dem') return [incumbentData, republican]
-      else return [incumbentData, candidates.find(cand => cand.polID != incumbent.polID) as Candidate];
-    }
-  }
-
-  // Third strategy - Pair D and R
-  
-
-  if(republican && democrat){
-    // Both parties have been found, return both
-    return [democrat, republican];
-  }
-
-
-  // Fourth strategy - Alphabetical order
-  return [candidates[0], candidates[1]];
-
-}
-
 let voteTotal = props.race ? (props.race.parameters.vote?.total || 0) : 0
 
-const topTwo = getTopTwoCandidates();
+const topTwo = getTopTwoCandidates(props.race);
 
 
 
@@ -128,7 +83,7 @@ const topTwo = getTopTwoCandidates();
   <div class="bg-slate-800 overflow-hidden h-2 relative">
 
     <div class="block h-2 absolute left-0" :style="{width: `${100*topTwo[0].voteCount/(voteTotal > 0 ? voteTotal : 1)}%`, backgroundColor: topTwo[0]?.partyData.colors[0]}"></div>
-    <div v-if="topTwo.length > 1" class="block h-2 absolute right-0" :style="{width: `${100*topTwo[1].voteCount/(voteTotal > 0 ? voteTotal : 1)}%`, backgroundColor: topTwo[1]?.partyData.colors[0]}"></div>
+    <div v-if="(topTwo.length > 1)" class="block h-2 absolute right-0" :style="{width: `${100*topTwo[1].voteCount/(voteTotal > 0 ? voteTotal : 1)}%`, backgroundColor: topTwo[1]?.partyData.colors[0]}"></div>
 
   </div>
 

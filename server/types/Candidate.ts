@@ -4,9 +4,6 @@ import Race from "@/server/types/Race";
 
 export function attachCandidateData([...races]: Race[], candidateData: any[]){
 
-    // Candidate data should be attached in only the candidates section
-    console.log("Candidate data:", candidateData);
-
     for(let race of races){
 
         for(let candidate of race.candidates){

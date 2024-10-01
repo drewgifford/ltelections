@@ -1,6 +1,7 @@
 import { Raw } from "vue";
 import Race from "../types/Race";
 import ReportingUnit from "../types/ReportingUnit";
+import Color from "../types/Color";
 
 export function notZero(n: number | undefined) {
 
@@ -91,3 +92,5 @@ export function getTopTwoCandidates(unit: Raw<Race> | Raw<ReportingUnit>) {
     return [candidates[0], candidates[1]];
   
   }
+
+export function getBlendedColor(colors: Color[], )

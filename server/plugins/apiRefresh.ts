@@ -97,9 +97,12 @@ export default defineNitroPlugin(async (nitroApp) => {
         }
 
         //await db.update(({response}) => apiResponse);
-        useStorage().setItem(date, apiResponse.toJSON());
+        let j = apiResponse.toJSON();
+        useStorage().setItem(date, j);
 
         console.info("✔ Done");
+        return j;
+
     }
     
 
@@ -107,48 +110,16 @@ export default defineNitroPlugin(async (nitroApp) => {
     cron.schedule(`*/${REFRESH_TIME} * * * * *`, async () => {
 
         let data = await setupCandidateData();
-        await setupAPData(data);
-        
+        let apiResponse = await setupAPData(data);
 
+        // Use historical county data to generate an expected vote total for each race
+        let races = apiResponse.races;
 
+        for(let race of races){
+            
+            
 
-        // Grab AP API data and cache in redis database based on election date
-        /*var dates = [process.env.ELECTION_DATE || ""]
-        const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
-
-        console.log("Updating races for " + dates + "...")
-
-        for(var date of dates){
-
-            var nextReqDate = date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
-
-            let reqQuery = `https://api.ltelections.com/?resultsType=t&level=fipscode&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
-
-            try {
-                let res = await fetch(reqQuery);
-                let json = await res.json();
-
-                let apiResponse = new ApiResponse(json);
-
-                // TODO : Populate races with LTE data (whether or not we have a forecast available, candidate images, etc.)
-                // TODO !important : Use FULL fipscode data and separate out into data needed for the Mini Race View search and full data, separated out into individual
-                // redis keys
-                //await gatherOtherData(date, json);
-
-                //useStorage("redis").setItem(date, json);
-
-                if (json.nextrequest) {
-                    nextReqDates[date] = "&minDateTime=" + json.nextrequest.split("&minDateTime=")[1];
-                    console.log(json.nextrequest);
-                }
-
-                console.log(Date.now() + " | Updated races for date " + date);
-
-            } catch (e) {
-                
-                console.error(e)
-            }
-        }*/
+        }
 
         
         

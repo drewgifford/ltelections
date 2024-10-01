@@ -14,7 +14,7 @@ type CountyData = {
     candidatevotes: number
 }
 
-type HistoricalCounty = {
+export type HistoricalCounty = {
     swing: number,
     dem: number,
     demPct: number,

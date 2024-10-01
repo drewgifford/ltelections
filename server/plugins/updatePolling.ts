@@ -12,6 +12,8 @@ export default defineNitroPlugin(async (nitroApp) => {
     let presidential_polls = await parsePolls(PRESIDENTIAL_URL);
 
     let historicalCountyData = await parseHistoricalData();
+
+    useStorage().setItem("historicalData", historicalCountyData);
     // TODO: parse presidential polls, add senate + house polls, calculate expected result and standard deviation for all races (swing races without polls by national swing from 2020-2024)
     // default standard deviation: 4.0%
 
@@ -69,7 +71,7 @@ async function parsePolls(url: string){
             if(!(Object.keys(parsedPolls).includes(poll.state))) parsedPolls[poll.state] = [];
 
             parsedPolls[poll.state].push(existingPoll);
-            
+
         };
     }
 

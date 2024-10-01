@@ -3,6 +3,8 @@ import ApiResponse from "../types/ApiResponse";
 import yoctoSpinner from "yocto-spinner";
 import { JSONFilePreset } from 'lowdb/node'
 import { attachCandidateData } from "../types/Candidate";
+import { HistoricalCounty } from "../polling/HistoricalResult";
+import { OfficeType } from "../types/Race";
 
 
 
@@ -114,12 +116,17 @@ export default defineNitroPlugin(async (nitroApp) => {
 
         // Use historical county data to generate an expected vote total for each race
         let races = apiResponse.races;
+        let historicalData = await useStorage().getItem("historicalData") as HistoricalCounty[];
 
-        for(let race of races){
-            
-            
+        console.log(races.length);
+        
+        races.forEach((race) => {
 
-        }
+            if(!(race.officeID == OfficeType.President)) return;
+
+            console.log(race.title);
+
+        })
 
         
         

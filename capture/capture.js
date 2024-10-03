@@ -8,7 +8,7 @@ dotenv.config();
 var nextReqDates = {}
 const extractFolder = "capture/captures";
 let index = 0;
-const REFRESH_TIME = 60;
+const REFRESH_TIME = 300;
 const date = "2024-11-05"
 
 var isWorking = false;

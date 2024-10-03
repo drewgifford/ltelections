@@ -59,6 +59,7 @@ export default class Race extends JsonObject {
     seatName?: string
 
     parameters: RaceParameters = {}
+    designation?: string;
 
 
     constructor(props?: Partial<Race>){
@@ -91,7 +92,7 @@ export default class Race extends JsonObject {
                     if(!c) {
                         cands.push(cand);
                     } else if (ru.reportingunitLevel == 1){
-                        c.voteCount += cand.voteCount;
+                        c.voteCount = (c.voteCount || 0) + (cand.voteCount || 0);
                     }
                 }
             }

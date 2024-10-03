@@ -16,9 +16,6 @@ export default defineNitroPlugin(async (nitroApp) => {
     useStorage().setItem("historicalData", historicalCountyData);
     // TODO: parse presidential polls, add senate + house polls, calculate expected result and standard deviation for all races (swing races without polls by national swing from 2020-2024)
     // default standard deviation: 4.0%
-
-
-
     console.info("Done!");
 
 });

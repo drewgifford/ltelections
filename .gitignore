@@ -25,3 +25,4 @@ logs
 
 # Generated files
 maps
+capture/captures/*.json

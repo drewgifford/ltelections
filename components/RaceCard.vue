@@ -8,7 +8,7 @@ const props = defineProps<{
     race: Raw<Race>
 }>();
 
-let winner = props.race.candidates.find(cand => cand.winner = 'X');
+let winner = props.race.candidates.find(cand => cand.winner == 'X');
 
 const getText = () => {
 
@@ -68,6 +68,10 @@ const getText = () => {
                  <div class="mt-4 card p-4">
 
                     <p class="text-md font-header">LTE Project-o-matic</p>
+                    <div class="flex">
+                        <h1 class="text-xl">>99% Trump</h1>
+                    </div>
+                    <p class="text-xs"><i>Probability based on historical Presidential data and topline polling averages. May not be accurate.</i></p>
 
                  </div>
 

@@ -2,6 +2,7 @@ import Candidate from "@/server/types/Candidate";
 import ReportingUnit, { ReportingCandidate, ReportingUnitLevel } from "./ReportingUnit";
 import State from "@/server/types/State";
 import JsonObject from "../utils/JsonObject";
+import { CanPin } from "../utils/Raw";
 
 export enum OfficeType {
     
@@ -26,6 +27,8 @@ export interface RaceParameters {
     vote?: VoteParameters
 }
 
+export type RacePinnable = Race & CanPin;
+
 export default class Race extends JsonObject {
 
     uuid: string
@@ -42,7 +45,7 @@ export default class Race extends JsonObject {
     officeID?: OfficeType;
     officeName?: string;
     incumbents: Candidate[] = [];
-    candidates: Candidate[] = [];
+    candidates: ReportingCandidate[] = [];
     reportingUnits: ReportingUnit[] = [];
 
     eevp: number = 0
@@ -57,6 +60,7 @@ export default class Race extends JsonObject {
     state?: State
 
     seatName?: string
+    winner?: string
 
     parameters: RaceParameters = {}
     designation?: string;
@@ -93,6 +97,7 @@ export default class Race extends JsonObject {
                         cands.push(cand);
                     } else if (ru.reportingunitLevel == 1){
                         c.voteCount = (c.voteCount || 0) + (cand.voteCount || 0);
+                        if(!c.winner) c.winner = cand.winner;
                     }
                 }
             }

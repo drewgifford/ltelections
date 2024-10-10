@@ -93,4 +93,4 @@ export function getTopTwoCandidates(unit: Raw<Race> | Raw<ReportingUnit>) {
   
   }
 
-export function getBlendedColor(colors: Color[], )
+export function getBlendedColor(colors: Color[]){}

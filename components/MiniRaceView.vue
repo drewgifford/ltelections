@@ -4,27 +4,16 @@ import type { Raw } from '~/server/utils/Raw';
  import { notZero } from '~/server/utils/Util';
 
   const props = defineProps<{
-    race: Raw<Race>,
+    race: Race,
     isPinned: boolean,
   }>();
 
   let title = "";
   let desc = "";
   let mounted = true;
-
-  console.log(props.race.candidates);
-
-  /*onMounted(() => {
-    let r = new Race(props.race);
-
-    title = r.getTitle();
-    desc = r.getDescription();
-
-    mounted = true;
-  })*/
   
   
-
+  console.log(props.race.reportingUnits[0])
 </script>
 
 <template>

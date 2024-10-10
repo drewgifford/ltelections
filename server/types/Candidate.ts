@@ -36,7 +36,9 @@ export class Candidate extends JsonObject {
     parsed: boolean = false
 
     imageURL: string = 'https://media.discordapp.net/attachments/1212623884948340757/1288587531289497600/Generic.png?ex=66f5ba28&is=66f468a8&hm=a4c2336dd1826facc93c4770f84d3a6722369029344c4fc6aa9244e41040414a&=&format=webp&quality=lossless&width=1164&height=1456'
-    description: string | null = null
+    description: string | null = null;
+
+    winner?: string;
 
     constructor(props?: Partial<Candidate>){
         super();

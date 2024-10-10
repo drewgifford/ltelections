@@ -5,12 +5,14 @@ import { JSONFilePreset } from 'lowdb/node'
 import { attachCandidateData } from "../types/Candidate";
 import { HistoricalCounty } from "../polling/HistoricalResult";
 import { OfficeType } from "../types/Race";
+import { readFileSync, existsSync } from "node:fs";
+import path from "node:path";
 
 
 
 
 
-const REFRESH_TIME = 60
+const REFRESH_TIME = (process.env.TEST_DATA ? 10 : 30);
 
 
 type CandidateData = {
@@ -21,6 +23,8 @@ type CandidateData = {
 }
 let candidateData: CandidateData[] = [];
 let apiResponse: ApiResponse;
+
+let testDataPath = "/capture/captures";
 
 export function getApiResponse(){
     return apiResponse;
@@ -61,12 +65,16 @@ export function getPartyData(){
 
 export default defineNitroPlugin(async (nitroApp) => {
 
+    var testIndex: number = 0;
+
     const db = await JSONFilePreset('@/db/apiCache.json', { response: {} })
 
     var nextReqDates: any = {}
 
     // === Grab candidate data
     const setupCandidateData = async () => {
+
+        console.info("Reading candidate data...");
 
         let req = `https://api.ltelections.com/candidates/`;
         let res = await fetch(req);
@@ -78,15 +86,37 @@ export default defineNitroPlugin(async (nitroApp) => {
     }
 
     const setupAPData = async (data: CandidateData[]) => {
-        console.info("Setting up AP data...")
+
+        console.info("Setting up AP data...");
         let date = '2024-11-05';
         let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
         const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
         
-        //TODO: I know i spent all day converting everything to classes, but you need to convert it to types or interfaces :(
-        let req = `https://api.ltelections.com/?resultsType=t&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
-        let res = await fetch(req);
-        let json = await res.json();
+        let json;
+        
+        if(!process.env.TEST_DATA){
+
+            let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
+            let res = await fetch(req);
+            json = await res.json();
+
+        } else {
+
+            let filePath = path.resolve(process.cwd()+`/${testDataPath}/capture-${testIndex}.json`);
+            console.info(`Using test data`, filePath);
+
+            if(!existsSync(filePath)) {
+                testIndex = 0;
+            }
+
+            console.info(`File Exists`);
+
+            const data = readFileSync(filePath, { encoding: 'utf8', flag: 'r' });
+
+            json = JSON.parse(data);
+
+            testIndex++;
+        }
         
         apiResponse = new ApiResponse(json);
 
@@ -117,14 +147,10 @@ export default defineNitroPlugin(async (nitroApp) => {
         // Use historical county data to generate an expected vote total for each race
         let races = apiResponse.races;
         let historicalData = await useStorage().getItem("historicalData") as HistoricalCounty[];
-
-        console.log(races.length);
         
         races.forEach((race) => {
 
             if(!(race.officeID == OfficeType.President)) return;
-
-            console.log(race.title);
 
         })
 

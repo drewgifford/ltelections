@@ -127,10 +127,10 @@ import ReportingUnit from "~/server/types/ReportingUnit";
 
             let difference = ((cand1Vote-cand2Vote)/vt)*100;
 
-            if(difference >= 15) { return colors[0]+'80' }
-            else if (difference >= 7.5) { return colors[1]+'80' }
-            else if (difference >= 2) { return colors[2]+'80' }
-            else if (difference > 0) { return colors[3]+'80' }
+            if(difference >= 15) { return colors[0] }
+            else if (difference >= 7.5) { return colors[1] }
+            else if (difference >= 2) { return colors[2] }
+            else if (difference > 0) { return colors[3] }
             else return "#1E293B80";
 
             return ["#E7004A", "#E7004A", "#E7004A", "#E7004A", "#E7004A", "#cfaaa2", "#ffa9b6", "#ff0052", "#b2b8d1","#b2b8d1","#5f85ff", "#0041E9"][Math.floor(Math.random()*12)];

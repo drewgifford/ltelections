@@ -8,7 +8,7 @@ dotenv.config();
 var nextReqDates = {}
 const extractFolder = "capture/captures";
 let index = 0;
-const REFRESH_TIME = 300;
+const REFRESH_TIME = 3; // MINUTES
 const date = "2024-11-05"
 
 var isWorking = false;
@@ -49,7 +49,7 @@ async function makeRequest(){
 
 }
 
-cron.schedule(`*/${REFRESH_TIME} * * * * *`, async () => {
+cron.schedule(`0 */${REFRESH_TIME} * * * *`, async () => {
 
     await makeRequest();
     

@@ -5,10 +5,12 @@ import { notZero } from '~/server/utils/Util';
 
 
 const { unit, max, reporting = true} = defineProps<{
-    unit: Raw<Race> | Raw<ReportingUnit>,
+    unit: Race | ReportingUnit,
     max: number,
     reporting: boolean
 }>();
+
+console.log(unit.candidates.slice(0,max));
 
 
 </script>

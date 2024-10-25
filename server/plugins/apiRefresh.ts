@@ -7,12 +7,12 @@ import { HistoricalCounty } from "../polling/HistoricalResult";
 import { OfficeType } from "../types/Race";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
+import { attachPVI } from "../polling/CookPVI";
+import { attachDecisionDeskData } from "../polling/DecisionDeskData";
 
+console.log(process.env.TEST_DATA);
 
-
-
-
-const REFRESH_TIME = (process.env.TEST_DATA ? 10 : 30);
+const REFRESH_TIME = (process.env.TEST_DATA == '1' ? 10 : 30);
 
 
 type CandidateData = {
@@ -94,7 +94,7 @@ export default defineNitroPlugin(async (nitroApp) => {
         
         let json;
         
-        if(!process.env.TEST_DATA){
+        if(process.env.TEST_DATA == '0'){
 
             let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
             let res = await fetch(req);
@@ -108,6 +108,7 @@ export default defineNitroPlugin(async (nitroApp) => {
             if(!existsSync(filePath)) {
                 testIndex = 0;
             }
+            if(testIndex > 45) testIndex = 0;
 
             console.info(`File Exists`);
 
@@ -123,6 +124,10 @@ export default defineNitroPlugin(async (nitroApp) => {
         // Manually attach candidate images here
         apiResponse.races = attachCandidateData(apiResponse.races, data);
 
+        await attachPVI(apiResponse.races);
+        await attachDecisionDeskData(apiResponse.races);
+
+
         /* Use .nextrequest per AP standard */
         if (apiResponse.nextrequest) {
             nextReqDates[date] = "&minDateTime=" + apiResponse.nextrequest.split("&minDateTime=")[1];
@@ -130,11 +135,11 @@ export default defineNitroPlugin(async (nitroApp) => {
 
         //await db.update(({response}) => apiResponse);
         let j = apiResponse.toJSON();
+
         useStorage().setItem(date, j);
 
         console.info("✔ Done");
         return j;
-
     }
     
 
@@ -144,15 +149,7 @@ export default defineNitroPlugin(async (nitroApp) => {
         let data = await setupCandidateData();
         let apiResponse = await setupAPData(data);
 
-        // Use historical county data to generate an expected vote total for each race
-        let races = apiResponse.races;
-        let historicalData = await useStorage().getItem("historicalData") as HistoricalCounty[];
         
-        races.forEach((race) => {
-
-            if(!(race.officeID == OfficeType.President)) return;
-
-        })
 
         
         

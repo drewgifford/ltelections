@@ -12,7 +12,7 @@ export function attachCandidateData([...races]: Race[], candidateData: any[]){
             let match = candidateData.find((c: any) => c.id == candidate.polID);
 
             if(match){
-                candidate.imageURL = match.image;
+                candidate.imageURL = match.image || '/img/generic-candidate.png';
                 candidate.description = match.description || null;
             }
         }
@@ -28,14 +28,17 @@ export class Candidate extends JsonObject {
 
     first?: string
     last?: string
+    fullName?: string
     party?: string
     partyData: Party | null = null
     candidateID?: string
     polID?: string
     polNum?: string
     parsed: boolean = false
+    incumbent?: boolean
+    probability?: number
 
-    imageURL: string = 'https://media.discordapp.net/attachments/1212623884948340757/1288587531289497600/Generic.png?ex=66f5ba28&is=66f468a8&hm=a4c2336dd1826facc93c4770f84d3a6722369029344c4fc6aa9244e41040414a&=&format=webp&quality=lossless&width=1164&height=1456'
+    imageURL: string = '/img/generic-candidate.png'
     description: string | null = null;
 
     winner?: string;
@@ -45,9 +48,18 @@ export class Candidate extends JsonObject {
         Object.assign(this, props);
 
         this.partyData = new Party(this.partyData || this.party || "");
-    }
 
-    fullName() { return `${this.first} ${this.last}` }
+        if(!this.first) this.fullName = this.last;
+        else if(!this.last) this.fullName = this.first;
+        else this.fullName = `${this.first} ${this.last}`;
+
+        if(this.party == 'No'){
+            this.imageURL = '/img/issue-no.png';
+        }
+        if(this.party == 'Yes'){
+            this.imageURL = '/img/issue-yes.png';
+        }
+    }
 
 }
 

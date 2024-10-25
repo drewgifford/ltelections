@@ -1,13 +1,21 @@
 <script setup lang="ts">
-    import CandidateBattle from '~/components/presidential/CandidateBattle.vue';
-    import PresidentialForecast from '~/components/presidential/PresidentialForecast.vue';
+    
+    useSeoMeta({
+        title: "Home",
+        ogImage: "/og-image.png",
+    })
+
+
 </script>
 
 <template>
 
     <Container>
-        <PresidentialForecast/>
+        <p>Home page!</p>
     </Container>
 
 </template>
 
+<style>
+
+</style>

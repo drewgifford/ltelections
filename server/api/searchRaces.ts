@@ -9,16 +9,24 @@ export default defineEventHandler(async (event) => {
   type BodyRes = {
     statePostal: string,
     officeID: OfficeType,
-    raceUUIDs: string[]
+    raceUUIDs: string[],
+    date: string,
+    limit: number,
   }
+
 
   const query: BodyRes = getQuery(event);
 
-  const data = (await useStorage().getItem(ELECTION_DATE || "") || {}) as ApiResponse;
+  if(!query.limit) query.limit = 1000;
+
+  if(query.date == '2024') query.date = '2024-11-05';
+
+  const data = (await useStorage().getItem(query.date || "") || {}) as ApiResponse;
 
   let d = data.races?.filter(race => {
 
     if(query.raceUUIDs && query.raceUUIDs.includes(race.uuid)){
+      
       return true;
     }
 
@@ -33,62 +41,7 @@ export default defineEventHandler(async (event) => {
 
   });
 
-  return d;
-  
-
-  /*
-  const query: BodyRes = getQuery(event);
-
-  // Check if the query is in the Redis database and not stale
-
-  let item = await useStorage("redis").getItem(ELECTION_DATE || "") as RedisQuery | null;
-  let lteData = await useStorage("redis").getItem("lteData") as any;
-
-  if(item == null) return [] as Race[];
-
-  // Check date
-  let data: any = item as any;
-
-  let races = data.races == null ? [] : (data.races as Race[]);
-  
-  let filtered = races;
-
-  if(query.officeID != null){
-    filtered = filtered.filter(race => {
-      if (query.officeID == "*" || race.officeID == query.officeID) return true;
-      return false;
-    });
-  }
-
-  if(query.statePostal != null){
-    filtered = filtered.filter(race =>
-      query.statePostal == "*" || race.reportingUnits.length >= 1 && race.reportingUnits[0].statePostal == query.statePostal
-    );
-  }
-
-  if(query.raceUUIDs != null && query.raceUUIDs.length > 0){
-    filtered = filtered.filter(race => 
-      query.raceUUIDs.includes(getUniqueRaceId(race))
-    )
-  }
-
-  filtered.forEach(x => {
-    x.reportingUnits.forEach(unit => {
-
-      unit.candidates.forEach(cand => {
-
-        for(var party of lteData.parties){
-          if(party.partyId === cand.party){
-            cand.partyData = party;
-          }
-        }
-      });
-    });
-  });
-  
-  // State filter
- 
-  return [... new Set(filtered)];
-  */
+  if(d) return d.splice(0,query.limit);
+  return [];
   
 })

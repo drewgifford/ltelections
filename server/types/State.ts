@@ -14,6 +14,9 @@ export default class State {
             let stateData = States;
             let state = stateData.find(x => x.apId == props);
 
+            if(!state) state = stateData.find(x => x.name.toLowerCase() == props.toLowerCase());
+            if(!state) state = stateData.find(x => x.postalCode.toLowerCase() == props.toLowerCase())
+
             if(state){
                 Object.assign(this, state);
             }

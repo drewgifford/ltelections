@@ -4,20 +4,17 @@ import type ReportingUnit from '~/server/types/ReportingUnit';
 import { notZero } from '~/server/utils/Util';
 
 
-const { unit, max, reporting = true} = defineProps<{
+const props = defineProps<{
     unit: Race | ReportingUnit,
     max: number,
     reporting: boolean
 }>();
 
-console.log(unit.candidates.slice(0,max));
-
-
 </script>
 
 <template>
 
-    <div class="flex w-full" v-for="candidate of unit.candidates.slice(0, max)">
+    <div class="flex w-full"  v-for="candidate of props.unit.candidates.slice(0, max)" :key="candidate.polID">
 
         <div v-if="candidate.winner == 'X'" :style="[{backgroundColor: candidate.partyData?.colors[0]}]" class="rounded-l-sm text-xs px-1 w-4 flex items-center font-header text-center">✓</div>
 

@@ -18,6 +18,9 @@ import CONFIG from "./config.json" with {type: "json"};
 import { pruneArcs } from "./mapshaper/topojson-arc-prune.js";
 import { presimplify, simplify } from 'topojson-simplify';
 
+const NEW_ENGLAND_STATES = ["NH", "VT", "MA", "CT", "RI", "ME"];
+const FILTER_STATES = ["NC","AL","LA","NY"];
+
 const RESOLUTION = 1e3;
 
 const nationalUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/nation-10m.json";
@@ -86,27 +89,63 @@ async function downloadData(){
 
     spinner.success();
 
+    spinner = yoctoSpinner({text: "Downloading County Equivalents maps..."}).start();
+
+    let new_england_data = {};
+
+    for(let state of NEW_ENGLAND_STATES){
+
+        let fips = FIPS_CODES[state];
+
+        let url = `https://www2.census.gov/geo/tiger/TIGER2022/COUSUB/tl_2022_${fips}_cousub.zip`
+        let { data } = await axios({method: "GET", url: url, responseType: "arraybuffer"});
+
+        let fileName = `tl_2022_${FIPS_CODES[state]}_cousub`;
+
+        let zip = new AdmZip(data);
+
+        console.log(fileName);
+
+        // We only need the .dbf (data) and .shp (shapefile) data to create a topojson
+        zip.extractEntryTo((fileName + '.dbf'), extractFolder + "/temp/", false, true);
+        zip.extractEntryTo((fileName + '.shp'), extractFolder + "/temp/", false, true);
+
+        new_england_data[state] = await shapefile.read(`${extractFolder}/temp/${fileName}.shp`, `${extractFolder}/temp/${fileName}.dbf`);
+    }
+
+
+
+
+    spinner.success();
+
     return { 
         states: topojsonClient.feature(statesData.data, statesData.data.objects.states),
         counties: topojsonClient.feature(countiesData.data, countiesData.data.objects.counties),
-        nation: turf.feature(nationMesh) }
+        nation: turf.feature(nationMesh),
+        newEnglandData: new_england_data
+    }
+
+
+    
     
 }
 
-const { states: statesData, counties: countiesData, nation: nationMesh} = await downloadData();
+const { states: statesData, counties: countiesData, nation: nationMesh, newEnglandData: newEnglandData} = await downloadData();
 
-await generateStateData(statesData, countiesData, nationMesh);
+await generateStateData(statesData, countiesData, nationMesh, newEnglandData);
 
 async function generateStateData(statesData, countiesData, nationMesh){
 
-    for(var statePostal of Object.keys(FIPS_CODES)){
+    for(var statePostal of FILTER_STATES.length > 0 ? FILTER_STATES : Object.keys(FIPS_CODES)){
 
-        spinner.start();
+        let c = (NEW_ENGLAND_STATES.includes(statePostal) ? newEnglandData[statePostal] : countiesData);
+
+        console.log(c);
 
         let districtsData = await downloadDistricts(statePostal);
 
         let districts = createDistricts(statePostal, districtsData, nationMesh);
-        let counties = createCounties(statePostal, countiesData);
+        let counties = createCounties(statePostal, c);
 
         createDistrictCountyMaps(statePostal, districts, counties);
 
@@ -145,6 +184,9 @@ function createCounties(statePostal, countiesData){
     spinner.text = `${statePostal} - Creating county map...`;
 
     let features = countiesData.features.filter(feature => {
+        if(!feature.id){
+            return true;
+        }
         return feature.id.substr(0, 2) == FIPS_CODES[statePostal];
     });
 
@@ -214,7 +256,10 @@ function createDistrictCountyMaps(statePostal, districts, counties){
     }
 
     let layers = {};
+    console.log(districts.features);
     let countyMaps = districts.features.map((district, distIdx) => {
+
+        let districtNum = district.properties.CD119FP;
 
         let featureCollection = turf.featureCollection(counties.features.flatMap((county, ctyIdx) => {
 
@@ -226,7 +271,7 @@ function createDistrictCountyMaps(statePostal, districts, counties){
 
         }));
 
-        layers[`cd-${distIdx+1}`] = featureCollection;
+        layers[`cd-${Number(districtNum)}`] = featureCollection;
         return featureCollection;
 
     });

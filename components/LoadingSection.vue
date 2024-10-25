@@ -1,6 +1,20 @@
+<script setup lang="ts">
+
+const props = defineProps<{
+  absolute: boolean
+}>();
+
+let classes = "flex-1 relative card !bg-slate-900";
+
+if(props.absolute){
+    classes = "flex-1 absolute top-0 left-0 w-full h-full !bg-slate-900";
+}
+
+</script>
+
 <template>
     
-    <div class="flex-1 relative card !bg-slate-950/25">
+    <div :class="(classes)">
 
         <div role="status" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
 
@@ -11,6 +25,5 @@
 
             <span class="sr-only">Loading...</span>
         </div>
-
     </div>
 </template>

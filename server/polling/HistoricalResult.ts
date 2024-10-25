@@ -37,8 +37,8 @@ export async function parseHistoricalData(){
 
     let weights: { [key: number]: number } = {
         2012: 1,
-        2016: 1,
-        2020: 1,
+        2016: 2,
+        2020: 4,
     }
     let totalWeight = Object.values(weights).reduce((b,a) => b+a, 0);
     let states: string[] = [];

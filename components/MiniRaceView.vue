@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import Race from '~/server/types/Race';
+  import Race, { OfficeType } from '~/server/types/Race';
 import type { Raw } from '~/server/utils/Raw';
  import { notZero } from '~/server/utils/Util';
 
@@ -11,9 +11,28 @@ import type { Raw } from '~/server/utils/Raw';
   let title = "";
   let desc = "";
   let mounted = true;
+
+  const bgColor = computed(() => {
+
+    let officeType = props.race.officeID;
+
+    switch(officeType){
+      case OfficeType.President:
+        return "#FFD300"
+      case OfficeType.Senate:
+        return "#0041E9"
+      case OfficeType.House:
+        return "#94A3B8"
+      case OfficeType.Governor:
+        return "#00D99E"
+      case OfficeType.BallotMeasure:
+        return "#ffffff"
+      default:
+        return "#ffffff"
+    }
+
+  })
   
-  
-  console.log(props.race.reportingUnits[0])
 </script>
 
 <template>
@@ -25,7 +44,8 @@ import type { Raw } from '~/server/utils/Raw';
     </div>
 
     <div @click="$emit('select')" class="card p-3 pl-6 hover:bg-slate-800 hover:cursor-pointer">
-        <div class="absolute left-0 top-0 h-full w-2 bg-lte-yellow rounded-l-sm"></div>
+        
+        <div class="absolute left-0 top-0 h-full w-2 rounded-l-sm" :style="{backgroundColor: bgColor}"></div>
 
         
 

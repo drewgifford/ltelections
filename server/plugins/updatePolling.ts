@@ -2,14 +2,15 @@ import axios from "axios";
 import { RawPoll, Poll, PollCandidate } from "../polling/Poll";
 import csv from "csvtojson";
 import { parseHistoricalData } from "../polling/HistoricalResult";
+import cron from "node-cron";
 
 const PRESIDENTIAL_URL = "https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv";
+const SENATE_URL = "https://projects.fivethirtyeight.com/polls/data/senate_polls.csv";
+const REFRESH_TIME = 5; // Minutes
 
 export default defineNitroPlugin(async (nitroApp) => {
 
     console.info("Refreshing polling data...");
-
-    let presidential_polls = await parsePolls(PRESIDENTIAL_URL);
 
     let historicalCountyData = await parseHistoricalData();
 
@@ -18,10 +19,25 @@ export default defineNitroPlugin(async (nitroApp) => {
     // default standard deviation: 4.0%
     console.info("Done!");
 
+
+    async function updateData(){
+        const PRESIDENT_POLLS = await parsePolls(PRESIDENTIAL_URL);
+        const SENATE_POLLS = await parsePolls(SENATE_URL);
+
+        const COUNTY_DATA = await parseHistoricalData();
+        
+        try {
+            useStorage("redis").setItem("polls.president", PRESIDENT_POLLS);
+            useStorage("redis").setItem("polls.senate", SENATE_POLLS);
+            useStorage("redis").setItem("polls.countyData", COUNTY_DATA);
+        } catch(e){};
+    }
+
+    cron.schedule(`* */${REFRESH_TIME} * * * *`, updateData);
+
 });
 
-
-async function parsePolls(url: string){
+export async function parsePolls(url: string){
 
     // Just for testing, we will do presidential data
 

@@ -2,10 +2,18 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/image', "@nuxt/icon", 'nuxt-socket-io'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/image', "@nuxt/icon", 'nuxt-socket-io', "@nuxtjs/seo"],
+
+  site: {
+    url: "https://ltelections.com",
+    name: "LTElections",
+    description: "Real-time elections reporting, predictions and analysis for the 2024 U.S. general election.",
+    defaultLocale: "en"
+  },
+
   app: {
     head: {
-      title: "Let's Talk Elections",
+      title: "LTElections",
       meta: [
         { name: "description", content: "Real-time elections reporting, predictions, and analysis." }
       ]

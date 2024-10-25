@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import type Race from '~/server/types/Race';
 import { OfficeType } from '~/server/types/Race';
-import { nth } from '~/server/utils/Util';
-
+import { getOfficeURL, nth } from '~/server/utils/Util';
 
 const props = defineProps<{
-    race: Raw<Race>
+    race: Race,
+    map: boolean,
 }>();
 
-let winner = props.race.candidates.find(cand => cand.winner == 'X');
+const hasMap = () => {
+    if(props.map == false) return false;
+    return true;
+}
+
+if(!props.map) props.map = true;
+
+const getWinner = () => {
+    return props.race.candidates.find(cand => cand.winner == 'X');
+}
+
 
 const getText = () => {
 
@@ -20,7 +30,7 @@ const getText = () => {
     let stateLabel = `${race.state?.name}`;
 
     if(race.officeID == OfficeType.House){
-        stateLabel += `'s ${race.seatNum || 1}${nth(race.seatNum || 1)}`
+        stateLabel += `'s ${race.seatNum || 1}${nth(race.seatNum || 1)} District`
     }
 
 
@@ -32,19 +42,36 @@ const getText = () => {
         if(!winner) return "An error has occurred.";
 
         if(candidates.length == 1) {
-            return `${winner.first} ${winner.last} has won uncontested in ${stateLabel}.`;
+            return `${winner.fullName} has won uncontested in ${stateLabel}.`;
         }
         let loser = candidates[1];
         
-        return `${winner.first} ${winner.last} has defeated ${loser.first} ${loser.last} in ${stateLabel}.`
+        return `${winner.fullName} has defeated ${loser.fullName} in ${stateLabel}.`
 
     }
     else {
-        return "Not set up yet";
+        
+        return `${candidates[0].fullName} is leading in ${stateLabel}.`
+
+
     }
 
 }
 
+const route = useRoute();
+
+const getLink = () => {
+    let r = getOfficeURL(props.race);
+
+    let s = "";
+    if(props.race.raceType?.includes("Special")){
+        s = "-special";
+    }
+
+    return `/results/${route.params.date}/${props.race.state?.name?.toLowerCase().replace(' ','-')}/${r}${s}`;
+}
+
+let winner = getWinner();
 
 </script>
 
@@ -55,9 +82,9 @@ const getText = () => {
         <ProjectedWinner :race="(race)" v-if="(winner)"/>
         <div class="p-4 flex bg-slate-950/25">
 
-            <div class="w-1/2 p-2">
+            <div class="p-2" :class="hasMap() ? ['w-1/2'] : ['w-full']">
                 <h1 class="text-xl">{{ getText() }}</h1>
-                <p class="mb-4 text-sm">Last updated 9/30/2024 2:51PM ET</p>
+                <p><a :href="getLink()" class="py-2 px-4 inline-block my-2 bg-lte-yellow !text-slate-900 rounded-sm text-sm font-header">Detailed Race Info ➤</a></p>
 
                 <div class="p-2 card border-slate-600 border">
                     <ResultTable :unit="race" :max="5" :reporting="true"/>
@@ -65,23 +92,23 @@ const getText = () => {
 
                 <!-- Napkin math -->
 
-                 <div class="mt-4 card p-4">
+                 <div class="card p-4" v-if="(race.hasProjectomatic)">
 
-                    <p class="text-md font-header">LTE Project-o-matic</p>
-                    <div class="flex">
-                        <h1 class="text-xl">>99% Trump</h1>
-                    </div>
-                    <p class="text-xs"><i>Probability based on historical Presidential data and topline polling averages. May not be accurate.</i></p>
+                    <Projectomatic :race="(race)" :forceSmall="true"/>
 
                  </div>
 
+                 <div v-else>
+                    <p class="text-sm mt-4">The LTE Project-o-Matic is not offered for this race.</p>
+                 </div>
                 
             </div>
 
-            <div class="w-1/2 p-4 rounded-md shadow-inner">
-                <ZoomableMap :race="(race)" map-type="counties"/>
+            <div class="w-1/2 p-4 rounded-md shadow-inner" v-if="hasMap()">
+                <ZoomableMap minHeight="500px" :race="(race)" map-type="counties"/>
             </div>
         </div>
        
     </div>
 </template>
+

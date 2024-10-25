@@ -6,60 +6,65 @@ import axios from 'axios';
 import type { CanPin, Raw } from '~/server/utils/Raw';
 import States from '~/server/utils/States';
 import LoadingSection from '~/components/LoadingSection.vue';
+import { useIntervalFn } from "@vueuse/core";
+
+    const route = useRoute();
 
     const statePostal = ref('OH');
     const officeID = ref('*');
     const pinnedRaceIds = ref<string[]>([]);
-    const pinnedRaces = ref<(Race)[]>([]);
+
+    useSeoMeta({
+        title: "Race Dashboard",
+        ogImage: "/og-image.png",
+    });
 
     // Query races
-    const { data: races, status, error } = useFetch("/api/searchRaces", {
+    const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
         query: {
             statePostal: statePostal,
-            officeID: officeID
+            officeID: officeID,
+            raceUUIDs: pinnedRaceIds,
+            date: route.params.date,
         },
         transform: (races: RacePinnable[]) => {
             return races.map(r => {
-                
-                r.pinned = false;
+                r.pinned = (pinnedRaceIds.value.includes(r.uuid));
+                r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
                 return r;
             });
             
         }
     });
 
+    useIntervalFn(async () => {
+        await refreshRaces();
+    }, 10000);
+
     onMounted(async () => {
         pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
-
-        // Get initial pinned races
-        pinnedRaces.value = (await axios.get("/api/searchRaces", {
-            params: {
-                raceUUIDs: pinnedRaceIds.value
-            }
-        })).data.map((r: RacePinnable) => {
-            r.pinned = true;
-        });
+        if(pinnedRaceIds.value.length > 0){
+            await refreshRaces();
+        }
     });
 
     // Pin races functionality
     const togglePin = (race: RacePinnable) => {
 
-        let index = pinnedRaces.value.indexOf(race);
+        let index = races.value.indexOf(race);
         let idIndex = pinnedRaceIds.value.indexOf(race.uuid);
 
         if(race.pinned){
 
             // Remove pin
-            pinnedRaces.value.splice(index, 1);
+            races.value[index].pinned = false;
             pinnedRaceIds.value.splice(idIndex, 1);
-            race.pinned = false;
             
         } else {
 
             // Add pin
-            if(index < 0) pinnedRaces.value.push(race);
+            races.value[index].pinned = true;
             if(idIndex < 0) pinnedRaceIds.value.push(race.uuid as string);
-            race.pinned = true;
 
         }
         
@@ -68,86 +73,25 @@ import LoadingSection from '~/components/LoadingSection.vue';
 
     let states = States;
 
-    const raceView = ref<Race | null>(null);
-
-    let d = 0;
+    const raceView = ref<string | null>(null);
     const setView = (race: Race) => {
-        raceView.value = race;
-    }
-    watch(raceView, () => d++);
-
-    /*
-
-    const pinnedRaces = ref<Race[]>([]);
-
-    const { data: races, status, error, refresh } = useLazyFetch("/api/searchRaces", {
-
-        query: {
-            statePostal: statePostal,
-            officeID: officeID,
-        },
-
-        transform: (races: Race[]) => {
-            return races;
-        }
-    });
-
-    const filterFullList = () => {
-        return races.value?.filter(x => (x.officeID == officeID.value  || officeID.value == '*') && (x.reportingUnits[0].statePostal == statePostal.value || statePostal.value == '*'));
+        raceView.value = race.uuid;
     }
 
-    const togglePin = (race: Race) => {
-
-        /*var localRaces = LocalStorageHandler.getItem("pinnedRaces") || [];
-        var raceInList = races.value?.find(x => raceIsEqual(x, race)) || null;
-
-        const raceUUID = getUniqueRaceId(race);
-
-        race.isPinned = !race.isPinned;
-        if(race.isPinned){
-            console.log("PINNED RACE!", race);
-
-            if(raceInList) raceInList.isPinned = true;
-
-            pinnedRaces.value.push(race);
-
-            if(!localRaces.includes(raceUUID)) localRaces?.push(raceUUID);
-            
-        } else {
-
-            console.log("UNPINNED RACE!", race);
-
-            if(raceInList) raceInList.isPinned = false;
-
-            pinnedRaces.value.splice(pinnedRaces.value.indexOf(race), 1);
-            localRaces.splice(localRaces.indexOf(raceUUID), 1);
-        }
-
-        LocalStorageHandler.setItem("pinnedRaces", localRaces);
+    const getNonPinnedRaces = () => {
+        if(!races) return [];
+        return races.value?.filter(x => x.inQuery);
+    }
+    const getPinnedRaces = () => {
+        if(!races) return [];
+        return races.value?.filter(x => x.pinned);
+    }
+    const getRaceView = () => {
+        if(!raceView.value) return null;
+        if(!races) return null;
+        return races.value?.find(x => x.uuid == raceView.value);
     }
 
-    const setView = (race: Race) => {
-        raceView.value = null;
-        raceView.value = race;
-    }
-
-    watch(statePostal, (s) => {
-        let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
-        a.statePostal = statePostal.value;
-        LocalStorageHandler.setItem("lastSearch", a);
-    });
-
-    watch(officeID, (s) => {
-        let a = LocalStorageHandler.getItem("lastSearch") || {} as any;
-        a.officeID = officeID.value;
-        LocalStorageHandler.setItem("lastSearch", a);
-    });
-
-    var d = 0;
-
-    watch(raceView, (s) => {
-        d++;
-    })*/
 
 
 </script>
@@ -155,9 +99,9 @@ import LoadingSection from '~/components/LoadingSection.vue';
 <template>
 
     <Container class="mt-4">
-        <div class="flex gap-6">
+        <div class="lg:flex gap-6">
             
-            <div class="flex flex-col gap-6 w-1/2">
+            <div class="flex flex-col gap-6 w-full lg:w-1/2">
 
                 <form class="flex gap-4 p-4 card z-10 sticky top-24 w-full items-stretch">
                     <div class="flex-1">
@@ -201,43 +145,45 @@ import LoadingSection from '~/components/LoadingSection.vue';
                 </form>
 
                 <!-- Pinned races -->
-                <div v-if="(pinnedRaces.length > 0)" class="flex flex-col gap-3 w-full">
-                    <p>{{ pinnedRaces?.length }} races pinned</p>
+                <div v-if="(getPinnedRaces() || []).length > 0" class="flex flex-col gap-3 w-full">
+                    <p>{{ getPinnedRaces()?.length }} races pinned</p>
                     <MiniRaceView 
-                        v-for="(race, index) of pinnedRaces?.values()"
+                        v-for="(race, index) of getPinnedRaces()"
                         :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
                         :is-pinned="race.pinned"
                         :race="race"
+                        :key="race.uuid"
                         class="race relative transition-colors"
                     />
                 </div>
 
                 <!-- Non-pinned races -->
-                <div v-if="status !== 'pending'" class="flex flex-col gap-3 w-full pb-24">
+                <div v-if="true || (status !== 'pending')" class="flex flex-col gap-3 w-full pb-24">
                     <p>Showing {{ races?.length }} results</p>
 
                     <MiniRaceView 
-                        v-for="(race, index) of races?.values()"
+                        v-for="(race, index) of getNonPinnedRaces()"
                         :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
                         :is-pinned="race.pinned"
                         :race="race"
+                        :key="race.uuid"
                     />
                 </div>
 
                 <!-- Loader for non-pinned races -->
-                 <LoadingSection v-else/>
+                 <LoadingSection :absolute="false" v-else/>
 
                 
 
             </div>
 
-            <div class="w-1/2">
+            <div class="display-none lg:block w-full lg:w-1/2">
 
-                <RaceCard :key="(d)" :race="(raceView)" v-if="(raceView != null)"/>
+                <RaceCard v-if="(getRaceView() != null)" :key="(raceView || '')" :race="(getRaceView())" :map=true />
                 
             </div>
 

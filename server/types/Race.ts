@@ -3,6 +3,7 @@ import ReportingUnit, { ReportingCandidate, ReportingUnitLevel } from "./Reporti
 import State from "@/server/types/State";
 import JsonObject from "../utils/JsonObject";
 import { CanPin } from "../utils/Raw";
+import { PollingAverage } from "../utils/PollingAverage";
 
 export enum OfficeType {
     
@@ -47,6 +48,9 @@ export default class Race extends JsonObject {
     incumbents: Candidate[] = [];
     candidates: ReportingCandidate[] = [];
     reportingUnits: ReportingUnit[] = [];
+    raceNum?: string;
+    inQuery?: boolean;
+    lastWinningParty?: string;
 
     eevp: number = 0
     national: boolean = false
@@ -60,10 +64,14 @@ export default class Race extends JsonObject {
     state?: State
 
     seatName?: string
+    seatNum?: string
     winner?: string
 
     parameters: RaceParameters = {}
     designation?: string;
+
+    pollingAverage?: PollingAverage
+    hasProjectomatic: boolean = false;
 
 
     constructor(props?: Partial<Race>){

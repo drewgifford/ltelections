@@ -1,4 +1,5 @@
 //import { getPartyData } from "../plugins/apiRefresh";
+import { xgcd } from "mathjs";
 import JsonObject from "../utils/JsonObject";
 import Color from "./Color";
 
@@ -31,22 +32,39 @@ export default class Party extends JsonObject {
                     shorthand: "R"
                 },
                 {
+                    id: "Ind",
+                    name: "Independent",
+                    demonym: "Independent",
+                    colors: ["#8222A6","#8222A6","#8222A6","#8222A6"],
+                    shorthand: "I"
+                },
+                {
                     id: "Yes",
                     name: "Yes",
                     demonym: "Supporter",
-                    colors: ["#00ff00"],
+                    colors: ["#0CA14D","#33D77A","#63FDA6","#68A181"],
                     shorthand: "✓"
                 },
                 {
                     id: "No",
                     name: "No",
                     demonym: "Opponent",
-                    colors: ["#ff0000"],
+                    colors: ["#E7004A","#FF7392","#FFA9B6","#CFAAA2"],
                     shorthand: "✖"
                 }
             ];
 
             let party = partyData.find(x => x.id == props);
+
+            if(!party){
+                party = {
+                    id: props,
+                    name: "Independent",
+                    demonym: "Independent",
+                    colors: ["#8222A6","#8222A6","#8222A6","#8222A6"],
+                    shorthand: "I"
+                }
+            }
 
             if(party){
                 Object.assign(this, party);

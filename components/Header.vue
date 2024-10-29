@@ -1,3 +1,10 @@
+<script setup lang="ts">
+
+const { data: data } = (await useFetch("/api/raceActive"));
+
+
+</script>
+
 <template>
   <div class="w-full backdrop-blur text-slate-200 bg-slate-900/75 h-20 flex items-center sticky top-0 z-20">
 
@@ -20,7 +27,7 @@
                 <NuxtLink to="/">Home</NuxtLink>
             </li>
             <li>
-                <NuxtLink to="/results/2024/">Election Results <span class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header">LIVE</span></NuxtLink>
+                <NuxtLink to="/results/2024/">Election Results <span v-if="(data?.racesActive)" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header">LIVE</span></NuxtLink>
             </li>
             <li>
                 <NuxtLink to="/about">About</NuxtLink>

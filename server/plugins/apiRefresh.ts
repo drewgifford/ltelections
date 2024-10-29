@@ -4,15 +4,18 @@ import yoctoSpinner from "yocto-spinner";
 import { JSONFilePreset } from 'lowdb/node'
 import { attachCandidateData } from "../types/Candidate";
 import { HistoricalCounty } from "../polling/HistoricalResult";
-import { OfficeType } from "../types/Race";
+import { OfficeType, TabulationStatus } from "../types/Race";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { attachPVI } from "../polling/CookPVI";
 import { attachDecisionDeskData } from "../polling/DecisionDeskData";
+import raceActive from "../api/raceActive";
 
 console.log(process.env.TEST_DATA);
 
-const REFRESH_TIME = (process.env.TEST_DATA == '1' ? 10 : 30);
+const USING_TEST_DATA = process.env.TEST_DATA == '1';
+
+const REFRESH_TIME = (USING_TEST_DATA ? 10 : 30);
 
 
 type CandidateData = {
@@ -94,7 +97,7 @@ export default defineNitroPlugin(async (nitroApp) => {
         
         let json;
         
-        if(process.env.TEST_DATA == '0'){
+        if(!USING_TEST_DATA){
 
             let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
             let res = await fetch(req);
@@ -138,22 +141,26 @@ export default defineNitroPlugin(async (nitroApp) => {
 
         useStorage().setItem(date, j);
 
+        let racesActive = apiResponse.races.find(x => x.tabulationStatus == TabulationStatus.ActiveTabulation) != undefined;
+        useStorage().setItem("racesActive", racesActive);
+
         console.info("✔ Done");
         return j;
     }
     
 
     // Automatically refresh the database with all races every REFRESH_TIME seconds
-    cron.schedule(`*/${REFRESH_TIME} * * * * *`, async () => {
 
+    async function updateApiData(){
         let data = await setupCandidateData();
         let apiResponse = await setupAPData(data);
+    }
 
-        
+    updateApiData().then(async () => {
+        cron.schedule(`*/${REFRESH_TIME} * * * * *`, updateApiData);
+    })
 
-        
-        
-    });
+    
 
 
 })

@@ -12,11 +12,15 @@ const COUNTY_PROJECTION_RACES = [OfficeType.President, OfficeType.Senate, Office
 export function hasProjectOMatic(race: Race){
 
     if(race.pollingAverage) return true;
-    if(race.officeID == OfficeType.House && race.reportingUnits[0].cookPVI) {
-        let dem = race.candidates.find(x => x.party == 'Dem');
-        let gop = race.candidates.find(x => x.party == 'GOP');
 
-        if(dem && gop) return true;
+    if(race.officeID == OfficeType.House && race.reportingUnits[0].cookPVI) {
+
+        // Check if there's multiple
+        let dem = race.candidates.filter(x => x.party == 'Dem');
+        let gop = race.candidates.filter(x => x.party == 'GOP');
+
+        if(dem.length > 1 || gop.length > 1) return false;
+        if(dem.length > 0 && gop.length > 0) return true;
     };
     return false;
 
@@ -30,8 +34,7 @@ function getCandidateExpected(race: Race, candidate: ReportingCandidate, polling
         NON_COUNTY_STATES.includes(race.state?.postalCode as any)
     ) {
 
-        let expected = pollingAverage[candidate.polID || '']?.average;;
-
+        let expected = pollingAverage[candidate.polID || '']?.average;
         return (1-race.eevp/100)*(expected * (race.parameters.vote?.expected.actual || 0)) + (race.candidates.find(x => x.polID == candidate.polID)?.voteCount || 0);
     }
 
@@ -84,6 +87,21 @@ function getCandidateExpected(race: Race, candidate: ReportingCandidate, polling
 
 function getRaceProbability(race: Race, pollingAverage: PollingAverage, countyData: HistoricalCounty[]){
 
+    // Check if the race is called
+    let winner = race.candidates.find(x => x.winner == 'X');
+
+    if(winner){
+        let probs: any = {};
+
+        for(let candidate of race.candidates){
+            probs[candidate.polID as string] = 0;
+        }
+        probs[winner.polID as string] = 1;
+
+        return probs;
+
+    }
+
 
     // Handle races with a polling average first
     let probs: any = {};
@@ -124,6 +142,8 @@ function getRaceProbability(race: Race, pollingAverage: PollingAverage, countyDa
                 let otherPct = otherVoteTotal / (race.parameters.vote?.expected.actual || 1);
                 let otherExpectedPct = otherExpectedVoteTotal / (race.parameters.vote?.expected.actual || 1);
 
+                
+
                 let margin = pct - otherPct;
 
                 let marginNeeded = (-margin * reportingPct)/(1-reportingPct);
@@ -133,7 +153,7 @@ function getRaceProbability(race: Race, pollingAverage: PollingAverage, countyDa
 
                 
 
-                let probability = 1-cdfNormal(marginNeeded, expectedMargin, STANDARD_DEV*2);
+                let probability = 1-cdfNormal(marginNeeded, expectedMargin, STANDARD_DEV);
 
                 probabilities.push(probability);
 
@@ -180,11 +200,11 @@ export function getRaceProbabilities(race: Race, COUNTY_DATA: HistoricalCounty[]
 
             pollingAverage = {}
 
-            pollingAverage[dem.polID] = {
+            pollingAverage[dem.polID as string] = {
                 average: 0.5 - pvi/200,
                 includedPolls: 0
             }
-            pollingAverage[gop.polID] = {
+            pollingAverage[gop.polID as string] = {
                 average: 0.5 + pvi/200,
                 includedPolls: 0
             }
@@ -197,6 +217,60 @@ export function getRaceProbabilities(race: Race, COUNTY_DATA: HistoricalCounty[]
     let probs = getRaceProbability(race, pollingAverage, COUNTY_DATA);
 
     return probs;
+
+}
+
+
+export function presidentialProbability(presRace: Race, races: Race[]){
+
+    const TOTAL_EVS = 538;
+    const TO_WIN = 270;
+    let dp: {[key: string]: number[]} = {};
+
+    races.forEach((race) => {
+
+        let votes = race.reportingUnits[0].electTotal as number;
+
+        for(let candidate of race.candidates){
+
+            let polID = candidate.polID as string;
+
+            // Set up DP table
+            if(!(Object.keys(dp).includes(polID))){
+                dp[polID] = Array(TOTAL_EVS + 1).fill(0);
+                dp[polID][0] = 1;
+            }
+
+            let candDP = dp[polID];
+            let probability = candidate.probability;
+
+            for(let i = TOTAL_EVS - votes; i >= 0; i--){
+                candDP[i+votes] += (candDP[i] * probability);
+                candDP[i] *= (1-probability);
+            }
+        }
+
+    });
+
+    // US-wide race object
+    for (let candidate of presRace.candidates){
+
+        let polID = candidate.polID as string;
+        let candDP = dp[polID];
+        let probability = 0;
+
+        
+
+        for(let i = TO_WIN; i <= TOTAL_EVS; i++){
+            probability += candDP[i];
+        }
+
+        candidate.probability = probability;
+        presRace.hasProjectomatic = true;
+    }
+
+
+
 
 }
 

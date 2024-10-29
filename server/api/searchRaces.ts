@@ -17,13 +17,15 @@ export default defineEventHandler(async (event) => {
 
   const query: BodyRes = getQuery(event);
 
-  if(!query.limit) query.limit = 1000;
+  if(!query.limit) query.limit = 100;
 
   if(query.date == '2024') query.date = '2024-11-05';
 
   const data = (await useStorage().getItem(query.date || "") || {}) as ApiResponse;
 
   let d = data.races?.filter(race => {
+
+    if(race.stateID == '0') return false;
 
     if(query.raceUUIDs && query.raceUUIDs.includes(race.uuid)){
       

@@ -115,7 +115,7 @@ import { nth } from '~/server/utils/Util';
             <div class="w-full lg:w-1/2 mt-2">
 
                 <div class="my-4">
-                    <p><a href="/">&lt; See all races</a></p>
+                    <p><a :href="`/results/${route.params.date}/?state=${race.state?.postalCode}&office=any`">&lt; See all races in {{ race.state?.name }}</a></p>
                     <h1 class="text-2xl">{{ getTitle() }}</h1>
                 </div>
 

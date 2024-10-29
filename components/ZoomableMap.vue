@@ -19,6 +19,10 @@ import LoadingSection from "./LoadingSection.vue";
 
     const NEW_ENGLAND_STATES = ["VT", "CT", "ME", "RI", "NH", "MA"];
 
+    const IS_NATIONAL_MAP =() => {
+        return props.race.stateID == '0' && props.race.officeID == OfficeType.President
+    };
+
     const INVALID_FILL = "#1E293B";
     const BG_FILL = "#0F172A";
     const BG_STROKE = "#0C1325";
@@ -30,7 +34,7 @@ import LoadingSection from "./LoadingSection.vue";
 
     async function updateTooltipData(race: Race){
         if(selectedRu){
-            selectedRu.value = race.reportingUnits.find(x => x.fipsCode == selectedRu.value?.fipsCode);
+            selectedRu.value = race.reportingUnits.find(x => x.reportingunitName == selectedRu.value?.reportingunitName);
         }
     }
 
@@ -43,7 +47,12 @@ import LoadingSection from "./LoadingSection.vue";
                 reportingUnit = race.reportingUnits[0];
             }
             else {
-                reportingUnit = race.reportingUnits.find(ru => ru.fipsCode == county.id || (county.properties.COUSUBFP && ru.townFIPSCode == county.properties.COUSUBFP));
+                if(NEW_ENGLAND_STATES.includes(statePostal)){
+                    reportingUnit = props.race.reportingUnits.find(ru => ru.townFIPSCode == county.properties.COUSUBFP);
+                }
+                else {
+                    reportingUnit = props.race.reportingUnits.find(ru => ru.fipsCode == county.id || ru.reportingunitName == county.properties.name);
+                }
             }
 
             if(!reportingUnit) return INVALID_FILL;
@@ -83,6 +92,10 @@ import LoadingSection from "./LoadingSection.vue";
 
             let expectedVoteTotal = reportingUnit.parameters.vote?.expected.actual;
 
+            if(voteTotal == 0){
+                return INVALID_FILL;
+            }
+
             if((cand1Vote - cand2Vote) >= ((expectedVoteTotal || 0) - voteTotal)) {
                 // If the current number of outstanding votes is greater than the margin between the top two candidates, this county can be solid
                 return `${colors[getDifferenceNumber()]}`
@@ -103,6 +116,7 @@ import LoadingSection from "./LoadingSection.vue";
 
         let data: any;
 
+
         if(statePostal == "AK"){
 
             data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=cds`);
@@ -110,7 +124,19 @@ import LoadingSection from "./LoadingSection.vue";
             return [topojson.feature(data, data.objects.cds), null];
         }
 
-        if(officeType == OfficeType.House || (race.seatNum && officeType == OfficeType.President)){
+        else if(officeType == OfficeType.President && race.stateID == '0'){
+            statePostal = 'US';
+
+            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=states`);
+            let obj = data.objects[`states`];
+
+            delete data['bbox'];
+
+            return [topojson.feature(data, obj), null];
+
+        }
+
+        else if(officeType == OfficeType.House || (race.seatNum && officeType == OfficeType.President)){
             // Return congressional district with only the counties included in the reportingUnits
 
             data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=cds-counties`);
@@ -125,6 +151,8 @@ import LoadingSection from "./LoadingSection.vue";
             });
 
             if(!NEW_ENGLAND_STATES.includes(race.state?.postalCode || '')){
+
+                
 
                 obj.geometries = obj.geometries.filter((x: any) => {
                     return countyIds.includes(String(x.id)) || (props.race.reportingUnits.find(ru => ru.reportingunitName == x.properties.name));
@@ -186,6 +214,8 @@ import LoadingSection from "./LoadingSection.vue";
         let defs = d3.select(elem.value).append("defs");
         var svg = d3.select(elem.value).select("#foreground").selectAll('path').data(features).join('path').attr('d', geoGenerator).attr("stroke","#0C1325").attr("stroke-width", 0.75);
 
+        
+
         let parties: any[] = [];
         
         for(let candidate of props.race.candidates){
@@ -199,7 +229,7 @@ import LoadingSection from "./LoadingSection.vue";
 
                 pattern.append("rect").attr("width","8").attr("height","8").attr("fill", (candidate.partyData?.colors[i] as string)+'70');
                 pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
-                    .attr("stroke-width", "1.5")
+                    .attr("stroke-width", "3")
                     .attr("stroke", (candidate.partyData?.colors[i] as string)+'aa');
             }
 
@@ -225,7 +255,14 @@ import LoadingSection from "./LoadingSection.vue";
                 reportingUnit = props.race.reportingUnits[0];
             }
             else {
-                reportingUnit = d ? props.race.reportingUnits.find(ru => ru.fipsCode == d.id || (d.properties.COUSUBFP && ru.townFIPSCode == d.properties.COUSUBFP)) : null;
+
+                if(NEW_ENGLAND_STATES.includes(statePostal)){
+                    reportingUnit = props.race.reportingUnits.find(ru => ru.townFIPSCode == d.properties.COUSUBFP);
+                }
+                else {
+                    reportingUnit = props.race.reportingUnits.find(ru => ru.fipsCode == d.id || ru.reportingunitName == d.properties.name);
+                }
+
             }
             
             selectedRu.value = reportingUnit || undefined;
@@ -236,7 +273,11 @@ import LoadingSection from "./LoadingSection.vue";
 
 
             
-            d3.select(this).attr('stroke', 'white').attr("stroke-width", 1.5).raise();
+            d3.select(this as any).attr('stroke', 'white').attr("stroke-width", 1.5).raise();
+
+            if(selectedRu && IS_NATIONAL_MAP()){
+                d3.select(this as any).attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value.stateName?.toLowerCase()}/president'`);
+            }
         }
 
         const mousemove = function(event: any, d: any){

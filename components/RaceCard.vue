@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type Race from '~/server/types/Race';
 import { OfficeType } from '~/server/types/Race';
-import { getOfficeURL, nth } from '~/server/utils/Util';
+import { getOfficeURL, getRaceURL, nth } from '~/server/utils/Util';
 
 const props = defineProps<{
     race: Race,
@@ -60,16 +60,7 @@ const getText = () => {
 
 const route = useRoute();
 
-const getLink = () => {
-    let r = getOfficeURL(props.race);
 
-    let s = "";
-    if(props.race.raceType?.includes("Special")){
-        s = "-special";
-    }
-
-    return `/results/${route.params.date}/${props.race.state?.name?.toLowerCase().replace(' ','-')}/${r}${s}`;
-}
 
 let winner = getWinner();
 
@@ -84,7 +75,7 @@ let winner = getWinner();
 
             <div class="p-2" :class="hasMap() ? ['w-1/2'] : ['w-full']">
                 <h1 class="text-xl">{{ getText() }}</h1>
-                <p><a :href="getLink()" class="py-2 px-4 inline-block my-2 bg-lte-yellow !text-slate-900 rounded-sm text-sm font-header">Detailed Race Info ➤</a></p>
+                <p><a :href="getRaceURL(route.params.date as string, race)" class="py-2 px-4 inline-block my-2 bg-lte-yellow !text-slate-900 rounded-sm text-sm font-header">Detailed Race Info ➤</a></p>
 
                 <div class="p-2 card border-slate-600 border">
                     <ResultTable :unit="race" :max="5" :reporting="true"/>

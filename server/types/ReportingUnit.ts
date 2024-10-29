@@ -42,6 +42,7 @@ export default class ReportingUnit extends JsonObject {
     candidates: ReportingCandidate[] = []
     fipsCode: string = "";
     townFIPSCode?: string
+    electTotal?: number
 
     cookPVI?: number;
     swing?: number;
@@ -71,7 +72,7 @@ export default class ReportingUnit extends JsonObject {
 
         let words = this.reportingunitName?.split(" ") || [];
         if(words.length > 1){
-            const ILLEGAL_WORDS = ["County", "Town", "Parish"];
+            const ILLEGAL_WORDS = ["County", "Town", "Parish", "town"];
             if(ILLEGAL_WORDS.includes(words[words.length-1])) this.reportingunitName = words.splice(0, words.length-1).join(" ");
         }
 

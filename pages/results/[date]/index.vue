@@ -7,11 +7,24 @@ import type { CanPin, Raw } from '~/server/utils/Raw';
 import States from '~/server/utils/States';
 import LoadingSection from '~/components/LoadingSection.vue';
 import { useIntervalFn } from "@vueuse/core";
+import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
 
     const route = useRoute();
+    const router = useRouter();
 
-    const statePostal = ref('OH');
-    const officeID = ref('*');
+    const statePostal = ref(route.query.state || '*');
+    const officeID = ref(officeTypeFromString(route.query.office as string || '*'));
+
+    watch(statePostal, (statePostal) => {
+        router.push({ query: { "state": statePostal, "office": officeTypeToString(officeID.value) } });
+    });
+    watch(officeID, (officeID) => {
+        router.push({ query: { "state": statePostal.value, "office": officeTypeToString(officeID) } });
+    });
+
+
+    //const statePostal = ref('OH');
+    //const officeID = ref('*');
     const pinnedRaceIds = ref<string[]>([]);
 
     useSeoMeta({

@@ -6,6 +6,7 @@ import cron from "node-cron";
 
 const PRESIDENTIAL_URL = "https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv";
 const SENATE_URL = "https://projects.fivethirtyeight.com/polls/data/senate_polls.csv";
+const HOUSE_URL = "https://projects.fivethirtyeight.com/polls/data/house_polls.csv";
 const REFRESH_TIME = 5; // Minutes
 
 export default defineNitroPlugin(async (nitroApp) => {
@@ -23,17 +24,22 @@ export default defineNitroPlugin(async (nitroApp) => {
     async function updateData(){
         const PRESIDENT_POLLS = await parsePolls(PRESIDENTIAL_URL);
         const SENATE_POLLS = await parsePolls(SENATE_URL);
+        const HOUSE_POLLS = await parsePolls(HOUSE_URL);
 
+        
         const COUNTY_DATA = await parseHistoricalData();
         
         try {
-            useStorage("redis").setItem("polls.president", PRESIDENT_POLLS);
-            useStorage("redis").setItem("polls.senate", SENATE_POLLS);
-            useStorage("redis").setItem("polls.countyData", COUNTY_DATA);
+            await useStorage().setItem("polls.house", HOUSE_POLLS);
+            await useStorage().setItem("polls.president", PRESIDENT_POLLS);
+            await useStorage().setItem("polls.senate", SENATE_POLLS);
+            await useStorage().setItem("polls.countyData", COUNTY_DATA);
         } catch(e){};
     }
 
-    cron.schedule(`* */${REFRESH_TIME} * * * *`, updateData);
+    updateData().then(() => cron.schedule(`* */${REFRESH_TIME} * * * *`, updateData));
+
+    
 
 });
 
@@ -48,7 +54,12 @@ export async function parsePolls(url: string){
 
     for(let poll of rawPolls){
 
+        
+
         if(!poll.state || poll.state == "") poll.state = "National";
+        if(poll.seat_number && !poll.state.includes('-')) poll.state = `${poll.state}-${poll.seat_number}`;
+
+        //if(poll.seat_number) console.log(poll.state);
 
         /* Filter only polls we want */
         //if(poll.population != "lv") continue;

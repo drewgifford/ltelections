@@ -15,6 +15,26 @@ export enum OfficeType {
     Any = "*"
 }
 
+export enum TabulationStatus {
+
+    AwaitingClose = "Awaiting Poll Close",
+    PollsClosed = "Polls Closed/Waiting First Report",
+    ActiveTabulation = "Active Tabulation",
+    TabulationPaused = "Tabulation Paused",
+    EndOfTabulation = "End of AP Tabulation",
+    GatheringResults = "Gathering Certified Results",
+    Certified = "Vote Certified"
+
+}
+
+export enum RaceCallStatus {
+
+    Uncalled = "Uncalled",
+    Called = "Called",
+    Runoff = "Runoff",
+    WinnerNotLeading = "Winner Not Leading"
+}
+
 export interface VoteParameters {
     expected: {
         actual: number,
@@ -41,7 +61,7 @@ export default class Race extends JsonObject {
     raceID?: number;
     raceType?: string;
     raceTypeID?: string;
-    tabulationStatus?: string;
+    tabulationStatus?: TabulationStatus;
     raceCallStatus?: string;
     officeID?: OfficeType;
     officeName?: string;
@@ -66,6 +86,7 @@ export default class Race extends JsonObject {
     seatName?: string
     seatNum?: string
     winner?: string
+    
 
     parameters: RaceParameters = {}
     designation?: string;
@@ -111,6 +132,8 @@ export default class Race extends JsonObject {
             }
 
             this.candidates = cands.map(r => new ReportingCandidate(r).toJSON());
+
+            
         
         }
 

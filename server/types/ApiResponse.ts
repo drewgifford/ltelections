@@ -26,8 +26,8 @@ export class ApiResponse extends JsonObject {
 
         this.races.sort((a,b) => {
 
-            if((a.state?.name || '') > (b.state?.name || '')) return -1;
-            else if((a.state?.name || '') < (b.state?.name || '')) return 1;
+            if((a.state?.name || '') > (b.state?.name || '')) return 1;
+            else if((a.state?.name || '') < (b.state?.name || '')) return -1;
 
             if(OFFICE_HIERARCHY.indexOf(a.officeID as any) > OFFICE_HIERARCHY.indexOf(b.officeID as any)) return 1;
             else if(OFFICE_HIERARCHY.indexOf(a.officeID as any) < OFFICE_HIERARCHY.indexOf(b.officeID as any)) return -1;

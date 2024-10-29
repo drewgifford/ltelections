@@ -23,6 +23,7 @@ type BasicPoll = {
     election_date: string,
 
     question_id: string,
+    seat_number?: number
 }
 
 export type RawPoll = BasicPoll & Partial<PollCandidate>;

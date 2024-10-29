@@ -8,8 +8,6 @@ export default defineEventHandler(async (event) => {
   let state = query.postalCode;
   let mapType: number | 'counties' | 'cds' = query.mapType as any;
 
-  console.log(state, mapType);
-
   if(state == null || state == undefined || mapType == null || mapType == undefined){
 
     throw createError({

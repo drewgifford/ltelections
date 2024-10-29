@@ -14,7 +14,7 @@ const LOW_QUALITY_NEEDLE_RACES = ["AK", "VT", "CT", "ME", "RI", "NH", "MA"];
 
 const projectomatic = computed(() => {
 
-    let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => a.probability > b.probability ? -1 : 1);
+    let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(a.probability) > Number(b.probability) ? -1 : 1);
     
     let leadingPct = getLeadingPct(topProbabilities);
     let colors = getColors(topProbabilities);
@@ -195,10 +195,6 @@ const getTickClass = (n: number) =>{
 
 <template>
 
-<div class="w-full flex gap-4" v-if="(race.hasProjectomatic) && projectomatic">
-
-    <div class="w-2 rounded-sm" :style="{backgroundColor: projectomatic.candidate.partyData?.colors[0]}"></div>
-
     <div class="pb-4 flex-1 relative" :style="{width: 'calc(100% - 1.5rem)'}">
 
         <div class="w-full">
@@ -280,17 +276,7 @@ const getTickClass = (n: number) =>{
                 <span>P</span><span>R</span><span>O</span><span>J</span><span>E</span><span>C</span><span>T</span><span>O</span><span>M</span><span>A</span><span>T</span><span>I</span><span>C</span>
             </div>
         </div>
-            
     </div>
-</div>
-
-<div class="projectomatic w-full">
-
-    
-
-
-</div>
-
 </template>
 
 <style lang="css" scoped>

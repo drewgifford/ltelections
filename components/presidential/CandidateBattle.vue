@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type Candidate from '~/server/types/Candidate';
 import type Race from '~/server/types/Race';
+import { OfficeType } from '~/server/types/Race';
 import type { ReportingCandidate } from '~/server/types/ReportingUnit';
 import type { Raw } from '~/server/utils/Raw';
 import { getTopTwoCandidates } from '~/server/utils/Util';
@@ -12,7 +13,12 @@ const props = defineProps<{
   race: Race
 }>();
 
-const voteTotal = computed(() => props.race ? (props.race.parameters.vote?.total || 0) : 1);
+const isPresidentialOverview = props.race.stateID == '0' && props.race.officeID == OfficeType.President;
+const voteTotal = computed(() => {
+  return props.race.candidates.reduce((prev, cand) => prev + (cand.voteCount || 0), 0);
+});
+
+
 
 const tt = computed(() => {
 
@@ -63,16 +69,19 @@ const tt = computed(() => {
 
           <div class="py-2 self-center">
               <p class="text-slate-200">{{ tt.topTwo[0].fullName }}</p>
-              <h1 class="text-3xl">{{ (((tt.topTwo[0].voteCount || 0)/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2) }}%</h1>
+
+              <h1 v-if="isPresidentialOverview" class="text-4xl">{{tt.topTwo[0].electWon || 0}}</h1>
+              <h1 :class="isPresidentialOverview ? ['text-xl'] : ['text-3xl']">{{ (((tt.topTwo[0].voteCount || 0)/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2) }}%</h1>
               <p class="text-md text-slate-200/75">{{ tt.topTwo[0].voteCount?.toLocaleString() }}</p>
             </div>
         </div>
 
 
-        <div class="py-8 self-end text-center text-slate-200">
+        <div class="py-2 self-end text-center text-slate-200">
 
-          <p class="text-md">Percent</p>
-          <p class="text-md mt-1.5">Total Votes</p>
+          <p v-if="isPresidentialOverview" class="text-md">Electoral Votes</p>
+          <p class="text-md mt-2.5">Percent</p>
+          <p class="text-md">Total Votes</p>
 
         </div>
 
@@ -81,7 +90,12 @@ const tt = computed(() => {
 
           <div class="py-2 self-center">
               <p class="text-slate-200">{{ tt.topTwo[1].fullName }}</p>
-              <h1 class="text-3xl">{{(((tt.topTwo[1].voteCount || 0)/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2)}}%</h1>
+
+              <h1 v-if="isPresidentialOverview" class="text-4xl">{{tt.topTwo[1].electWon || 0}}</h1>
+              <h1 :class="isPresidentialOverview ? ['text-xl'] : ['text-3xl']">{{(((tt.topTwo[1].voteCount || 0)/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2)}}%</h1>
+
+
+
               <p class="text-md text-slate-200/75">{{ tt.topTwo[1].voteCount?.toLocaleString() }}</p>
             </div>
 

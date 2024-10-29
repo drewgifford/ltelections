@@ -1,6 +1,6 @@
 import { Raw } from "vue";
 import Race, { OfficeType } from "../types/Race";
-import ReportingUnit from "../types/ReportingUnit";
+import ReportingUnit, { ReportingCandidate } from "../types/ReportingUnit";
 import Color from "../types/Color";
 
 export function notZero(n: number | undefined) {
@@ -45,60 +45,48 @@ export function sortedCandidates(unit: Raw<Race> | Raw<ReportingUnit>){
 
 }
 
+export function filterDuplicateRaces(races: Race[]){
+
+  return races.filter(race => {
+    // If this race is a special election and there is another race with the same seat number of the same office type and same state
+    let val = !(race.raceType?.includes('Special') && races.find(x => !x.raceType?.includes('Special') && (x.seatNum == race.seatNum) && (x.officeID == race.officeID) && (x.stateID == race.stateID)));
+
+    return val;
+  });
+
+}
+
+export function sortCandidates(candidates: ReportingCandidate[]){
+
+  let incumbent = candidates.find(cand => cand.incumbent);
+
+
+  return candidates.toSorted((a: ReportingCandidate, b: ReportingCandidate) => {
+
+    if((a.voteCount || 0) > (b.voteCount || 0)) return -1;
+    if((a.voteCount || 0) < (b.voteCount || 0)) return 1;
+
+    if(a.probability > b.probability) return -1;
+    if(a.probability < b.probability) return 1;
+
+    if(a.incumbent) return -1;
+
+    if(a.party == 'Dem' || a.party == 'GOP') return -1;
+    return 1;
+
+
+  })
+
+
+}
+
+export function getMostLikelyCandidate(race: Race){
+  return race.candidates.reduce((prev: ReportingCandidate, curr: ReportingCandidate) => curr.probability > prev.probability ? curr : prev);
+}
+
 export function getTopTwoCandidates(unit: Raw<Race> | Raw<ReportingUnit>) {
-
-    let candidates = unit.candidates;
-  
-    if(candidates.length <= 1) return [candidates[0]];
-
-    let yes = candidates.find(cand => cand.party == 'Yes');
-    let no = candidates.find(cand => cand.party == 'No');
-
-    if(yes && no){
-      return [yes, no];
-    }
-  
-    let republican = candidates.find(cand => cand.party == "GOP");
-    let democrat = candidates.find(cand => cand.party == "Dem");
-  
-    // First action - try polling data
-  
-    // Second strategy - Check for an incumbent
-    //let incumbents = race ? race.incumbents : (unit instanceof Race ? unit.incumbents : []);
-    let incumbents = unit.candidates.filter(cand => cand.incumbent);
-  
-    if(incumbents.length > 0){
-  
-      let incumbent = incumbents[0];
-  
-      let incumbentData = candidates.find(cand => cand.polID == incumbent.polID);
-      let incumbentParty = incumbentData?.party || '';
-  
-      // If the incumbent is actually running
-      if(incumbentData) {
-        // If there is both a democrat and republican in this race, and the incumbent is independent
-        if (democrat && republican && !["Dem","GOP"].includes(incumbentParty)) return [incumbentData, republican];
-  
-        // If there is a democrat in this race and the incumbent is republican
-        else if(democrat && incumbentParty == 'GOP') return [democrat, incumbentData];
-        else if(republican && incumbentParty == 'Dem') return [incumbentData, republican]
-        else return [incumbentData, candidates.find(cand => cand.polID != incumbent.polID) as Candidate];
-      }
-    }
-  
-    // Third strategy - Pair D and R
-    
-  
-    if(republican && democrat){
-      // Both parties have been found, return both
-      return [democrat, republican];
-    }
-  
-  
-    // Fourth strategy - Alphabetical order
-    return [candidates[0], candidates[1]];
-  
-  }
+    return sortCandidates(unit.candidates).slice(0, 2);
+}
 
 var hex = function(x: any) {
   x = x.toString(16);
@@ -154,6 +142,45 @@ export function getBlendedMapColor(colors: Color[], threshold: number){
 
 };
 
+export function officeTypeToString(officeID: OfficeType){
+
+  switch(officeID){
+    case OfficeType.Senate:
+      return "senate";
+    case OfficeType.President:
+      return "president";
+    case OfficeType.House:
+      return "house";
+    case OfficeType.Governor:
+      return "governor";
+    case OfficeType.BallotMeasure:
+      return "measure";
+    default:
+      return "any";
+  }
+  
+}
+
+export function officeTypeFromString(officeID: string){
+
+  switch(officeID.toLowerCase()){
+    case "senate":
+      return OfficeType.Senate;
+    case "president":
+      return OfficeType.President;
+    case "house":
+      return OfficeType.House;
+    case "governor":
+      return OfficeType.Governor;
+    case "measure":
+      return OfficeType.BallotMeasure;
+    default:
+      return OfficeType.Any;
+                                    
+  }
+
+}
+
 export function getOfficeURL(race: Race){
   switch(race.officeID){
     case OfficeType.Senate:
@@ -180,4 +207,16 @@ export function getOfficeTypeFromOfficeURL(officeUrl: string){
   else {
     return null;
   }
+}
+
+
+export function getRaceURL(year: string, race: Race) {
+  let r = getOfficeURL(race);
+
+  let s = "";
+  if(race.raceType?.includes("Special")){
+      s = "-special";
+  }
+
+  return `/results/${year}/${race.state?.name?.toLowerCase().replace(' ','-')}/${r}${s}`;
 }

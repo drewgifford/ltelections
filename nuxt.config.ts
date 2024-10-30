@@ -56,6 +56,7 @@ export default defineNuxtConfig({
       REDIS_PORT: process.env.REDIS_PORT,
       ELECTION_DATE: process.env.ELECTION_DATE,
       TEST_DATA: process.env.TEST_DATA,
+      CRON_SECRET: process.env.CRON_SECRET,
       NODE_ENV: process.env.NODE_ENV,
     }
   }

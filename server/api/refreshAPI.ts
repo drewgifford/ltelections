@@ -11,6 +11,7 @@ import { attachPVI } from "../polling/CookPVI";
 import { attachDecisionDeskData } from "../polling/DecisionDeskData";
 import raceActive from "./raceActive";
 import axios from "axios";
+import refreshPollingData from "../polling/refreshPollingData";
 
 type CandidateData = {
   name: string,
@@ -133,11 +134,16 @@ export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig();
 
   const authHeader = event.headers.get("authorization");
-  if(authHeader !== `Bearer ${runtimeConfig.env.LTE_API_KEY}`){
+  if(authHeader !== `Bearer ${runtimeConfig.env.CRON_SECRET}`){
     return new Response('Unauthorized', {
       status: 401,
     })
   };
+
+  // First refresh polling data
+  let res = await refreshPollingData();
+
+  console.info(res);
 
   useStorage().setItem("testIndex", 0);
   // === Grab candidate data

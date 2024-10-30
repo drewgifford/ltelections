@@ -1,7 +1,7 @@
 import axios from "axios";
-import Poll, { PollCandidate, RawPoll } from "../polling/Poll";
+import Poll, { PollCandidate, RawPoll } from "./Poll";
 import csv from "csvtojson";
-import { parseHistoricalData } from "../polling/HistoricalResult";
+import { parseHistoricalData } from "./HistoricalResult";
 import cron from "node-cron";
 
 const PRESIDENTIAL_URL = "https://projects.fivethirtyeight.com/polls-page/data/president_polls.csv";
@@ -11,16 +11,9 @@ const REFRESH_TIME = 5; // Minutes
 
 
 
-export default defineEventHandler(async (event) => {
+export default async function() {
 
   const runtimeConfig = useRuntimeConfig();
-
-  const authHeader = event.headers.get("authorization");
-  if(authHeader !== `Bearer ${runtimeConfig.env.LTE_API_KEY}`){
-    return new Response('Unauthorized', {
-      status: 401,
-    })
-  };
 
 
   console.info("Refreshing polling data...");
@@ -49,7 +42,7 @@ export default defineEventHandler(async (event) => {
       success: true
     });
 
-});
+};
 
 async function parsePolls(url: string){
 

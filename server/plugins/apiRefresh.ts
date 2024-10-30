@@ -12,7 +12,6 @@ import { attachDecisionDeskData } from "../polling/DecisionDeskData";
 import raceActive from "../api/raceActive";
 import axios from "axios";
 
-const runtimeConfig = useRuntimeConfig();
 
 
 
@@ -66,9 +65,14 @@ export function getPartyData(){
 
 export default defineNitroPlugin(async (nitroApp) => {
 
+    
+    const runtimeConfig = useRuntimeConfig();
+
     const USING_TEST_DATA = runtimeConfig.env.TEST_DATA == '1';
     const REFRESH_TIME = (USING_TEST_DATA ? 10 : 30);
     const LTE_API_KEY = runtimeConfig.env.LTE_API_KEY;
+
+    console.log(runtimeConfig.env.LTE_API_KEY);
 
     var testIndex: number = 0;
 

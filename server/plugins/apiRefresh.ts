@@ -85,7 +85,7 @@ export default defineNitroPlugin(async (nitroApp) => {
 
         console.info("Reading candidate data...");
 
-        await axios.get(`https://api.ltelections.com/candidates/`, { responseType: 'json', timeout: 10000, timeoutErrorMessage: 'LTE API Request timed out.' })
+        await axios.get(`https://api.ltelections.com/candidates/`, { responseType: 'json', timeout: 30000, timeoutErrorMessage: 'LTE API Request timed out.' })
         .then((response) => {
             console.info(`Got a response with status`, response.status);
             return response.data;

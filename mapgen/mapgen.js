@@ -32,7 +32,7 @@ const countiesUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json";
 const congressUrl = (input) => {
     return `https://www2.census.gov/geo/tiger/TIGER${CONFIG.year}/CD/tl_${CONFIG.year}_${input}_cd${CONFIG.congress}.zip`;
 };
-const extractFolder = "maps";
+const extractFolder = "public/maps";
 
 const ok = await yesno({
     question: "Are you sure you want to regenerate all topoJSON files? (y)/n",

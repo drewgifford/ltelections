@@ -119,7 +119,7 @@ import LoadingSection from "./LoadingSection.vue";
 
         if(statePostal == "AK"){
 
-            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=cds`);
+            data = await d3.json(`/maps/${statePostal}/cds.json`);
 
             return [topojson.feature(data, data.objects.cds), null];
         }
@@ -127,7 +127,7 @@ import LoadingSection from "./LoadingSection.vue";
         else if(officeType == OfficeType.President && race.stateID == '0'){
             statePostal = 'US';
 
-            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=states`);
+            data = await d3.json(`/maps/${statePostal}/counties.json`);
             let obj = data.objects[`states`];
 
             delete data['bbox'];
@@ -139,7 +139,7 @@ import LoadingSection from "./LoadingSection.vue";
         else if(officeType == OfficeType.House || (race.seatNum && officeType == OfficeType.President)){
             // Return congressional district with only the counties included in the reportingUnits
 
-            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=cds-counties`);
+            data = await d3.json(`/maps/${statePostal}/cds-counties.json`);
 
             let obj = data.objects[`cd-${race.seatNum}`];
 

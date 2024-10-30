@@ -11,11 +11,8 @@ import { attachPVI } from "../polling/CookPVI";
 import { attachDecisionDeskData } from "../polling/DecisionDeskData";
 import raceActive from "../api/raceActive";
 
-console.log(process.env.TEST_DATA);
+const runtimeConfig = useRuntimeConfig();
 
-const USING_TEST_DATA = process.env.TEST_DATA == '1';
-
-const REFRESH_TIME = (USING_TEST_DATA ? 10 : 30);
 
 
 type CandidateData = {
@@ -68,6 +65,10 @@ export function getPartyData(){
 
 export default defineNitroPlugin(async (nitroApp) => {
 
+    const USING_TEST_DATA = runtimeConfig.env.TEST_DATA == '1';
+    const REFRESH_TIME = (USING_TEST_DATA ? 10 : 30);
+    const LTE_API_KEY = runtimeConfig.env.LTE_API_KEY;
+
     var testIndex: number = 0;
 
     const db = await JSONFilePreset('@/db/apiCache.json', { response: {} })
@@ -99,7 +100,7 @@ export default defineNitroPlugin(async (nitroApp) => {
         
         if(!USING_TEST_DATA){
 
-            let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${process.env.LTE_API_KEY}${nextReqDate}`;
+            let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${LTE_API_KEY}${nextReqDate}`;
             let res = await fetch(req);
             json = await res.json();
 
@@ -123,6 +124,8 @@ export default defineNitroPlugin(async (nitroApp) => {
         }
         
         apiResponse = new ApiResponse(json);
+
+        console.info(`Found ${apiResponse.races.length} races.`)
 
         // Manually attach candidate images here
         apiResponse.races = attachCandidateData(apiResponse.races, data);

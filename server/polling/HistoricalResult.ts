@@ -29,9 +29,17 @@ export type HistoricalCounty = {
     state_po: string
 }
 
+const CSV_URL = "https://www.dropbox.com/scl/fi/1o83yjhr2n3fafy3233yk/countypres_2000-2020.csv?rlkey=s08psw07deyhweri6po6qoqig&st=ob8zovfb&dl=1";
+let PARSED_CSV: CountyData[] | null = null;
+
 export async function parseHistoricalData(){
 
-    let d: CountyData[] = await csv().fromFile("/public/countypres_2000-2020.csv");
+    if(!PARSED_CSV){
+        let str = await (await fetch(CSV_URL)).text();
+        PARSED_CSV = await csv().fromString(str);
+    }
+
+    let d = PARSED_CSV.slice();
 
     let parsedCounties: HistoricalCounty[] = [];
 

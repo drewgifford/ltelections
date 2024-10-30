@@ -85,13 +85,8 @@ export default defineNitroPlugin(async (nitroApp) => {
 
         console.info("Reading candidate data...");
 
-        let req = `https://api.ltelections.com/candidates/`;
-        let res = await fetch(req);
-        let json = await res.json();
-
-        console.info("✔ Done");
-
-        return json;
+        const response = await axios.get(`https://api.ltelections.com/candidates/`, { responseType: 'json' });
+        return response.data;
     }
 
     const setupAPData = async (data: CandidateData[]) => {

@@ -128,8 +128,8 @@ const raceData = computed(() => {
     const { dem: aDem, gop: aGOP } = getDemAndGOP(a.race);
     const { dem: bDem, gop: bGOP } = getDemAndGOP(b.race);
 
-    let aMargin = ((aDem?.voteCount || 0) - (aGOP?.voteCount || 0)) / a.race.parameters.vote.total;
-    let bMargin = ((bDem?.voteCount || 0) - (bGOP?.voteCount || 0)) / b.race.parameters.vote.total;
+    let aMargin = ((aDem?.voteCount || 0) - (aGOP?.voteCount || 0)) / (a.race.parameters.vote?.total || 1);
+    let bMargin = ((bDem?.voteCount || 0) - (bGOP?.voteCount || 0)) / (b.race.parameters.vote?.total || 1);
 
     if(aMargin > bMargin) return -1;
     if(aMargin < bMargin) return 1;

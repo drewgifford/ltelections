@@ -124,6 +124,8 @@ export default defineNitroPlugin(async (nitroApp) => {
         
         apiResponse = new ApiResponse(json);
 
+        console.info(`Found ${apiResponse.races.length} races.`)
+
         // Manually attach candidate images here
         apiResponse.races = attachCandidateData(apiResponse.races, data);
 

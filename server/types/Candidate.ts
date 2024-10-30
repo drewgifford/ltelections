@@ -36,7 +36,7 @@ export class Candidate extends JsonObject {
     polNum?: string
     parsed: boolean = false
     incumbent?: boolean
-    probability: number = -1
+    probability: number = 0
 
     imageURL: string = '/img/generic-candidate.png'
     description: string | null = null;

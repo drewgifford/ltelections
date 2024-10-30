@@ -160,14 +160,14 @@ import LoadingSection from "./LoadingSection.vue";
             }
 
             // State
-            let stateData: any = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=cds`);
+            let stateData: any = await d3.json(`/maps/${statePostal}/cds.json`);
             let stateFeature: any = topojson.feature(stateData, stateData.objects.cds);
             
             return [topojson.feature(data, obj), stateFeature];
 
         } else {
 
-            data = await d3.json(`/api/topojson?postalCode=${statePostal}&mapType=counties`);
+            data = await d3.json(`/maps/${statePostal}/counties.json`);
             data.objects.counties.geometries = data.objects.counties.geometries.filter((x: any) => {
                 if (NEW_ENGLAND_STATES.includes(race.state?.postalCode || '')){
                     return Number(x.properties.COUSUBFP) != 0;

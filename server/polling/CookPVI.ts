@@ -1,5 +1,4 @@
-import { parsePolls } from "../plugins/updatePolling";
-import ApiResponse from "../types/ApiResponse";
+
 import Race, { OfficeType } from "../types/Race";
 import { ReportingCandidate } from "../types/ReportingUnit";
 import { getPollingAverage, PollingAverageType } from "../utils/PollingAverage";

@@ -31,7 +31,7 @@ export type HistoricalCounty = {
 
 export async function parseHistoricalData(){
 
-    let d: CountyData[] = await csv().fromFile("./assets/csv/countypres_2000-2020.csv");
+    let d: CountyData[] = await csv().fromFile("/public/countypres_2000-2020.csv");
 
     let parsedCounties: HistoricalCounty[] = [];
 

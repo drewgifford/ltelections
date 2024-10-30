@@ -92,7 +92,7 @@ export default defineNitroPlugin(async (nitroApp) => {
             return response.data;
         }
         catch (error: any){
-            console.error(error.response.data);
+            console.error(error);
         }
        
         
@@ -123,7 +123,7 @@ export default defineNitroPlugin(async (nitroApp) => {
 
             } catch(error: any){
 
-                console.error(error.response.data);
+                console.error(error.response);
 
             }
             

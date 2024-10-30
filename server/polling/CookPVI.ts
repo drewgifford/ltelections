@@ -17,10 +17,10 @@ const HOUSE_PVI: any = {"AL-01":24.47,"AL-02":-3.58,"AL-03":27.36,"AL-04":35.24,
 
 export async function attachPVI(races: Race[]){
 
-    const PRESIDENT_POLLS = (await useStorage("redis").getItem("polls.president")) as { [key: string]: Poll[]; };
-    const SENATE_POLLS = (await useStorage("redis").getItem("polls.senate")) as { [key: string]: Poll[]; };
-    const HOUSE_POLLS = (await useStorage("redis").getItem("polls.house")) as { [key: string]: Poll[]; };
-    const COUNTY_DATA = (await useStorage("redis").getItem("polls.countyData")) as HistoricalCounty[];
+    const PRESIDENT_POLLS = (await useStorage().getItem("polls.president")) as { [key: string]: Poll[]; };
+    const SENATE_POLLS = (await useStorage().getItem("polls.senate")) as { [key: string]: Poll[]; };
+    const HOUSE_POLLS = (await useStorage().getItem("polls.house")) as { [key: string]: Poll[]; };
+    const COUNTY_DATA = (await useStorage().getItem("polls.countyData")) as HistoricalCounty[];
 
 
     for(let race of races){

@@ -97,7 +97,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     const setupAPData = async (data: CandidateData[]) => {
 
         console.info("Setting up AP data...");
-        let date = '2024-11-05';
+        let date = runtimeConfig.env.ELECTION_DATE;
         let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
         const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
         
@@ -108,12 +108,15 @@ export default defineNitroPlugin(async (nitroApp) => {
             let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${LTE_API_KEY}${nextReqDate}`;
             
 
+            console.info(req);
             // Use axios
             const response = await axios.get(req, { responseType: 'json' });
             
+            console.info(response);
+
             console.info(`Got a response with status`, response.status);
 
-            console.info(json);
+            json = response.data;
 
         } else {
 

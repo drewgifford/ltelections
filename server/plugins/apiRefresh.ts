@@ -105,9 +105,7 @@ export default defineNitroPlugin(async (nitroApp) => {
 
             console.info(req);
             // Use axios
-            const response = await axios.get(req, { responseType: 'json', timeout: 10000, timeoutErrorMessage: 'AP API Request timed out.' });
-            
-            console.info(response);
+            const response = await axios.get(req, { responseType: 'json', timeout: 30000, timeoutErrorMessage: 'AP API Request timed out.' });
 
             console.info(`Got a response with status`, response.status);
 

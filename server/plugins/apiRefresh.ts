@@ -85,8 +85,17 @@ export default defineNitroPlugin(async (nitroApp) => {
 
         console.info("Reading candidate data...");
 
-        const response = await axios.get(`https://api.ltelections.com/candidates/`, { responseType: 'json', timeout: 10000, timeoutErrorMessage: 'LTE API Request timed out.' });
-        return response.data;
+        let response;
+
+        try {
+            response = await axios.get(`https://api.ltelections.com/candidates/`, { responseType: 'json', timeout: 10000, timeoutErrorMessage: 'LTE API Request timed out.' });
+            return response.data;
+        }
+        catch (error: any){
+            console.error(error.response.data);
+        }
+       
+        
     }
 
     const setupAPData = async (data: CandidateData[]) => {
@@ -104,12 +113,22 @@ export default defineNitroPlugin(async (nitroApp) => {
             
 
             console.info(req);
+            let response;
             // Use axios
-            const response = await axios.get(req, { responseType: 'json', timeout: 30000, timeoutErrorMessage: 'AP API Request timed out.' });
+            try {
 
-            console.info(`Got a response with status`, response.status);
+                response = await axios.get(req, { responseType: 'json', timeout: 30000, timeoutErrorMessage: 'AP API Request timed out.' });
+                console.info(`Got a response with status`, response.status);
+                json = response.data;
 
-            json = response.data;
+            } catch(error: any){
+
+                console.error(error.response.data);
+
+            }
+            
+
+            
 
         } else {
 

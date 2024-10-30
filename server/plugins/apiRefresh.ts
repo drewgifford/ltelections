@@ -10,6 +10,7 @@ import path from "node:path";
 import { attachPVI } from "../polling/CookPVI";
 import { attachDecisionDeskData } from "../polling/DecisionDeskData";
 import raceActive from "../api/raceActive";
+import axios from "axios";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -101,8 +102,14 @@ export default defineNitroPlugin(async (nitroApp) => {
         if(!USING_TEST_DATA){
 
             let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${LTE_API_KEY}${nextReqDate}`;
-            let res = await fetch(req);
-            json = await res.json();
+            
+
+            // Use axios
+            const response = await axios.get(req, { responseType: 'json' });
+            
+            console.info(`Got a response with status`, response.status);
+
+            console.info(json);
 
         } else {
 

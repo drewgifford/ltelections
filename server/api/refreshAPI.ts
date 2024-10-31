@@ -61,17 +61,13 @@ const setupAPData = async (data: CandidateData[]) => {
   let json;
   
   if(!USING_TEST_DATA){
-      let req = `https://api.ap.org/v3/elections/${date}?resultsType=l&level=ru&officeID=${allowedOfficeIDs.join(',')}&format=json`;
+
+      let req = `https://api.ltelections.com/?resultsType=l&level=ru&statepostal=*&officeID=${allowedOfficeIDs.join(',')}&format=json&electionDate=${date}&apiKey=${LTE_API_KEY}${nextReqDate}`;
       
 
       console.info(req);
       // Use axios
-      await axios.get(req, { 
-        
-        headers: {
-          'x-api-key': runtimeConfig.env.LTE_API_KEY
-        },
-        responseType: 'json', timeout: 20000, timeoutErrorMessage: 'AP API Request timed out.' })
+      await axios.get(req, { responseType: 'json', timeout: 20000, timeoutErrorMessage: 'AP API Request timed out.' })
       .then((response) => {
           json = response.data;
           console.info(`Got a response with status`, response.status);

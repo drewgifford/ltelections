@@ -124,6 +124,8 @@ function getRaceProbability(race: Race, pollingAverage: PollingAverage, countyDa
             let reportingPct = race.eevp / 100;
 
             var probabilities: number[] = [];
+
+            
             
 
             for(let otherID of Object.keys(pollingAverage)){
@@ -153,14 +155,13 @@ function getRaceProbability(race: Race, pollingAverage: PollingAverage, countyDa
 
                 
 
-                let probability = 1-cdfNormal(marginNeeded, expectedMargin, STANDARD_DEV);
+                let probability = 1-cdfNormal(marginNeeded, expectedMargin, STANDARD_DEV*2);
 
                 probabilities.push(probability);
 
             }
 
             let prob = probabilities.reduce((prev: number, curr: number) => prev * curr, 1);
-
             
             probs[polID] = prob;
         }
@@ -168,6 +169,8 @@ function getRaceProbability(race: Race, pollingAverage: PollingAverage, countyDa
         
 
     }
+    
+    
 
     // Normalize the data
     let total = Object.keys(probs).reduce((prev: number, curr: string) => prev + probs[curr], 0);
@@ -220,20 +223,270 @@ export function getRaceProbabilities(race: Race, COUNTY_DATA: HistoricalCounty[]
 
 }
 
-
-export function presidentialProbability(presRace: Race, races: Race[]){
+const LOCKED_STATES = {
+    "AL": "",
+    "AK": "",
+    "AZ": "Harris",
+    "AR": "",
+    "CA": "",
+    "CO": "",
+    "CT": "",
+    "DE": "",
+    "DC": "",
+    "FL": "Trump",
+    "GA": "Harris",
+    "HI": "",
+    "ID": "",
+    "IL": "",
+    "IN": "",
+    "IA": "",
+    "KS": "",
+    "KY": "",
+    "LA": "",
+    "ME": "",
+    "ME-1": "",
+    "ME-2": "",
+    "MD": "",
+    "MA": "",
+    "MI": "Harris",
+    "MN": "",
+    "MS": "",
+    "MO": "",
+    "MT": "",
+    "NE": "",
+    "NE-1": "",
+    "NE-2": "Harris",
+    "NE-3": "",
+    "NV": "Harris",
+    "NH": "",
+    "NJ": "",
+    "NM": "",
+    "NY": "",
+    "NC": "Harris",
+    "ND": "",
+    "OH": "",
+    "OK": "",
+    "OR": "",
+    "PA": "Harris",
+    "RI": "",
+    "SC": "",
+    "SD": "",
+    "TN": "",
+    "TX": "Harris",
+    "UT": "",
+    "VT": "",
+    "VA": "",
+    "WA": "",
+    "WV": "",
+    "WI": "Harris",
+    "WY": ""
+}
+function runIndividualSimulation(races: Race[]){
 
     const TOTAL_EVS = 538;
     const TO_WIN = 270;
     let dp: {[key: string]: number[]} = {};
 
     races.forEach((race) => {
+    let votes = race.reportingUnits[0].electTotal as number;
+
+    for(let candidate of race.candidates){
+
+        let polID = candidate.polID as string;
+
+        // Set up DP table
+        if(!(Object.keys(dp).includes(polID))){
+            dp[polID] = Array(TOTAL_EVS + 1).fill(0);
+            dp[polID][0] = 1;
+        }
+
+        let candDP = dp[polID];
+        let probability = candidate.probability;
+
+        for(let i = TOTAL_EVS - votes; i >= 0; i--){
+            candDP[i+votes] += (candDP[i] * probability);
+            candDP[i] *= (1-probability);
+        }
+    }
+
+    });
+
+    let ret: {[key: string]: number} = {};
+
+    for (let polID of Object.keys(dp)){
+
+        let candDP = dp[polID];
+        let probability = 0;
+
+
+        for(let i = TO_WIN; i <= TOTAL_EVS; i++){
+            probability += candDP[i];
+        }
+
+        ret[polID] = probability;
+    }
+
+    console.log(ret);
+
+    return ret;
+
+}
+
+export function presidentialProbability(presRace: Race, races: Race[], countyData: HistoricalCounty[]){
+
+    const SIMULATIONS = 50;
+    const TOTAL_EVS = 538;
+    const TO_WIN = 270;
+    let dp: {[key: string]: number[]} = {};
+
+
+    
+
+    let rs = races.slice();
+
+    // Generate national expected popular vote
+    let popularVote: {[key: string]: number} = {};
+    let total = 0;
+
+    //let pa = rs.find(x => x.state?.postalCode == 'PA');
+    for(let race of rs){
+
+
+        let stateLabel = race.state?.postalCode;
+        if(race.seatNum){
+            stateLabel = `${stateLabel}-${race.seatNum}`;
+        }
+
+
+
+        if(Object.keys(LOCKED_STATES).includes(stateLabel)){
+
+            let winner = LOCKED_STATES[stateLabel];
+
+            let winnerCand = race.candidates.find(x => x.last == winner);
+
+            if(winnerCand){
+                winnerCand.winner = 'X';
+            }
+
+
+        }
+
+    }
+
+    for(let race of rs){
+
+        for(let candidate of race.candidates){
+            let polID = candidate.polID as string;
+            if(!Object.keys(popularVote).includes(polID)) popularVote[polID] = 0;
+
+            if(!Object.keys(race.pollingAverage).includes(polID)) continue;
+
+            let n = getCandidateExpected(race, candidate, race.pollingAverage, countyData);
+            popularVote[polID] += n;
+            total += n;
+        }
+
+    }
+
+    let gopPolID = presRace.candidates.find(x => x.party == 'GOP')?.polID || "";
+    let demPolID = presRace.candidates.find(x => x.party == 'Dem')?.polID || "";
+
+    function runSimulation(pollingAverageAdjustment: number){
+        
+        let rs1 = deepCopy(rs);
+
+        for(let race of rs1){
+
+
+            // Check if this race is called
+            let winner = race.candidates.find(x => x.winner == 'X')
+            if(winner){
+                
+                for(let candidate of race.candidates){
+                    candidate.probability = 0;
+                }
+                winner.probability = 1;
+                continue;
+            }
+
+            let pollingAverage = race.pollingAverage as PollingAverage;
+
+            if(Object.keys(pollingAverage).includes(gopPolID)){
+                pollingAverage[gopPolID].average += pollingAverageAdjustment;
+            }
+            if(Object.keys(pollingAverage).includes(demPolID)){
+                pollingAverage[demPolID].average -= pollingAverageAdjustment;
+            }
+
+            let probs = getRaceProbabilities(race, countyData);
+
+            for(let key of Object.keys(probs)){
+                let cand = race.candidates.find(x => x.polID == key);
+                if(cand) cand.probability = probs[key];
+            }
+
+        }
+        // Run nationwide simulation
+
+        let probs = runIndividualSimulation(rs1);
+        return probs;
+
+    }
+
+    let probs: {[key: string]: number} = {};
+
+    let stdDev = STANDARD_DEV;
+    let start = stdDev * (-2);
+    let end = stdDev * (2);
+    let step = (end-start)/SIMULATIONS;
+
+    let totalWeight = 0;
+
+    for(let i = start; i <= end; i+=step){
+
+        console.info("Simulation", i, "/", SIMULATIONS);
+
+        let weight = cdfNormal(i+(step/2), 0, STANDARD_DEV)-cdfNormal(i-(step/2), 0, STANDARD_DEV);
+
+        totalWeight += weight;
+
+        let probSlice = runSimulation(i);
+
+        for(let key of Object.keys(probSlice)){
+            if(!Object.keys(probs).includes(key)) probs[key] = 0;
+            probs[key] += probSlice[key] * weight;
+        }
+
+    }
+
+    for(let candidate of presRace.candidates){
+
+        let polID = candidate.polID as string;
+        if(Object.keys(probs).includes(polID)){
+
+            candidate.probability = probs[polID]/totalWeight;
+
+            console.log(candidate.last, candidate.probability);
+        }
+        
+
+    }
+    presRace.hasProjectomatic = true;
+
+
+
+    /*races.forEach((race) => {
 
         let votes = race.reportingUnits[0].electTotal as number;
 
         for(let candidate of race.candidates){
 
             let polID = candidate.polID as string;
+
+            console.log(race.state?.postalCode, candidate.fullName, candidate.probability);
+
+            
 
             // Set up DP table
             if(!(Object.keys(dp).includes(polID))){
@@ -267,7 +520,7 @@ export function presidentialProbability(presRace: Race, races: Race[]){
 
         candidate.probability = probability;
         presRace.hasProjectomatic = true;
-    }
+    }*/
 
 
 
@@ -293,4 +546,16 @@ export function roundPercentage(pct: number, fixed?: number){
 
 function cdfNormal (x: number, mean: number, standardDeviation: number) {
     return (1 - erf((mean - x ) / (Math.sqrt(2) * standardDeviation))) / 2
+}
+
+const deepCopy = <T>(obj: T): T => {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+function gaussianRandom(mean=0, stdev=1) {
+    const u = 1 - Math.random(); // Converting [0,1) to (0,1]
+    const v = Math.random();
+    const z = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+    // Transform to the desired mean and standard deviation:
+    return z * stdev + mean;
 }

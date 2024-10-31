@@ -56,7 +56,7 @@ const setupAPData = async (data: CandidateData[]) => {
   console.info("Setting up AP data...");
   let date = runtimeConfig.env.ELECTION_DATE;
   let nextReqDate =  date in Object.keys(nextReqDates) ? nextReqDates[date] : "";
-  const allowedOfficeIDs = ["G", "H", "P", "S", "I", "L"];
+  const allowedOfficeIDs = ["G", "H", "P", "S", "I"];
   
   let json;
   
@@ -78,7 +78,7 @@ const setupAPData = async (data: CandidateData[]) => {
 
   } else {
 
-      let testIndex = await useStorage().getItem("testIndex") as number;
+      let testIndex = 45; //await useStorage().getItem("testIndex") as number;
 
       let filePath = path.resolve(process.cwd()+`/${testDataPath}/capture-${testIndex}.json`);
       console.info(`Using test data`, filePath);

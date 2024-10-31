@@ -21,19 +21,23 @@ export default async function() {
 
     console.info("Parsing Presidential polls...")
     const PRESIDENT_POLLS = await parsePolls(PRESIDENTIAL_URL);
+    console.info("Saving Presidential polls...", PRESIDENT_POLLS.length)
     await useStorage().setItem("polls.president", JSON.stringify(PRESIDENT_POLLS));
     
 
     console.info("Parsing Senate polls...")
     const SENATE_POLLS = await parsePolls(SENATE_URL);
+    console.info("Saving Senate polls...")
     await useStorage().setItem("polls.senate", JSON.stringify(SENATE_POLLS));
 
     console.info("Parsing House polls...")
     const HOUSE_POLLS = await parsePolls(HOUSE_URL);
+    console.info("Saving House polls...")
     await useStorage().setItem("polls.house", JSON.stringify(HOUSE_POLLS));
 
     console.info("Parsing County data...")
     const COUNTY_DATA = await parseHistoricalData();
+    console.info("Saving County data...")
     await useStorage().setItem("polls.countyData", JSON.stringify(COUNTY_DATA));
 
     console.info("Done!");
@@ -52,14 +56,17 @@ async function parsePolls(url: string){
 
   const rawPolls: RawPoll[] = await csv().fromString(await response.data);
 
-  const parsedPolls: { [key: string]: Poll[] } = {};
+  console.log(rawPolls.length);
+
+  let parsedPolls: { [key: string]: Poll[] } = {};
 
   for(let poll of rawPolls){
 
       
 
       if(!poll.state || poll.state == "") poll.state = "National";
-      if(poll.seat_number && !poll.state.includes('-')) poll.state = `${poll.state}-${poll.seat_number}`;
+
+      if(Number(poll.seat_number) != 0 && !poll.state.includes('-')) poll.state = `${poll.state}-${poll.seat_number}`;
 
       //if(poll.seat_number) console.log(poll.state);
 
@@ -100,6 +107,8 @@ async function parsePolls(url: string){
 
       };
   }
+
+  console.log(Object.keys(parsedPolls), "Polls processed");
 
   return parsedPolls;
 

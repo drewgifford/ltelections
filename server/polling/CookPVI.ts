@@ -21,6 +21,10 @@ export async function attachPVI(races: Race[]){
     const HOUSE_POLLS = (await useStorage().getItem("polls.house")) as { [key: string]: Poll[]; };
     const COUNTY_DATA = (await useStorage().getItem("polls.countyData")) as HistoricalCounty[];
 
+    console.log("PRESIDENTIAL POLLS:", PRESIDENT_POLLS.length);
+    console.log("SENATE POLLS:", PRESIDENT_POLLS.length);
+    console.log("HOUSE POLLS:", PRESIDENT_POLLS.length);
+
 
     for(let race of races){
         
@@ -95,6 +99,6 @@ export async function attachPVI(races: Race[]){
     let presRace = races.find(x => x.stateID == '0' && x.officeID == OfficeType.President);
 
     if(presRace){
-        presidentialProbability(presRace, races.filter(x => x.stateID != '0' && x.officeID == OfficeType.President));
+        presidentialProbability(presRace, races.filter(x => x.stateID != '0' && x.officeID == OfficeType.President), COUNTY_DATA);
     }
 }

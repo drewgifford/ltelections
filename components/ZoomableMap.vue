@@ -10,7 +10,7 @@
 import type Color from "~/server/types/Color";
     import type Race from "~/server/types/Race";
 import { OfficeType } from "~/server/types/Race";
-import ReportingUnit from "~/server/types/ReportingUnit";
+import ReportingUnit, { ReportingCandidate } from "~/server/types/ReportingUnit";
 import LoadingSection from "./LoadingSection.vue";
     import { getBlendedMapColor } from "~/server/utils/Util";
 
@@ -192,8 +192,7 @@ import LoadingSection from "./LoadingSection.vue";
     
 
     onMounted(async () => {
-        
-        //const data: any = (await d3.json(`/api/topojson?postalCode=AL&mapType=1`));
+    
 
         let [feature, stateFeature]: any = await populateMap();
 
@@ -329,6 +328,22 @@ import LoadingSection from "./LoadingSection.vue";
 
     });
 
+const tooltipData = () => {
+
+    let candidates = selectedRu.value?.candidates as ReportingCandidate[];
+    let highestProb = 0;
+    let highestCand = null;
+
+    for(let cand of candidates){
+        if(cand.probability > highestProb){
+            highestProb = cand.probability;
+            highestCand = cand;
+        }
+    }
+    if(highestCand) return highestCand;
+
+};
+
 </script>
 
 <template>
@@ -339,7 +354,8 @@ import LoadingSection from "./LoadingSection.vue";
 
             <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="(selectedRu.statePostal || '' in NEW_ENGLAND_STATES ? selectedRu.townFIPSCode : selectedRu?.fipsCode)">
 
-                <p class="text-white font-header mb-2">{{ ru.reportingunitName }}</p>
+                <p class="text-white font-header mb-2">{{ ru.reportingunitName }} <span v-if="race.stateID == '0' && tooltipData()" class="text-white ml-1 p-1 inline-block text-sm rounded-sm">85.5%</span></p>
+                
                 <ResultTable :key="ruIdx" :unit="ru" :max="5" :reporting="true"/>
 
             </div>

@@ -75,7 +75,7 @@ import { getMostLikelyCandidate } from '~/server/utils/Util';
 
         </div>
 
-        <div class="flex mt-4 gap-4 items-center" v-if="(presRace)">
+        <div class="flex mt-4 gap-4 items-center">
             <div class="xl:w-1/2 w-full">
                 <h1 class="text-2xl text-center py-4"><img class="h-12 inline-block mr-2" src="/img/logo.png"/>Presidential Race Overview</h1>
                 <div class="card">
@@ -102,10 +102,10 @@ import { getMostLikelyCandidate } from '~/server/utils/Util';
         <div class="mt-4">
             <!-- Senate Dashboard -->
             <div class="grid xl:grid-cols-2 gap-4">
-                <div class="card p-4" v-if="(senateRaces)">
+                <div class="card p-4">
                     <SenateDashboard :races="senateRaces"/>
                 </div>
-                <div class="card px-6 py-4" v-if="(houseRaces)">
+                <div class="card px-6 py-4">
                     <HouseDashboard :races="houseRaces"/>
                 </div>
             </div>

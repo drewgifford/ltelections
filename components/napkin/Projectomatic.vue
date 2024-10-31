@@ -110,8 +110,8 @@ const getColors = (topProbabilities: ReportingCandidate[]) => {
 
 const getNeedleGradient = (colors: Color[]) => {
 
-    let leftColor = colors[4]+'';
-    let leftColorTransparent = colors[5]+'11';
+    let leftColor = colors[5]+'';
+    let leftColorTransparent = colors[6]+'11';
 
     let rightColor = colors[9]+'';
     let rightColorTransparent = colors[10]+'11';
@@ -155,15 +155,15 @@ const getLeadingText = (topProbabilities: ReportingCandidate[], colors: Color[])
     }
     else if(leadingPct > 0.8){
         text = `very likely`;
-        color = colors[7];
+        color = colors[8];
     }
     else if(leadingPct > 0.6){
         text = `likely`;
-        color = colors[5];
+        color = colors[7];
     }
     else {
         text = `slightly likely`;
-        color = colors[3];
+        color = colors[5];
     }
     
     return {
@@ -235,9 +235,9 @@ const getTickClass = (n: number) =>{
             </div>
 
             <div class="w-full text-xs flex">
-                    <div class="rounded-sm text-center py-1 mr-0.5" :style="{backgroundColor: projectomatic.colors[3]+'', width: '20%'}"><span class="font-header">Slightly Likely</span></div>
-                    <div class="rounded-sm text-center py-1 ml-0.5 mr-0.5" :style="{backgroundColor: projectomatic.colors[5]+'', width: '40%'}"><span class="font-header">Likely</span></div>
-                    <div class="rounded-sm text-center py-1 ml-0.5 mr-0.5" :style="{backgroundColor: projectomatic.colors[7]+'', width: '30%'}"><span class="font-header">Very Likely</span></div>
+                    <div class="rounded-sm text-center py-1 mr-0.5" :style="{backgroundColor: projectomatic.colors[5]+'', width: '20%'}"><span class="font-header">Slightly Likely</span></div>
+                    <div class="rounded-sm text-center py-1 ml-0.5 mr-0.5" :style="{backgroundColor: projectomatic.colors[6]+'', width: '40%'}"><span class="font-header">Likely</span></div>
+                    <div class="rounded-sm text-center py-1 ml-0.5 mr-0.5" :style="{backgroundColor: projectomatic.colors[8]+'', width: '30%'}"><span class="font-header">Very Likely</span></div>
                     <div class="rounded-sm text-center py-1 ml-0.5" :style="{backgroundColor: projectomatic.colors[10]+'', width: '10%'}"><span class="font-header">Certain</span></div>
             </div>
         </div>

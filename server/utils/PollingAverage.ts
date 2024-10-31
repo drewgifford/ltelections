@@ -35,7 +35,7 @@ export type PollingAverage = {
 
 export async function getPollingAverage(race: Race, type: PollingAverageType, POLLS: { [key: string]: Poll[] }){
 
-    const INCLUDED_POLLS = 10;
+    const INCLUDED_POLLS = 18;
 
     let stateName = `${race.state?.name}`;
     if(race.officeID == OfficeType.President){
@@ -101,7 +101,7 @@ export async function getPollingAverage(race: Race, type: PollingAverageType, PO
                 }
             }
 
-            candidateAverages[key].average += Number(result.pct)/100;
+            candidateAverages[key].average += (Number(result.pct))/100;
             candidateAverages[key].includedPolls += 1;
         }
     }
@@ -208,6 +208,8 @@ export async function getPollingAverage(race: Race, type: PollingAverageType, PO
     for(let candName of Object.keys(candidateAverages)){
         candidateAverages[candName].average /= candidateAverages[candName].includedPolls;
     }
+
+    
 
     
 

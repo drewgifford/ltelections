@@ -28,6 +28,12 @@ export default defineNuxtConfig({
         host: process.env.REDIS_HOST,
         password: process.env.REDIS_PASSWORD,
       }
+    },
+
+    vercel: {
+      functions: {
+        maxDuration: 30
+      }
     }
   },
 

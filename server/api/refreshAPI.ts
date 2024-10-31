@@ -67,7 +67,7 @@ const setupAPData = async (data: CandidateData[]) => {
 
       console.info(req);
       // Use axios
-      await axios.get(req, { responseType: 'json', timeout: 20000, timeoutErrorMessage: 'AP API Request timed out.' })
+      await axios.get(req, { responseType: 'json', timeout: 30000, timeoutErrorMessage: 'AP API Request timed out.' })
       .then((response) => {
           json = response.data;
           console.info(`Got a response with status`, response.status);

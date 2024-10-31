@@ -349,7 +349,7 @@ export function presidentialProbability(presRace: Race, races: Race[], countyDat
     let total = 0;
 
     //let pa = rs.find(x => x.state?.postalCode == 'PA');
-    for(let race of rs){
+    /*for(let race of rs){
 
 
         let stateLabel = race.state?.postalCode;
@@ -372,7 +372,7 @@ export function presidentialProbability(presRace: Race, races: Race[], countyDat
 
         }
 
-    }
+    }*/
 
     for(let race of rs){
 

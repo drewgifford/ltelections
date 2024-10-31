@@ -23,12 +23,12 @@ const { data: data } = (await useFetch("/api/raceActive"));
                 
             </li>
 
-            <li>
+            <!--<li>
                 <NuxtLink to="/">Home</NuxtLink>
             </li>
             <li>
                 <NuxtLink to="/results/2024/">Election Results <span v-if="(data?.racesActive)" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header">LIVE</span></NuxtLink>
-            </li>
+            </li>-->
             <li>
                 <NuxtLink to="/about">About</NuxtLink>
             </li>

@@ -18,14 +18,6 @@ const RESULT_WEIGHTS: any = {
     "0": 1,
 }
 
-export enum PollingAverageType {
-    
-    Senate = "S",
-    President = "P",
-    House = "H",
-
-}
-
 export type PollingAverage = {
     [polID: string]: {
         average: number,
@@ -61,7 +53,7 @@ export async function getPollingAverage(race: Race, type: PollingAverageType, PO
             }
 
 
-        ).slice(0, 10);
+        ).slice(0, INCLUDED_POLLS);
     }
 
     let candidateAverages: PollingAverage = {}

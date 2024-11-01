@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import Race, { type RacePinnable } from '~/server/types/Race';
-import type State from '~/server/types/State';
+import type { ApiRace } from '~/server/types/ApiTypes';
 import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
 import axios from 'axios';
 import type { CanPin, Raw } from '~/server/utils/Raw';
@@ -8,6 +7,7 @@ import States from '~/server/utils/States';
 import LoadingSection from '~/components/LoadingSection.vue';
 import { useIntervalFn } from "@vueuse/core";
 import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
+import type {ApiRaceQueried} from "~/server/types/ViewModel";
 
     const route = useRoute();
     const router = useRouter();
@@ -40,9 +40,9 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
             raceUUIDs: pinnedRaceIds,
             date: route.params.date,
         },
-        transform: (races: RacePinnable[]) => {
-            return races.map(r => {
-                r.pinned = (pinnedRaceIds.value.includes(r.uuid));
+        transform: (races: {[key: string]: ApiRaceQueried}) => {
+            return Object.values(races).map(r => {
+                r.pinned = pinnedRaceIds.value.includes(r.uuid);
                 r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
                 return r;
             });
@@ -62,9 +62,11 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
     });
 
     // Pin races functionality
-    const togglePin = (race: RacePinnable) => {
+    const togglePin = (race: ApiRaceQueried) => {
 
-        let index = races.value.indexOf(race);
+        if(!races.value) return;
+
+        let index = races.value?.indexOf(race);
         let idIndex = pinnedRaceIds.value.indexOf(race.uuid);
 
         if(race.pinned){
@@ -87,7 +89,7 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
     let states = States;
 
     const raceView = ref<string | null>(null);
-    const setView = (race: Race) => {
+    const setView = (race: ApiRaceQueried) => {
         raceView.value = race.uuid;
     }
 
@@ -173,7 +175,7 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
                 </div>
 
                 <!-- Non-pinned races -->
-                <div v-if="true || (status !== 'pending')" class="flex flex-col gap-3 w-full pb-24">
+                <div class="flex flex-col gap-3 w-full pb-24">
                     <p>Showing {{ races?.length }} results</p>
 
                     <MiniRaceView 

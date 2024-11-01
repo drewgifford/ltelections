@@ -220,3 +220,14 @@ export function getRaceURL(year: string, race: Race) {
 
   return `/results/${year}/${race.state?.name?.toLowerCase().replace(' ','-')}/${r}${s}`;
 }
+
+const createObjectMap = <T>(objects: T[], key: string) => {
+
+    let k: {[key: string]: T} = {};
+    for(let object of objects){
+      k[(object as any)[key] as string] = object;
+    }
+
+    return k;
+
+}

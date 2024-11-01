@@ -26,6 +26,7 @@
     "@types/d3": "^7.4.3",
     "@types/lowdb": "^1.0.15",
     "@types/node-cron": "^3.0.11",
+    "@types/redis": "^4.0.11",
     "@types/topojson-client": "^3.1.5",
     "@vercel/speed-insights": "^1.0.14",
     "@vesp/nuxt-fontawesome": "^1.1.0",

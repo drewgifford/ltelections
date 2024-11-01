@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@vueuse/core';
-import type Race from '~/server/types/Race';
-import { OfficeType } from '~/server/types/Race';
-import State from '~/server/types/State';
 import { getOfficeTypeFromOfficeURL } from '~/server/utils/Util';
 import { nth } from '~/server/utils/Util';
+import OfficeType from "~/server/types/enum/OfficeType";
+import {State} from "vscode-languageclient";
+import type {ApiRace} from "~/server/types/ApiTypes";
 
 
     const route = useRoute();
@@ -12,7 +12,6 @@ import { nth } from '~/server/utils/Util';
     
 
     const stateName = (route.params.state as string || '').replace('-',' ').toLowerCase();
-    const state = new State(stateName);
     const raceParam = route.params.race as string;
     const officeID = getOfficeTypeFromOfficeURL(raceParam);
     const idTypes = [OfficeType.House, OfficeType.BallotMeasure]
@@ -21,12 +20,12 @@ import { nth } from '~/server/utils/Util';
 
     const { data: races, status, error, refresh: refreshRaces } = await useFetch("/api/searchRaces", {
         query: {
-            statePostal: state.postalCode,
+            stateName: stateName,
             officeID: officeID,
             date: route.params.date,
         },
-        transform: (races: Race[]) => {
-            return races.filter(r => {
+        transform: (races: {[key: string]: ApiRace}) => {
+            return Object.values(races).filter(r => {
 
                 let s = (route.params.race as string || '').split("-");
                 let last = s[s.length-1];
@@ -48,10 +47,10 @@ import { nth } from '~/server/utils/Util';
                 
 
                 if(officeID == OfficeType.House){
-                    return (r.seatNum == raceParam.split("-")[1]);
+                    return (r.seatNum == Number(raceParam.split("-")[1]));
                 }
                 else if (officeID == OfficeType.BallotMeasure){
-                    return (r.designation == raceParam.split("-")[1]);
+                    return (r.seatNum == Number(raceParam.split("-")[1]));
                 }
                 return true;
             }).splice(0, 1);
@@ -64,7 +63,9 @@ import { nth } from '~/server/utils/Util';
 
     const getTitle = () => {
 
-        let stateName = state.name;
+        if(!races.value || races.value.length <= 0) return "";
+
+        let stateName = races.value[0].state.name;
 
         let raceLabel;
 
@@ -77,7 +78,7 @@ import { nth } from '~/server/utils/Util';
             stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
         }
         else if(officeID == OfficeType.Governor) raceLabel = `Governor`;
-        else if(officeID == OfficeType.BallotMeasure) raceLabel = `${races.value[0].officeName} ${races.value[0].designation}`;
+        else if(officeID == OfficeType.BallotMeasure) raceLabel = `${races.value[0].officeName} ${races.value[0].seatNum}`;
 
         let s = races.value[0].raceType?.includes('Special') ? " Special" : ""
 
@@ -94,8 +95,8 @@ import { nth } from '~/server/utils/Util';
         await refreshRaces();
     }, 10000);
 
-    const getWinner = (race: Race) => {
-        return race.candidates.find(cand => cand.winner == 'X');
+    const getWinners = (race: ApiRace) => {
+        return race.winners;
     }
 
 

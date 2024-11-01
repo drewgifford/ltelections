@@ -21,18 +21,10 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    storage: {
-      redis: {
-        driver: "redis",
-        port: process.env.REDIS_PORT,
-        host: process.env.REDIS_HOST,
-        password: process.env.REDIS_PASSWORD,
-      }
-    },
 
     vercel: {
       functions: {
-        maxDuration: 120
+        maxDuration: 30
       }
     }
   },

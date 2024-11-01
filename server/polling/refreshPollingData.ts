@@ -62,16 +62,9 @@ async function parsePolls(url: string){
 
   for(let poll of rawPolls){
 
-      
-
       if(!poll.state || poll.state == "") poll.state = "National";
 
       if(Number(poll.seat_number) != 0 && !poll.state.includes('-')) poll.state = `${poll.state}-${poll.seat_number}`;
-
-      //if(poll.seat_number) console.log(poll.state);
-
-      /* Filter only polls we want */
-      //if(poll.population != "lv") continue;
 
       let statePolls: Poll[] = parsedPolls[poll.state] || [];
 

@@ -213,14 +213,11 @@ export function getRaceProbabilities(race: Race, COUNTY_DATA: HistoricalCounty[]
             }
 
         }
-
-
     }
 
     let probs = getRaceProbability(race, pollingAverage, COUNTY_DATA);
 
     return probs;
-
 }
 
 const LOCKED_STATES = {
@@ -473,58 +470,6 @@ export function presidentialProbability(presRace: Race, races: Race[], countyDat
 
     }
     presRace.hasProjectomatic = true;
-
-
-
-    /*races.forEach((race) => {
-
-        let votes = race.reportingUnits[0].electTotal as number;
-
-        for(let candidate of race.candidates){
-
-            let polID = candidate.polID as string;
-
-            console.log(race.state?.postalCode, candidate.fullName, candidate.probability);
-
-            
-
-            // Set up DP table
-            if(!(Object.keys(dp).includes(polID))){
-                dp[polID] = Array(TOTAL_EVS + 1).fill(0);
-                dp[polID][0] = 1;
-            }
-
-            let candDP = dp[polID];
-            let probability = candidate.probability;
-
-            for(let i = TOTAL_EVS - votes; i >= 0; i--){
-                candDP[i+votes] += (candDP[i] * probability);
-                candDP[i] *= (1-probability);
-            }
-        }
-
-    });
-
-    // US-wide race object
-    for (let candidate of presRace.candidates){
-
-        let polID = candidate.polID as string;
-        let candDP = dp[polID];
-        let probability = 0;
-
-        
-
-        for(let i = TO_WIN; i <= TOTAL_EVS; i++){
-            probability += candDP[i];
-        }
-
-        candidate.probability = probability;
-        presRace.hasProjectomatic = true;
-    }*/
-
-
-
-
 }
 
 export function roundPercentage(pct: number, fixed?: number){

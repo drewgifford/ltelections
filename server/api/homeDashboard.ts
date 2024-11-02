@@ -1,5 +1,5 @@
 import ApiResponse from "../types/ApiResponse";
-import Race, { OfficeType } from "../types/Race";
+import { Race } from "../types/ViewModel";
 import { filterDuplicateRaces } from "../utils/Util";
 
 let STALE_TIME = 30
@@ -31,35 +31,7 @@ export default defineEventHandler(async (event) => {
 
   if(!data.races) data.races = [];
 
-  const PRESIDENTIAL_RACE = data.races.find(x => x.stateID == '0' && x.officeID == OfficeType.President);
-
-  let PRES_RACES = data.races.filter(x => x.stateID != '0' && x.officeID == OfficeType.President);
-  PRES_RACES.forEach(race => {
-    PRESIDENTIAL_RACE?.reportingUnits.push(race.reportingUnits[0]);
-  });
-
-  // SENATE RACES
-  const SENATE_RACES = data.races.filter(x => x.officeID == OfficeType.Senate).map(race => {
-    race.reportingUnits = [race.reportingUnits[0]];
-    return race;
-  });
-
-  const HOUSE_RACES = data.races.filter(x => x.officeID == OfficeType.House && !x.raceType?.includes('Special')).map(race => {
-    race.reportingUnits = [race.reportingUnits[0]];
-    return race;
-  });
   
-
-
-  return {
-
-    races: {
-      presidential: PRESIDENTIAL_RACE,
-      senate: filterDuplicateRaces(SENATE_RACES),
-      house: filterDuplicateRaces(HOUSE_RACES)
-    }
-
-  } as HomeDashboard;
 
 
   

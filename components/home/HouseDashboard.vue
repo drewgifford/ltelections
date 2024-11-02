@@ -1,31 +1,26 @@
 
 <script lang="ts" setup>
-import { e } from 'mathjs';
-import type Color from '~/server/types/Color';
-import type Race from '~/server/types/Race';
-import State from '~/server/types/State';
+import type { Race } from '~/server/types/ViewModel';
 import Projectomatic from '../napkin/Projectomatic.vue';
 import { getRaceURL } from '~/server/utils/Util';
 import { getBlendedColor } from '~/server/utils/Util';
-import type { ReportingCandidate } from '~/server/types/ReportingUnit';
-import { RaceCallStatus } from '~/server/types/Race';
 
 const ROWS = 12;
 const COLS = 12;
 
 const getRaceColor = (race: Race) => {
 
-  let colors = race.candidates[0]?.partyData?.colors as Color[];
+  let colors = race.candidates[0].party.colors as string[];
   if(race.candidates.length == 1) return colors[0];
 
-  let margin = ((race.candidates[0]?.voteCount || 0) - (race.candidates[1]?.voteCount || 0))/(race.parameters.vote?.total || 1);
+  let margin = (race.results[race.candidates[0].polID].vote - (race.results[race.candidates[1].polID]).vote)/(race.totalVotes || 1);
   
 
   margin *= 100;
 
   if(margin == 0){
     // Use probabilities
-    let probability = race.candidates[0].probability;
+    let probability = race.results[race.candidates[0].polID].probability;
 
     if(probability > 0.95){
       return colors[0]
@@ -60,7 +55,7 @@ function getDemAndGOP(race: Race){
 
       let topTwo = race.candidates.slice(0, 2);
 
-      if(topTwo[0].party != 'GOP'){
+      if(topTwo[0].party.partyID != 'GOP'){
         return {
           dem: topTwo[0],
           gop: topTwo[1]
@@ -88,24 +83,24 @@ const getGridPosition = (idx: number) => {
 const getDashboardData = (race: Race) => {
 
   let leadingCand = race.candidates[0];
-  let partyLabel = leadingCand.partyData?.id || 'Undefined';
+  let partyLabel = leadingCand.party.partyID || 'Undefined';
 
   let margin;
   
   if(race.candidates.length == 1) {
-    margin = race.parameters.vote?.total;
+    margin = race.totalVotes;
   } else {
-    margin = (race.candidates[0].voteCount || 0) - (race.candidates[1].voteCount || 0);
+    margin = (race.results[race.candidates[0].polID].vote || 0) - (race.results[race.candidates[1].polID].vote || 0);
   }
   
-  let marginPct = margin / (race.parameters.vote?.total || 1);
+  let marginPct = margin / (race.totalVotes || 1);
 
   return {
     race: race,
     leadingCand: leadingCand,
     color: getRaceColor(race)+'80',
     partyLabel: partyLabel,
-    state: race.state || new State(),
+    state: race.state,
     marginPct: marginPct,
     margin: margin,
     seatNum: race.seatNum || 0

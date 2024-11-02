@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-  import Race, { OfficeType } from '~/server/types/Race';
+import OfficeType from '~/server/types/enum/OfficeType';
+import type { Race } from '~/server/types/ViewModel';
 import type { Raw } from '~/server/utils/Raw';
  import { notZero } from '~/server/utils/Util';
 
@@ -51,7 +52,7 @@ import type { Raw } from '~/server/utils/Raw';
 
         <div class="flex w-full justify-between items-start">
             <div class="flex-1">
-                <h4 class="text-lg">{{ race.title }} <span v-if="(race.tabulationStatus == 'Active Tabulation')" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
+                <h4 class="text-lg">{{ race.title}} <span v-if="(race.tabulationStatus == 'Active Tabulation')" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
                 <p class="text-sm">{{ race.description }}</p>
             </div>
 
@@ -59,7 +60,7 @@ import type { Raw } from '~/server/utils/Raw';
 
               <div class="w-80">
 
-                <ResultTable :unit="race" :max="2" :reporting="false"/>
+                <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="2" :reporting="false"/>
 
               </div>
             </div>

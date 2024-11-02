@@ -7,12 +7,10 @@
 
     import * as d3 from "d3";
     import * as topojson from "topojson-client";
-import type Color from "~/server/types/Color";
-    import type Race from "~/server/types/Race";
-import { OfficeType } from "~/server/types/Race";
-import ReportingUnit, { ReportingCandidate } from "~/server/types/ReportingUnit";
 import LoadingSection from "./LoadingSection.vue";
     import { getBlendedMapColor } from "~/server/utils/Util";
+import type { Race, RaceReportingUnit } from "~/server/types/ViewModel";
+import OfficeType from "~/server/types/enum/OfficeType";
 
     const elem = useTemplateRef("svg");
     const tooltip = useTemplateRef("tooltip");
@@ -20,7 +18,7 @@ import LoadingSection from "./LoadingSection.vue";
     const NEW_ENGLAND_STATES = ["VT", "CT", "ME", "RI", "NH", "MA"];
 
     const IS_NATIONAL_MAP =() => {
-        return props.race.stateID == '0' && props.race.officeID == OfficeType.President
+        return props.race.state.stateID == '0' && props.race.officeID == OfficeType.President
     };
 
     const INVALID_FILL = "#1E293B";
@@ -28,13 +26,13 @@ import LoadingSection from "./LoadingSection.vue";
     const BG_STROKE = "#0C1325";
 
     // Tooltip values
-    let selectedRu = ref<ReportingUnit>();
+    let selectedRu = ref<RaceReportingUnit>();
 
     let statePostal = props.race.state?.postalCode;
 
     async function updateTooltipData(race: Race){
         if(selectedRu){
-            selectedRu.value = race.reportingUnits.find(x => x.reportingunitName == selectedRu.value?.reportingunitName);
+            selectedRu.value = race.reportingUnits[selectedRu.value?.reportingunitName || ''];
         }
     }
 
@@ -48,35 +46,35 @@ import LoadingSection from "./LoadingSection.vue";
             }
             else {
                 if(NEW_ENGLAND_STATES.includes(statePostal)){
-                    reportingUnit = props.race.reportingUnits.find(ru => ru.townFIPSCode == county.properties.COUSUBFP);
+                    reportingUnit = props.race.reportingUnits[county.properties.COUSUBFP];
                 }
                 else {
-                    reportingUnit = props.race.reportingUnits.find(ru => ru.fipsCode == county.id || ru.reportingunitName == county.properties.name);
+                    reportingUnit = props.race.reportingUnits[county.id];
                 }
             }
 
             if(!reportingUnit) return INVALID_FILL;
 
-            let candidates = reportingUnit.candidates.sort((a,b) => (a.voteCount || 0) > (b.voteCount || 0) ? -1 : 1);
+            let candidates = keys(reportingUnit.results).sort((a,b) => (reportingUnit.results[a] || 0) > (reportingUnit.results[b] || 0) ? -1 : 1);
 
-            let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0].polID);
+            let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0]);
 
             if(!raceCand) return INVALID_FILL;
 
-            let defaultColors: Color[] = ["#ffffff","#aaaaaa","#999999","#777777"]
+            let defaultColors: string[] = ["#ffffff","#aaaaaa","#999999","#777777"]
 
-            let colors = raceCand.partyData?.colors;
+            let colors = raceCand.party.colors;
             if(!colors || colors.length < 4) colors = defaultColors;
 
 
 
             if (candidates.length == 1) return colors[0];
 
-            let voteTotal = reportingUnit.parameters.vote?.total || 0;
+            let voteTotal = reportingUnit.totalVotes || 0;
             let vt = (voteTotal == 0 ? 1 : voteTotal);
 
-            let cand1Vote = candidates[0].voteCount || 0;
-            let cand2Vote = candidates[1] ? (candidates[1].voteCount || 0) : 0;
+            let cand1Vote = reportingUnit.results[candidates[0]] || 0;
+            let cand2Vote = reportingUnit.results[candidates[1]] || 0;
 
             let difference = ((cand1Vote-cand2Vote)/vt)*100;
 
@@ -90,7 +88,7 @@ import LoadingSection from "./LoadingSection.vue";
 
             
 
-            let expectedVoteTotal = reportingUnit.parameters.vote?.expected.actual;
+            let expectedVoteTotal = reportingUnit.expectedVotes;
 
             if(voteTotal == 0){
                 return INVALID_FILL;
@@ -124,7 +122,7 @@ import LoadingSection from "./LoadingSection.vue";
             return [topojson.feature(data, data.objects.cds), null];
         }
 
-        else if(officeType == OfficeType.President && race.stateID == '0'){
+        else if(officeType == OfficeType.President && race.state.stateID == '0'){
             statePostal = 'US';
 
             data = await d3.json(`/maps/${statePostal}/counties.json`);
@@ -146,8 +144,8 @@ import LoadingSection from "./LoadingSection.vue";
             delete data['bbox'];
 
             let countyIds: string[] = []
-            race.reportingUnits.forEach(x => {
-                countyIds.push(x.fipsCode || '');
+            keys(race.reportingUnits).forEach(x => {
+                countyIds.push(race.reportingUnits[x].fipsCode || '');
             });
 
             if(!NEW_ENGLAND_STATES.includes(race.state?.postalCode || '')){
@@ -155,7 +153,7 @@ import LoadingSection from "./LoadingSection.vue";
                 
 
                 obj.geometries = obj.geometries.filter((x: any) => {
-                    return countyIds.includes(String(x.id)) || (props.race.reportingUnits.find(ru => ru.reportingunitName == x.properties.name));
+                    return countyIds.includes(String(x.id)) || (Object.values(props.race.reportingUnits).find(ru => ru.reportingunitName == x.properties.name));
                 });
             }
 
@@ -222,14 +220,14 @@ import LoadingSection from "./LoadingSection.vue";
 
             parties.push(candidate.party);
 
-            for(let i = 0; i < (candidate.partyData?.colors.length || 0); i++){
+            for(let i = 0; i < (candidate.party.colors.length || 0); i++){
                 let pattern = defs.append("pattern")
                     .attr('id',`pattern-${candidate.party}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
 
-                pattern.append("rect").attr("width","8").attr("height","8").attr("fill", (candidate.partyData?.colors[i] as string)+'70');
+                pattern.append("rect").attr("width","8").attr("height","8").attr("fill", (candidate.party.colors[i] as string)+'70');
                 pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
                     .attr("stroke-width", "3")
-                    .attr("stroke", (candidate.partyData?.colors[i] as string)+'aa');
+                    .attr("stroke", (candidate.party.colors[i] as string)+'aa');
             }
 
             
@@ -243,7 +241,7 @@ import LoadingSection from "./LoadingSection.vue";
 
         loading.value = false;
 
-        const mouseover = function(event: any, d: any){
+        const mouseover = function(this: any, event: any, d: any){
 
             let t: HTMLDivElement = tooltip.value as HTMLDivElement;
 
@@ -256,10 +254,10 @@ import LoadingSection from "./LoadingSection.vue";
             else {
 
                 if(NEW_ENGLAND_STATES.includes(statePostal)){
-                    reportingUnit = props.race.reportingUnits.find(ru => ru.townFIPSCode == d.properties.COUSUBFP);
+                    reportingUnit = props.race.reportingUnits[d.properties.COUSUBFP];
                 }
                 else {
-                    reportingUnit = props.race.reportingUnits.find(ru => ru.fipsCode == d.id || ru.reportingunitName == d.properties.name);
+                    reportingUnit = props.race.reportingUnits[d.id];
                 }
 
             }
@@ -275,7 +273,7 @@ import LoadingSection from "./LoadingSection.vue";
             d3.select(this as any).attr('stroke', 'white').attr("stroke-width", 1.5).raise();
 
             if(selectedRu && IS_NATIONAL_MAP()){
-                d3.select(this as any).attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value.stateName?.toLowerCase()}/president'`);
+                d3.select(this as any).attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value.state.name.toLowerCase()}/president'`);
             }
         }
 
@@ -312,11 +310,12 @@ import LoadingSection from "./LoadingSection.vue";
 
         }
 
-        const mouseleave = function(d: any){
-            tooltip.value.style.filter = 'opacity(0)';
+        const mouseleave = function(this: any, d: any){
 
-            
-            d3.select(this).attr('stroke', '#0C1325').attr("stroke-width", 0.75).lower();
+            if(tooltip.value){
+                tooltip.value.style.filter = 'opacity(0)';
+                d3.select(this).attr('stroke', '#0C1325').attr("stroke-width", 0.75).lower();
+            }
         }
 
         svg
@@ -328,21 +327,23 @@ import LoadingSection from "./LoadingSection.vue";
 
     });
 
-const tooltipData = () => {
+const tooltipData = computed(() => {
 
-    let candidates = selectedRu.value?.candidates as ReportingCandidate[];
+    let candidates = props.race.candidates;
     let highestProb = 0;
     let highestCand = null;
 
     for(let cand of candidates){
-        if(cand.probability > highestProb){
-            highestProb = cand.probability;
+        let probability = props.race.results[cand.polID].probability;
+
+        if(probability > highestProb){
+            highestProb = probability;
             highestCand = cand;
         }
     }
     if(highestCand) return highestCand;
 
-};
+});
 
 </script>
 
@@ -352,11 +353,11 @@ const tooltipData = () => {
 
         <div class="overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
 
-            <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="(selectedRu.statePostal || '' in NEW_ENGLAND_STATES ? selectedRu.townFIPSCode : selectedRu?.fipsCode)">
+            <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="selectedRu?.fipsCode">
 
-                <p class="text-white font-header mb-2">{{ ru.reportingunitName }} <span v-if="race.stateID == '0' && tooltipData()" class="text-white ml-1 p-1 inline-block text-sm rounded-sm">85.5%</span></p>
+                <p class="text-white font-header mb-2">{{ ru.reportingunitName }} <span v-if="race.state.stateID == '0' && tooltipData" class="text-white ml-1 p-1 inline-block text-sm rounded-sm">85.5%</span></p>
                 
-                <ResultTable :key="ruIdx" :unit="ru" :max="5" :reporting="true"/>
+                <ResultTable :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>
 
             </div>
         </div>

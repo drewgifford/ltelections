@@ -1,7 +1,5 @@
 import { Raw } from "vue";
-import Race, { OfficeType } from "../types/Race";
-import ReportingUnit, { ReportingCandidate } from "../types/ReportingUnit";
-import Color from "../types/Color";
+import { Race, RaceReportingUnit } from "../types/ViewModel";
 
 export function notZero(n: number | undefined) {
 
@@ -24,7 +22,7 @@ export function nth(d: number) {
   }
 };
 
-export function sortedCandidates(unit: Raw<Race> | Raw<ReportingUnit>){
+export function sortedCandidates(unit: Race | RaceReportingUnit){
 
   // Get candidates, place top two automatically at the top and sort the remainder.
   if(unit.parameters.vote && unit.parameters.vote.total > 0){
@@ -221,13 +219,25 @@ export function getRaceURL(year: string, race: Race) {
   return `/results/${year}/${race.state?.name?.toLowerCase().replace(' ','-')}/${r}${s}`;
 }
 
-const createObjectMap = <T>(objects: T[], key: string) => {
+export const hasKey = (object: {[key: string]: any}, key: string) => {
+  if (!Object.keys(object).includes(key)) return null;
+  else return object[key];
+}
 
-    let k: {[key: string]: T} = {};
-    for(let object of objects){
-      k[(object as any)[key] as string] = object;
-    }
+export const keys = (object: {[key: string]: any}) => {
+  return Object.keys(object);
+}
 
-    return k;
+export const setKeyDefault = <T>(object: {[key: string]: T}, key: string, value: T) => {
+  if(!hasKey(object, key)){
+      object[key] = value;
+  }
+}
 
+export const keyBy = <T>(objects: any[], key: T) =>{
+  let obj: any = {};
+  for(let o of objects) {
+      obj[o[key]] = o;
+  }
+  return obj;
 }

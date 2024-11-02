@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type Race from '~/server/types/Race';
-import { OfficeType } from '~/server/types/Race';
+import OfficeType from '~/server/types/enum/OfficeType';
+import type { Race } from '~/server/types/ViewModel';
 import { getOfficeURL, getRaceURL, nth } from '~/server/utils/Util';
 
 const props = defineProps<{
@@ -11,12 +11,6 @@ const props = defineProps<{
 const hasMap = () => {
     if(props.map == false) return false;
     return true;
-}
-
-if(!props.map) props.map = true;
-
-const getWinner = () => {
-    return props.race.candidates.find(cand => cand.winner == 'X');
 }
 
 
@@ -37,7 +31,7 @@ const getText = () => {
 
     if(status == "Called"){
 
-        let winner = candidates.find(cand => cand.winner);
+        let winner = candidates.find(cand => race.winners.find(x => x.polID == cand.polID));
 
         if(!winner) return "An error has occurred.";
 
@@ -60,9 +54,9 @@ const getText = () => {
 
 const route = useRoute();
 
-
-
-let winner = getWinner();
+const winner = computed(() => {
+    return props.race.candidates.find(cand => props.race.winners.find(x => x.polID == cand.polID));
+});
 
 </script>
 
@@ -78,7 +72,7 @@ let winner = getWinner();
                 <p><a :href="getRaceURL(route.params.date as string, race)" class="py-2 px-4 inline-block my-2 bg-lte-yellow !text-slate-900 rounded-sm text-sm font-header">Detailed Race Info ➤</a></p>
 
                 <div class="p-2 card border-slate-600 border">
-                    <ResultTable :unit="race" :max="5" :reporting="true"/>
+                    <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="5" :reporting="true"/>
                 </div>
 
                 <!-- Napkin math -->

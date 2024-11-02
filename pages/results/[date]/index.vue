@@ -7,7 +7,7 @@ import States from '~/server/utils/States';
 import LoadingSection from '~/components/LoadingSection.vue';
 import { useIntervalFn } from "@vueuse/core";
 import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
-import type {ApiRaceQueried} from "~/server/types/ViewModel";
+import type {RaceQueried} from "~/server/types/ViewModel";
 
     const route = useRoute();
     const router = useRouter();
@@ -40,7 +40,7 @@ import type {ApiRaceQueried} from "~/server/types/ViewModel";
             raceUUIDs: pinnedRaceIds,
             date: route.params.date,
         },
-        transform: (races: {[key: string]: ApiRaceQueried}) => {
+        transform: (races: {[key: string]: RaceQueried}) => {
             return Object.values(races).map(r => {
                 r.pinned = pinnedRaceIds.value.includes(r.uuid);
                 r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
@@ -62,7 +62,7 @@ import type {ApiRaceQueried} from "~/server/types/ViewModel";
     });
 
     // Pin races functionality
-    const togglePin = (race: ApiRaceQueried) => {
+    const togglePin = (race: RaceQueried) => {
 
         if(!races.value) return;
 
@@ -89,7 +89,7 @@ import type {ApiRaceQueried} from "~/server/types/ViewModel";
     let states = States;
 
     const raceView = ref<string | null>(null);
-    const setView = (race: ApiRaceQueried) => {
+    const setView = (race: RaceQueried) => {
         raceView.value = race.uuid;
     }
 
@@ -189,8 +189,7 @@ import type {ApiRaceQueried} from "~/server/types/ViewModel";
                     />
                 </div>
 
-                <!-- Loader for non-pinned races -->
-                 <LoadingSection :absolute="false" v-else/>
+
 
                 
 

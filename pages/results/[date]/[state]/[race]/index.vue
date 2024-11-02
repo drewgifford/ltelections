@@ -3,8 +3,7 @@ import { useIntervalFn } from '@vueuse/core';
 import { getOfficeTypeFromOfficeURL } from '~/server/utils/Util';
 import { nth } from '~/server/utils/Util';
 import OfficeType from "~/server/types/enum/OfficeType";
-import {State} from "vscode-languageclient";
-import type {ApiRace} from "~/server/types/ApiTypes";
+import type { Race } from '~/server/types/ViewModel';
 
 
     const route = useRoute();
@@ -24,7 +23,7 @@ import type {ApiRace} from "~/server/types/ApiTypes";
             officeID: officeID,
             date: route.params.date,
         },
-        transform: (races: {[key: string]: ApiRace}) => {
+        transform: (races: {[key: string]: Race}) => {
             return Object.values(races).filter(r => {
 
                 let s = (route.params.race as string || '').split("-");
@@ -95,7 +94,7 @@ import type {ApiRace} from "~/server/types/ApiTypes";
         await refreshRaces();
     }, 10000);
 
-    const getWinners = (race: ApiRace) => {
+    const getWinners = (race: Race) => {
         return race.winners;
     }
 
@@ -122,12 +121,12 @@ import type {ApiRace} from "~/server/types/ApiTypes";
 
                 <div class="card">
 
-                    <CandidateBattle :race="race" v-if="!getWinner(race)"/>
-                    <ProjectedWinner :race="race" v-if="getWinner(race)"/>
+                    <CandidateBattle :race="race" v-if="getWinners(race).length == 0"/>
+                    <ProjectedWinner :race="race" v-if="getWinners(race).length > 0"/>
 
                     <div class="px-4">
                         <div class="p-2 my-4 card border-slate-600 border">
-                            <ResultTable :unit="race" :max="5" :reporting="true"/>
+                            <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="5" :reporting="true"/>
                         </div>
                         <div class="px-4">
                             <NapkinMath :race="race"/>
@@ -151,7 +150,7 @@ import type {ApiRace} from "~/server/types/ApiTypes";
                 <div class="card py-2 px-4  gap-4 flex items-stretch" v-for="(candidate, index) of race.candidates.filter(x => x.description != null)">
 
                     <div class="flex">
-                        <div class="w-2 h-full rounded-sm" :style="{backgroundColor: candidate.partyData?.colors[0]}"></div>
+                        <div class="w-2 h-full rounded-sm" :style="{backgroundColor: candidate.party.colors[0]}"></div>
                     </div>
     
                     <div class="flex items-center">
@@ -166,7 +165,7 @@ import type {ApiRace} from "~/server/types/ApiTypes";
 
                     <div class="flex-1 flex flex-col justify-center">
                         <h2 class="text-xl">{{ candidate.first }} {{ candidate.last }}</h2>
-                        <p><span class="text-sm py-1 px-2 rounded-md inline-block font-header" :style="{backgroundColor: candidate.partyData?.colors[0]+'80'}">{{ candidate.partyData?.demonym }}</span></p>
+                        <p><span class="text-sm py-1 px-2 rounded-md inline-block font-header" :style="{backgroundColor: candidate.party.colors[0]+'80'}">{{ candidate.party.partyID }}</span></p>
                         <p class="text-sm mt-2">{{candidate.description}}</p>
                     </div>
                 </div>

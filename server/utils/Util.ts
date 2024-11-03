@@ -1,4 +1,3 @@
-import { Raw } from "vue";
 import {Candidate, HasResults, Race, RaceReportingUnit} from "../types/ViewModel";
 import OfficeType from "~/server/types/enum/OfficeType";
 import moment from "moment-timezone";
@@ -197,6 +196,10 @@ export function getOfficeTypeFromOfficeURL(officeUrl: string){
 export function getRaceURL(year: string, race: Race) {
   let r = getOfficeURL(race);
 
+  if(race.officeID == OfficeType.President && race.seatNum > 0){
+    r +='-'+race.seatNum;
+  }
+
   let s = "";
   if(race.raceType?.includes("Special")){
       s = "-special";
@@ -340,4 +343,38 @@ export const getCallText = (race: Race) => {
     calls: call.calls,
   }
 
+}
+
+export function redisReplace(value: string) {
+  const replacements: {[key: string]: string} = {
+    ',': '\\,',
+    '<': '\\<',
+    '>': '\\>',
+    '{': '\\{',
+    '}': '\\}',
+    '[': '\\[',
+    ']': '\\]',
+    '"': '\\"',
+    "'": "\\'",
+    ':': '\\:',
+    ';': '\\;',
+    '!': '\\!',
+    '@': '\\@',
+    '#': '\\#',
+    '$': '\\$',
+    '%': '\\%',
+    '^': '\\^',
+    '&': '\\&',
+    '*': '\\*',
+    '(': '\\(',
+    ')': '\\)',
+    '-': '\\-',
+    '+': '\\+',
+    '=': '\\=',
+    '~': '\\~',
+  }
+
+  return value.replace(/,|\.|<|>|\{|\}|\[|\]|"|'|:|;|!|@|#|\$|%|\^|&|\*|\(|\)|-|\+|=|~/g, function (x: string) {
+    return replacements[x]
+  })
 }

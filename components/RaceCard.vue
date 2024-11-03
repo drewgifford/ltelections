@@ -70,7 +70,7 @@ const winner = computed(() => {
 
             <div class="p-2" :class="hasMap() ? ['w-1/2'] : ['w-full']">
                 <h1 class="text-xl">{{ getText() }}</h1>
-                <p><a :href="getRaceURL(route.params.date as string, race)" class="py-2 px-4 inline-block my-2 bg-lte-yellow !text-slate-900 rounded-sm text-sm font-header">Detailed Race Info ➤</a></p>
+                <p><a :href="getRaceURL(route.params.date as string, race)" class="py-2 px-4 inline-block my-2 bg-lte-yellow hover:brightness-75 !text-slate-900 rounded-sm text-sm font-header">Detailed Race Info ➤</a></p>
 
                 <div class="p-2 card border-slate-600 border">
                     <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="5" :reporting="true"/>

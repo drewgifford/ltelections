@@ -44,6 +44,7 @@ export type ApiRace = {
     call: ApiCallData,
     lastWinningParty: string,
     keyRace: boolean,
+    summary: string,
 
     seatNum: number,
     designation: string,

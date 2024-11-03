@@ -66,8 +66,6 @@ const keyToVictory = computed(() => {
 
     if(!otherCand) return null;
 
-    console.log(cand.polID, props.race.results);
-
     let candVote = props.race.results[cand.polID].vote;
     let otherVote = props.race.results[otherCand.polID].vote;
 
@@ -107,22 +105,22 @@ const keyToVictory = computed(() => {
         <div class="flex-1">
 
             <div v-if="(keyToVictory.votesNeeded > 0 && keyToVictory.votesNeeded <= keyToVictory.votesRemaining)">
-                <p class="my-1"><b class="font-header">Key To Victory:</b> To win, <span class="text-white py-1 px-2 rounded-sm" :style="{backgroundColor: keyToVictory.color+'80'}">{{ keyToVictory.name }}</span> needs:</p>
+                <p class="my-1 text-center md:text-left"><b class="font-header">Key To Victory:</b> To win, <span class="text-white py-1 px-2 rounded-sm" :style="{backgroundColor: keyToVictory.color+'80'}">{{ keyToVictory.name }}</span> needs:</p>
                 
-                <div class="flex justify-start">
+                <div class="md:flex justify-start">
 
-                    <div>
+                    <div class="md:block hidden">
                         <h1 class="text-2xl">
                             {{ keyToVictory.percent }}
                         </h1>
                         <p class="text-sm">of the remaining vote</p>
                     </div>
 
-                    <div class="flex items-center px-10">
+                    <div class="md:flex hidden items-center px-10">
                         <h3 class="mx-auto text-xl">OR</h3>
                     </div>
 
-                    <div>
+                    <div class="text-center md:text-center">
                         <h1 class="text-2xl">
                             {{ keyToVictory.votesNeeded.toLocaleString() }}
                         </h1>

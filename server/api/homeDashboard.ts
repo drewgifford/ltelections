@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     races: {
-      presidential: await transformRace(redis, presRace),
+      presidential: await transformRace(redis, presRace, true),
       senate: await transformRaces(redis, redisToArray(senateRaces.documents || [])),
       house: await transformRaces(redis, redisToArray(houseRaces.documents || [])),
     }

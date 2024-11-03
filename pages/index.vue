@@ -90,7 +90,8 @@ import { getMostLikelyCandidate } from '~/server/utils/Util';
             </div>
             
             <div class="w-full xl:w-1/2">
-                <ZoomableMap :race="(presRace)" minHeight="500px"/>
+                <!--<ZoomableMap :race="(presRace)" minHeight="500px"/>-->
+                <PresidentialMap :race="(presRace)" minHeight="500px"/>
             </div>
 
         </div>

@@ -20,6 +20,20 @@ const getVotes = (candidate: Candidate) => {
   return props.race.results[candidate.polID].vote;
 }
 
+const getElectoralVotes = (candidate: any) => {
+
+  let sum = 0;
+  for(let r of Object.values(props.race.reportingUnits) as any){
+
+    if(!r.call) continue;
+    if(r.call.winner && r.call.winner == candidate.polID){
+      sum += r.electTotal;
+    }
+  }
+  return sum;
+
+}
+
 const tt = computed(() => {
 
   let topTwo = getTopTwoCandidates(props.race) as Candidate[];
@@ -74,7 +88,7 @@ const tt = computed(() => {
           <div class="py-2 self-center">
               <p class="text-slate-200">{{ tt.topTwo[0].fullName }}</p>
 
-              <h1 v-if="isPresidentialOverview" class="text-4xl">{{tt.topTwo[0].electWon || 0}}</h1>
+              <h1 v-if="isPresidentialOverview" class="text-4xl">{{ getElectoralVotes(tt.topTwo[0])}}</h1>
               <h1 :class="isPresidentialOverview ? ['text-xl'] : ['text-3xl']">{{ (((getVotes(tt.topTwo[0]))/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2)}}%</h1>
               <p class="text-md text-slate-200/75">{{ (getVotes(tt.topTwo[0])).toLocaleString() }}</p>
             </div>
@@ -95,8 +109,8 @@ const tt = computed(() => {
           <div class="py-2 self-center">
               <p class="text-slate-200">{{ tt.topTwo[1].fullName }}</p>
 
-              <h1 v-if="isPresidentialOverview" class="text-4xl">{{tt.topTwo[1].electWon || 0}}</h1>
-              <h1 :class="isPresidentialOverview ? ['text-xl'] : ['text-3xl']">{{((getVotes(tt.topTwo[0])/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2)}}%</h1>
+              <h1 v-if="isPresidentialOverview" class="text-4xl">{{ getElectoralVotes(tt.topTwo[1]) }}</h1>
+              <h1 :class="isPresidentialOverview ? ['text-xl'] : ['text-3xl']">{{((getVotes(tt.topTwo[1])/(voteTotal > 0 ? voteTotal : 1))*100).toFixed(2)}}%</h1>
 
 
 

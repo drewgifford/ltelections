@@ -1,6 +1,6 @@
 import {RedisClientType} from "redis";
 import OfficeType from "../types/enum/OfficeType";
-import {redisToArray} from "~/server/utils/Util";
+import {redisReplace, redisToArray} from "~/server/utils/Util";
 import {transformRaces} from "~/server/types/ViewModel";
 import {RedisUtil} from "~/server/plugins/RedisConnection";
 
@@ -24,7 +24,6 @@ export default defineEventHandler(async (event) => {
   if(!redis) return [];
 
   const query: BodyRes = getQuery(event);
-  console.log(query);
 
   let queries = [`@type:{races}`];
 
@@ -32,11 +31,9 @@ export default defineEventHandler(async (event) => {
 
 
 
-  if(query.statePostal && query.statePostal != '*') queries.push(`@postalCode:{${query.statePostal}}`);
-  if(query.officeID && query.officeID != OfficeType.Any) queries.push(`@officeID:{${query.officeID}}`);
-  if(query.stateName) queries.push(`@stateName:(${query.stateName})`);
-
-  console.log(queries);
+  if(query.statePostal && query.statePostal != '*') queries.push(`@postalCode:{${redisReplace(query.statePostal)}}`);
+  if(query.officeID && query.officeID != OfficeType.Any) queries.push(`@officeID:{${redisReplace(query.officeID)}}`);
+  if(query.stateName) queries.push(`@stateName:(${redisReplace(query.stateName)})`);
 
   let results = await redis.ft.search('races', `'${queries.join(', ')}`, {
     LIMIT: {from: 0, size: 100}
@@ -45,10 +42,6 @@ export default defineEventHandler(async (event) => {
   let resultDocuments = results.documents;
 
   let array = redisToArray(resultDocuments || []);
-
-  //console.log(array.find(x => x.state.postalCode == 'ME' && x.officeID == OfficeType.Senate).uuid);
-
-  //console.log(query);
 
   return await transformRaces(redis, array);
   

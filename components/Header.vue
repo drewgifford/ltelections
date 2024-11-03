@@ -5,7 +5,6 @@ const { data: data } = (await useFetch("/api/raceActive"));
 const mobileOpen = ref(false);
 
 const toggle = () => {
-  console.log("toggled");
   mobileOpen.value = !mobileOpen.value;
 }
 
@@ -45,7 +44,7 @@ const toggle = () => {
                 <NuxtLink to="https://discord.gg/lte" target="_blank" class="flex items-center"> &nbsp;Discord</NuxtLink>
             </li>
             <li>
-                <NuxtLink to="https://buymeacoffee.com/ltelections" target="_blank" class="flex items-center py-1 px-2 bg-lte-blue/25 hover:bg-lte-blue/50 rounded-sm">Donate</NuxtLink>
+                <NuxtLink to="https://buymeacoffee.com/ltelections" target="_blank" class="flex items-center py-1 px-2 bg-lte-yellow hover:brightness-75 rounded-sm !text-slate-950 font-header">Donate</NuxtLink>
             </li>
         </ul>
       </div>

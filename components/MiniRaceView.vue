@@ -54,7 +54,7 @@ const props = defineProps<{
 
         
 
-        <div class="flex w-full justify-between items-start">
+        <div class="md:flex w-full justify-between items-start">
             <div class="flex-1">
                 <h4 class="text-lg">
                   <span class="py-1 px-2 text-md mr-1 border-2 border-slate-200/25 rounded-sn">{{ race.title.location }}</span>
@@ -72,7 +72,7 @@ const props = defineProps<{
 
             <div class="flex gap-2">
 
-              <div class="w-80">
+              <div class="w-full md:w-80">
 
                 <ResultTable :race="race" :unit="getTopReportingUnit(race)" :max="2" :reporting="false"/>
 

@@ -1,6 +1,13 @@
-import {ApiCandidate, ApiParty, ApiRace, ApiReportingUnit, ApiState} from "~/server/types/ApiTypes";
+import {
+    ApiCandidate,
+    ApiParty,
+    ApiRace,
+    ApiRaceReportingUnit,
+    ApiReportingUnit,
+    ApiState
+} from "~/server/types/ApiTypes";
 import {RedisClientType} from "redis";
-import {keyBy, keys, redisToArray} from "../utils/Util";
+import {keyBy, keys, redisReplace, redisToArray} from "../utils/Util";
 import OfficeType from "~/server/types/enum/OfficeType";
 
 export type PollingAverage = {
@@ -39,6 +46,9 @@ export type Candidate = {
     description: string,
     electWon: number,
 }
+
+export type PresidentialReportingUnit = RaceReportingUnit & Race;
+
 export async function transformCandidate(redis: RedisClientType, apiCandidate: ApiCandidate){
     return (await transformCandidates(redis, [apiCandidate]))[0];
 }
@@ -93,6 +103,7 @@ export type Race = {
     lastWinningParty: string,
     keyRace: boolean,
     designation: string,
+    summary: string,
 
 
     seatNum: number,
@@ -115,10 +126,10 @@ export type Race = {
 
     reportingUnits: {[reportingunitID: string]: RaceReportingUnit }
 }
-export async function transformRace(redis: RedisClientType, apiRace: ApiRace){
-    return (await transformRaces(redis, [apiRace]))[0];
+export async function transformRace(redis: RedisClientType, apiRace: ApiRace, skipRus?: boolean){
+    return (await transformRaces(redis, [apiRace], skipRus || false))[0];
 }
-export async function transformRaces(redis: RedisClientType, apiRaces: ApiRace[]) {
+export async function transformRaces(redis: RedisClientType, apiRaces: ApiRace[], skipRus?: boolean) {
 
     // Replace candidates, incumbents, winners with Candidates from Redis
     let polIDs = [...new Set(apiRaces.reduce((acc, race) => {
@@ -127,20 +138,34 @@ export async function transformRaces(redis: RedisClientType, apiRaces: ApiRace[]
         return acc;
     }, [] as string[]))];
 
-    let reportingUnitIDs = [...new Set(apiRaces.reduce((acc, race) => {
-        acc = [...acc, ...keys(race.reportingUnits)];
-        return acc;
-    }, [] as string[]))];
+    let reportingUnits;
+
 
 
     let apiCandidates = (
         await Promise.all(polIDs.map(async (x) => await redis.json.get(`candidates.${x}`)))
     ) as ApiCandidate[];
 
-    let reportingUnits = keyBy(
-        await Promise.all(reportingUnitIDs.map(async (x) => await redis.json.get(`reportingUnits.${x}`))),
-        'reportingunitID'
-    );
+
+    if(!skipRus) {
+        let reportingUnitIDs = [...new Set(apiRaces.reduce((acc, race) => {
+            acc = [...acc, ...keys(race.reportingUnits)];
+            return acc;
+        }, [] as string[]))];
+
+        reportingUnits = keyBy(
+            await Promise.all(reportingUnitIDs.map(async (x) => await redis.json.get(`reportingUnits.${x}`))),
+            'reportingunitID'
+        );
+    } else {
+        reportingUnits = apiRaces.reduce((acc, race) => {
+
+            for(let key of keys(race.reportingUnits)){
+                acc[key] = race.reportingUnits[key];
+            }
+            return acc;
+        }, {} as {[key: string]: ApiRaceReportingUnit})
+    }
 
 
 

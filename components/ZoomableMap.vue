@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-  import { keys } from "~/server/utils/Util";
+import {getBlendedColor, keys} from "~/server/utils/Util";
   import * as d3 from "d3";
   import * as topojson from "topojson-client";
   import LoadingSection from "./LoadingSection.vue";
@@ -85,9 +85,7 @@
 
             let candidates = keys(reportingUnit.results).sort((a,b) => (reportingUnit.results[a].vote || 0) > (reportingUnit.results[b].vote || 0) ? -1 : 1);
 
-            console.log("candidates:", candidates);
             let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0]);
-            console.log(reportingUnit.reportingunitName, raceCand);
 
             if(!raceCand) return INVALID_FILL;
 
@@ -241,7 +239,11 @@
         let defs = d3.select(elem.value).append("defs");
         var svg = d3.select(elem.value).select("#foreground").selectAll('path').data(features).join('path').attr('d', geoGenerator).attr("stroke","#0C1325").attr("stroke-width", 0.75);
 
-        
+        // STATE LABELS FOR PRES
+
+
+
+
 
         let parties: any[] = [];
         
@@ -251,13 +253,17 @@
             parties.push(candidate.party);
 
             for(let i = 0; i < (candidate.party.colors.length || 0); i++){
-                let pattern = defs.append("pattern")
-                    .attr('id',`pattern-${candidate.party.partyID}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
 
-                pattern.append("rect").attr("width","8").attr("height","8").attr("fill", (candidate.party.colors[i] as string)+'70');
-                pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
-                    .attr("stroke-width", "3")
-                    .attr("stroke", (candidate.party.colors[i] as string)+'aa');
+              let color1 = getBlendedColor(NA_FILL, candidate.party.colors[i], 0.75);
+              let color2 = getBlendedColor(NA_FILL, candidate.party.colors[i], 0.5);
+
+              let pattern = defs.append("pattern")
+                  .attr('id',`pattern-${candidate.party.partyID}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
+
+              pattern.append("rect").attr("width","8").attr("height","8").attr("fill", color1);
+              pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
+                  .attr("stroke-width", "3")
+                  .attr("stroke", color2);
             }
 
             
@@ -316,9 +322,19 @@
             let xOffset = 20;
             let yOffset = 0;
 
-            if(x + svgBounds.x + tooltipBounds.width + 20 > window.innerWidth){
+            let rightCheck = x + svgBounds.x + tooltipBounds.width + 20;
+            let leftCheck = x + svgBounds.x - tooltipBounds.width - 20
+
+            if(leftCheck < 0 && rightCheck > window.innerWidth){
+              xOffset = -tooltipBounds.width/2;
+            }
+            else if(rightCheck > window.innerWidth){
                 // Clip to left side instead
                 xOffset = -20 - tooltipBounds.width;
+            }
+            else if(leftCheck < 0){
+              // Clip to left side instead
+              xOffset = 20;
             }
 
             if(y + svgBounds.y + tooltipBounds.height + 40 > window.innerHeight){
@@ -386,7 +402,7 @@ const getTopCandidate = (ru: any) => {
               <div v-if="IS_NATIONAL_MAP()">
                 <div class="flex">
                   <div class="flex-1">
-                    <p class="text-white text-left font-header mb-2">{{ ru.state.name }}</p>
+                    <p class="text-white text-left font-header mb-2">{{ ru.state.name }} | {{ ru.electTotal }} EVs</p>
                   </div>
                 </div>
                 <ResultTable  :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>

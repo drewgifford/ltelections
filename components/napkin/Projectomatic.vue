@@ -14,7 +14,6 @@ const LOW_QUALITY_NEEDLE_RACES = ["AK", "VT", "CT", "ME", "RI", "NH", "MA"];
 const projectomatic = computed(() => {
 
     let results = props.race.results;
-    console.log(results);
     let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(results[a.polID].probability) > Number(results[b.polID].probability) ? -1 : 1);
 
     

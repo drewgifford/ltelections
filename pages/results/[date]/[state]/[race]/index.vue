@@ -13,6 +13,7 @@ import type { Race } from '~/server/types/ViewModel';
     const stateName = (route.params.state as string || '').replace('-',' ').toLowerCase();
     const raceParam = route.params.race as string;
     const officeID = getOfficeTypeFromOfficeURL(raceParam);
+
     const idTypes = [OfficeType.House, OfficeType.BallotMeasure]
 
     
@@ -30,6 +31,7 @@ import type { Race } from '~/server/types/ViewModel';
                 let last = s[s.length-1];
                 let lastIdx = (idTypes.includes(officeID as OfficeType) ? 2 : 1)
 
+
                 if(s.length > lastIdx){
                     if(last == "special" && !r.raceType?.includes("Special")){
                         return false;
@@ -40,13 +42,18 @@ import type { Race } from '~/server/types/ViewModel';
                     if(last == "special" && r.raceType?.includes("Special")){
                         return true;
                     }
-                    return false;
                 }
 
                 
 
-                if(officeID == OfficeType.House){
-                    return (r.seatNum == Number(raceParam.split("-")[1]));
+                if(officeID == OfficeType.House || officeID == OfficeType.President){
+                    let sn = Number(raceParam.split("-")[1]);
+                    if(sn > 0) {
+                      return (r.seatNum == Number(raceParam.split("-")[1]));
+                    }
+                    if(r.seatNum <= 0) return true;
+                    return false;
+
                 }
                 else if (officeID == OfficeType.BallotMeasure){
                     r.designation = r.designation.replace("_"," ");
@@ -78,7 +85,14 @@ import type { Race } from '~/server/types/ViewModel';
         if(!races.value) return "";
 
         if(officeID == OfficeType.Senate) raceLabel = `Senate`;
-        else if(officeID == OfficeType.President) raceLabel = `Presidential`;
+        else if(officeID == OfficeType.President) {
+          raceLabel = `Presidential`
+
+          if(races.value[0].seatNum > 0){
+            raceLabel = `CD Presidential`;
+            stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
+          }
+        }
         else if(officeID == OfficeType.House) {
             raceLabel = `District`;
             stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
@@ -173,16 +187,9 @@ import type { Race } from '~/server/types/ViewModel';
                     <div class="flex-1 flex flex-col justify-center">
                         <h2 class="text-xl">{{ candidate.first }} {{ candidate.last }}</h2>
                         <p><span class="text-sm py-1 px-2 rounded-md inline-block font-header" :style="{backgroundColor: candidate.party.colors[0]+'80'}">{{ candidate.party.partyID }}</span></p>
-                        <p class="text-sm mt-2">{{candidate.description}}</p>
+                        <p class="text-md mt-2">{{candidate.description}}</p>
                     </div>
                 </div>
-
-            </div>
-
-            <div class="w-full xl:w-1/2">
-
-                
-
 
             </div>
 

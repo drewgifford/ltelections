@@ -17,7 +17,7 @@ const getRaceColor = (race: Race) => {
   let margin = (race.results[race.candidates[0].polID].vote - (race.results[race.candidates[1].polID]).vote)/(race.totalVotes || 1);
   
 
-  margin *= 100;
+  margin *= 50;
 
   if(margin == 0){
     // Use probabilities
@@ -103,7 +103,7 @@ const getDashboardData = (race: Race) => {
     color: getRaceColor(race)+'80',
     partyLabel: partyLabel,
     state: race.state,
-    marginPct: marginPct,
+    marginPct: marginPct/2,
     margin: margin,
     seatNum: race.seatNum || 0
   }
@@ -201,8 +201,8 @@ const props = defineProps<{
         <h1 class="text-2xl">{{ races.filter(x => x.call.status == RaceCallStatus.Called && (x.call.winner?.party.partyID == 'GOP')).length }}</h1>
       </div>
     </div>
-    <div class="grid mt-2 gap-2 grid-flow-row grid-cols-3">
-      <a v-for="(race, index) of raceData.keyRaces" :href="getRaceURL('2024', race.race)" :id="(`senate-${index}`)" class="senate-race relative px-2 py-1 rounded-sm border-2 border-transparent hover:cursor-pointer hover:brightness-150" :style="{backgroundColor: race.color}">
+    <div class="block lg:grid mt-2 gap-2 grid-flow-row grid-cols-3">
+      <a v-for="(race, index) of raceData.keyRaces" :href="getRaceURL('2024', race.race)" :id="(`senate-${index}`)" class="block mb-2 lg:mb-0 lg:grid senate-race relative px-2 py-1 rounded-sm border-2 border-transparent hover:cursor-pointer hover:brightness-150" :style="{backgroundColor: race.color}">
         <div>
           <p class="text-xs text-white/60">{{ race.state.name }}-{{ race.seatNum }}</p>
           <h1 class="text-sm">{{ race.leadingCand.last }}+{{ (race.marginPct*100).toFixed(2) }}%</h1>

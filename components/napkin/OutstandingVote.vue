@@ -76,16 +76,16 @@ const outstandingVote = computed(() => {
 
 <template>
 
-    <div class="flex gap-4" v-if="(outstandingVote && outstandingVote.length > 0)">
+    <div class="hidden sm:flex gap-4 pb-4" v-if="(outstandingVote && outstandingVote.length > 0)">
 
         <div class="w-2 rounded-sm bg-slate-600"></div>
 
         <div class="flex-1">
             <p class="my-1"><b class="font-header">Outstanding Vote:</b> Key counties currently have outstanding votes.</p>
             
-            <div class="flex gap-6">
+            <div class="sm:grid sm:grid-cols-2 md:flex flex gap-6">
 
-                <div class="w-full mt-2" v-for="(elem, index) of outstandingVote">
+                <div class="w-1/2 md:w-full mt-2" v-for="(elem, index) of outstandingVote">
 
                     <p class="text-md font-header">{{ elem.name }}</p>
                     <p class="text-sm mt-1 inline-block rounded-sm py-1 px-2 text-white" :style="{backgroundColor: elem.leadingParty?.colors[0]+'80'}">{{ elem.leadingParty?.partyID }} +{{ elem.margin.toLocaleString() }}</p>

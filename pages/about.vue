@@ -87,13 +87,19 @@ const teamMembers: TeamMember[] = [
                     <p>The LTE Elections team and Decision Desk consists of professionals with over a decade of experience working in political campaigns and politics, as well as students majoring in political science, statistics, and computer science. Our predictions are based on an analysis of polling data, historical trends, and other factors. Ultimately, however, all predictions are just our opinions.</p>
                 </div>
 
+              <div class="max-w-prose mt-12 mb-12">
+                <h1 class="text-2xl">We Operate for <span class="p-1 bg-lte-blue/50 rounded-sm">Free</span>.</h1>
+                <p>This site is a passion project by some of the members of the LTE Decision Desk, and never plans on operating with any ads or paywall. You can support the continued hosting and development of the site for the future by giving a few dollars. Countless hours have been poured into this site to make one of the most unique and user-friendly election browser on the internet.</p>
+                <p><a href="https://buymeacoffee.com/ltelections" target="_blank" class="hover:brightness-75 py-4 px-8 inline-block my-2 bg-lte-yellow rounded-sm text-xl font-header !text-slate-900">Donate ➤</a></p>
+              </div>
+
                 <div class="max-w-prose mt-12 mb-12">
-                    <h1 class="text-2xl">LTElections Decision Desk</h1>
+                    <h1 class="text-2xl">About the Decision Desk</h1>
                     <p>The Decision Desk is responsible for tweaking the polling model, making predictions, and analyzing and calling races on election night. We try to be fast and accurate, attempting to beat out the AP and other news organizations while still maintaining full confidence in our projections.</p>
                 </div>
 
                 <div class="max-w-prose mt-12 mb-12">
-                    <p><a href="https://discord.gg/lte" target="_blank" style="background-color: #7289da" class="py-4 px-8 inline-block my-2  rounded-sm text-xl font-header">Join Our Discord ➤</a></p>
+                    <p><a href="https://discord.gg/lte" target="_blank" style="background-color: #7289da" class="hover:brightness-75 py-4 px-8 inline-block my-2  rounded-sm text-xl font-header">Join Our Discord ➤</a></p>
                     <p>Join the Let's Talk Elections Discord to discuss American politics, engage in server-wide events, and enjoy live commentary on election nights.</p>
                 
                 </div>

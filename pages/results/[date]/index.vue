@@ -27,10 +27,8 @@ import axios from "axios";
         ogImage: "/og-image.png",
     });
 
-    const races = ref<RaceQueried[]>([]);
-
     // Query races
-    /*const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
+    const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
         query: {
             statePostal: statePostal,
             officeID: officeID,
@@ -38,46 +36,32 @@ import axios from "axios";
             date: route.params.date,
         },
         transform: (races: {[key: string]: RaceQueried}) => {
-            return Object.values(races).map(r => {
-                r.pinned = pinnedRaceIds.value.includes(r.uuid);
-                r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
+            return sortRaces(Object.values(races).map(r => {
+                //r.pinned = pinnedRaceIds.value.includes(r.uuid);
+                //r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
                 return r;
-            });
+            })) as RaceQueried[];
             
         }
-    });*/
+    });
 
 
 
     onMounted(async () => {
       pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
 
-      async function fetchRaces(){
-        console.info("Refreshing data");
-        const response = await axios.get("/api/searchRaces/", {
-          params: {
-            statePostal: statePostal.value,
-            officeID: officeID.value,
-            raceUUIDs: pinnedRaceIds.value,
-            date: route.params.date,
-          }
-        });
-
-        console.log(response.data);
-
-        races.value = sortRaces(response.data as RaceQueried[]) as RaceQueried[];
-      }
-
-      await fetchRaces();
-
       watch(statePostal, async (statePostal) => {
-        await fetchRaces();
+        await refreshRaces();
       });
       watch(officeID, async (officeID) => {
-        await fetchRaces();
+        await refreshRaces();
       });
 
     });
+
+    useIntervalFn(async () => {
+      await refreshRaces();
+    }, 10000);
 
 
 

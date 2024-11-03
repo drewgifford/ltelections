@@ -26,7 +26,10 @@ export default defineNuxtConfig({
       functions: {
         maxDuration: 30
       }
-    }
+    },
+    plugins: [
+        "~/server/plugins/RedisConnection.ts"
+    ]
   },
 
   components: [

@@ -1,16 +1,55 @@
 <script setup lang="ts">
 
+  import { keys } from "~/server/utils/Util";
+  import * as d3 from "d3";
+  import * as topojson from "topojson-client";
+  import LoadingSection from "./LoadingSection.vue";
+  import type { Race, RaceReportingUnit } from "~/server/types/ViewModel";
+  import OfficeType from "~/server/types/enum/OfficeType";
+  import { keyBy } from "~/server/utils/Util";
+
     const props = defineProps<{
         race: Race,
         minHeight: string,
     }>();
 
-    import * as d3 from "d3";
-    import * as topojson from "topojson-client";
-import LoadingSection from "./LoadingSection.vue";
-    import { getBlendedMapColor } from "~/server/utils/Util";
-import type { Race, RaceReportingUnit } from "~/server/types/ViewModel";
-import OfficeType from "~/server/types/enum/OfficeType";
+  const INVALID_FILL = "#1E293B";
+  const NA_FILL = "#141c30";
+  const BG_FILL = "#141c30";
+  const BG_STROKE = "#0C1325";
+
+  const reportingUnitsByFIPS = computed(() => {
+
+    if(props.race.state.stateID == '0'){
+      return keyBy(Object.values(props.race.reportingUnits), 'reportingunitID')
+    }
+    return keyBy(Object.values(props.race.reportingUnits), 'fipsCode')
+  });
+
+    const getReportingUnit = (d: any) => {
+      let reportingUnit;
+
+      if(["AK","DC"].includes(props.race.state?.postalCode as string)){
+        reportingUnit = Object.values(props.race.reportingUnits)[0];
+        reportingUnit.reportingunitName = props.race.state.name;
+      }
+      else if (props.race.state.postalCode == 'US'){
+        reportingUnit = Object.values(props.race.reportingUnits).find(x => x.state.name == d.properties.name);
+      }
+      else {
+
+        if(NEW_ENGLAND_STATES.includes(statePostal)){
+          reportingUnit = reportingUnitsByFIPS.value[d.properties.COUSUBFP];
+        }
+        else {
+          reportingUnit = reportingUnitsByFIPS.value[d.id as string];
+        }
+
+      }
+      return reportingUnit;
+    }
+
+
 
     const elem = useTemplateRef("svg");
     const tooltip = useTemplateRef("tooltip");
@@ -21,9 +60,7 @@ import OfficeType from "~/server/types/enum/OfficeType";
         return props.race.state.stateID == '0' && props.race.officeID == OfficeType.President
     };
 
-    const INVALID_FILL = "#1E293B";
-    const BG_FILL = "#0F172A";
-    const BG_STROKE = "#0C1325";
+
 
     // Tooltip values
     let selectedRu = ref<RaceReportingUnit>();
@@ -31,33 +68,26 @@ import OfficeType from "~/server/types/enum/OfficeType";
     let statePostal = props.race.state?.postalCode;
 
     async function updateTooltipData(race: Race){
-        if(selectedRu){
-            selectedRu.value = race.reportingUnits[selectedRu.value?.reportingunitName || ''];
-        }
+      if(race.state.postalCode == 'US' && selectedRu){
+        selectedRu.value = race.reportingUnits[selectedRu.value?.state.stateID || ''];
+      }
+      else if(selectedRu){
+        selectedRu.value = race.reportingUnits[selectedRu.value?.reportingunitID || ''];
+      }
     }
 
     async function updateMapColors(race: Race, elements: any){
         elements.attr("fill", (county: any) => {
 
-            let reportingUnit;
+            let reportingUnit = getReportingUnit(county);
 
-            if(["AK","DC"].includes(props.race.state?.postalCode as string)){
-                reportingUnit = race.reportingUnits[0];
-            }
-            else {
-                if(NEW_ENGLAND_STATES.includes(statePostal)){
-                    reportingUnit = props.race.reportingUnits[county.properties.COUSUBFP];
-                }
-                else {
-                    reportingUnit = props.race.reportingUnits[county.id];
-                }
-            }
+            if(!reportingUnit) return NA_FILL;
 
-            if(!reportingUnit) return INVALID_FILL;
+            let candidates = keys(reportingUnit.results).sort((a,b) => (reportingUnit.results[a].vote || 0) > (reportingUnit.results[b].vote || 0) ? -1 : 1);
 
-            let candidates = keys(reportingUnit.results).sort((a,b) => (reportingUnit.results[a] || 0) > (reportingUnit.results[b] || 0) ? -1 : 1);
-
+            console.log("candidates:", candidates);
             let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0]);
+            console.log(reportingUnit.reportingunitName, raceCand);
 
             if(!raceCand) return INVALID_FILL;
 
@@ -73,8 +103,8 @@ import OfficeType from "~/server/types/enum/OfficeType";
             let voteTotal = reportingUnit.totalVotes || 0;
             let vt = (voteTotal == 0 ? 1 : voteTotal);
 
-            let cand1Vote = reportingUnit.results[candidates[0]] || 0;
-            let cand2Vote = reportingUnit.results[candidates[1]] || 0;
+            let cand1Vote = reportingUnit.results[candidates[0]].vote;
+            let cand2Vote = reportingUnit.results[candidates[1]].vote;
 
             let difference = ((cand1Vote-cand2Vote)/vt)*100;
 
@@ -100,7 +130,7 @@ import OfficeType from "~/server/types/enum/OfficeType";
             }
 
             // If the candidate hasn't reached over 50% of the expected vote
-            return `url(#pattern-${raceCand.party}-${getDifferenceNumber()})`
+            return `url(#pattern-${raceCand.party.partyID}-${getDifferenceNumber()})`
 
 
         });
@@ -134,7 +164,7 @@ import OfficeType from "~/server/types/enum/OfficeType";
 
         }
 
-        else if(officeType == OfficeType.House || (race.seatNum && officeType == OfficeType.President)){
+        else if(officeType == OfficeType.House || (race.seatNum > 0 && officeType == OfficeType.President)){
             // Return congressional district with only the counties included in the reportingUnits
 
             data = await d3.json(`/maps/${statePostal}/cds-counties.json`);
@@ -222,7 +252,7 @@ import OfficeType from "~/server/types/enum/OfficeType";
 
             for(let i = 0; i < (candidate.party.colors.length || 0); i++){
                 let pattern = defs.append("pattern")
-                    .attr('id',`pattern-${candidate.party}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
+                    .attr('id',`pattern-${candidate.party.partyID}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
 
                 pattern.append("rect").attr("width","8").attr("height","8").attr("fill", (candidate.party.colors[i] as string)+'70');
                 pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
@@ -248,21 +278,12 @@ import OfficeType from "~/server/types/enum/OfficeType";
             // Fill data
             let reportingUnit;
 
-            if(["AK","DC"].includes(props.race.state?.postalCode as string)){
-                reportingUnit = props.race.reportingUnits[0];
-            }
-            else {
+            reportingUnit = getReportingUnit(d);
 
-                if(NEW_ENGLAND_STATES.includes(statePostal)){
-                    reportingUnit = props.race.reportingUnits[d.properties.COUSUBFP];
-                }
-                else {
-                    reportingUnit = props.race.reportingUnits[d.id];
-                }
 
-            }
             
             selectedRu.value = reportingUnit || undefined;
+
             if(selectedRu.value){
                 t.style.filter = 'opacity(1)';
             }
@@ -273,7 +294,7 @@ import OfficeType from "~/server/types/enum/OfficeType";
             d3.select(this as any).attr('stroke', 'white').attr("stroke-width", 1.5).raise();
 
             if(selectedRu && IS_NATIONAL_MAP()){
-                d3.select(this as any).attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value.state.name.toLowerCase()}/president'`);
+                d3.select(this as any).attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state.name.toLowerCase()}/president'`);
             }
         }
 
@@ -345,6 +366,13 @@ const tooltipData = computed(() => {
 
 });
 
+const getTopCandidate = (ru: any) => {
+  let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(ru.results[a.polID].probability) > Number(ru.results[b.polID].probability) ? -1 : 1);
+
+  return topProbabilities[0];
+
+}
+
 </script>
 
 <template>
@@ -353,11 +381,22 @@ const tooltipData = computed(() => {
 
         <div class="overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
 
-            <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="selectedRu?.fipsCode">
+            <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="selectedRu?.reportingunitID">
 
-                <p class="text-white font-header mb-2">{{ ru.reportingunitName }} <span v-if="race.state.stateID == '0' && tooltipData" class="text-white ml-1 p-1 inline-block text-sm rounded-sm">85.5%</span></p>
-                
-                <ResultTable :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>
+              <div v-if="IS_NATIONAL_MAP()">
+                <div class="flex">
+                  <div class="flex-1">
+                    <p class="text-white text-left font-header mb-2">{{ ru.state.name }}</p>
+                  </div>
+                </div>
+                <ResultTable  :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>
+              </div>
+              <div v-else>
+                <p class="text-white font-header mb-2">{{ ru.reportingunitName }}</p>
+
+                <ResultTable v-if="!IS_NATIONAL_MAP()"  :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>
+              </div>
+
 
             </div>
         </div>

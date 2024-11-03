@@ -44,6 +44,7 @@
     "ioredis": "^5.4.1",
     "lowdb": "^7.0.1",
     "mathjs": "^13.2.0",
+    "moment-timezone": "^0.5.46",
     "node-cron": "^3.0.3",
     "nuxt": "^3.13.0",
     "nuxt-socket-io": "^3.0.13",

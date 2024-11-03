@@ -2,6 +2,7 @@
 import OfficeType from '~/server/types/enum/OfficeType';
 import type { Race } from '~/server/types/ViewModel';
 import { getOfficeURL, getRaceURL, nth } from '~/server/utils/Util';
+import RaceCallStatus from "~/server/types/enum/race/RaceCallStatus";
 
 const props = defineProps<{
     race: Race,
@@ -18,7 +19,7 @@ const getText = () => {
 
     let race = props.race;
     let candidates = race.candidates;
-    let status = race.raceCallStatus;
+    let status = race.call.status;
     
 
     let stateLabel = `${race.state?.name}`;
@@ -29,9 +30,9 @@ const getText = () => {
 
 
 
-    if(status == "Called"){
+    if(status == RaceCallStatus.Called){
 
-        let winner = candidates.find(cand => race.winners.find(x => x.polID == cand.polID));
+        let winner = race.call.winner;
 
         if(!winner) return "An error has occurred.";
 
@@ -55,7 +56,7 @@ const getText = () => {
 const route = useRoute();
 
 const winner = computed(() => {
-    return props.race.candidates.find(cand => props.race.winners.find(x => x.polID == cand.polID));
+    return props.race.call.winner;
 });
 
 </script>

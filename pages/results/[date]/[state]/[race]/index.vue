@@ -49,7 +49,14 @@ import type { Race } from '~/server/types/ViewModel';
                     return (r.seatNum == Number(raceParam.split("-")[1]));
                 }
                 else if (officeID == OfficeType.BallotMeasure){
-                    return (r.seatNum == Number(raceParam.split("-")[1]));
+                    r.designation = r.designation.replace("_"," ");
+
+                    if(isNaN(Number(r.designation))){
+                      return (r.designation == raceParam.split("-")[1].replace("_"," "));
+                    } else {
+                      return (Number(r.designation) == Number(raceParam.split("-")[1].replace("_"," ")));
+                    }
+
                 }
                 return true;
             }).splice(0, 1);
@@ -77,7 +84,7 @@ import type { Race } from '~/server/types/ViewModel';
             stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
         }
         else if(officeID == OfficeType.Governor) raceLabel = `Governor`;
-        else if(officeID == OfficeType.BallotMeasure) raceLabel = `${races.value[0].officeName} ${races.value[0].seatNum}`;
+        else if(officeID == OfficeType.BallotMeasure) raceLabel = `${races.value[0].officeName} ${races.value[0].designation}`;
 
         let s = races.value[0].raceType?.includes('Special') ? " Special" : ""
 
@@ -94,8 +101,8 @@ import type { Race } from '~/server/types/ViewModel';
         await refreshRaces();
     }, 10000);
 
-    const getWinners = (race: Race) => {
-        return race.winners;
+    const getWinner = (race: Race) => {
+        return race.call.winner;
     }
 
 
@@ -111,8 +118,8 @@ import type { Race } from '~/server/types/ViewModel';
 
         
 
-        <div class="lg:flex gap-6">
-            <div class="w-full lg:w-1/2 mt-2">
+        <div class="xl:flex gap-6">
+            <div class="w-full xl:w-1/2 mt-2">
 
                 <div class="my-4">
                     <p><a :href="`/results/${route.params.date}/?state=${race.state?.postalCode}&office=any`">&lt; See all races in {{ race.state?.name }}</a></p>
@@ -121,8 +128,8 @@ import type { Race } from '~/server/types/ViewModel';
 
                 <div class="card">
 
-                    <CandidateBattle :race="race" v-if="getWinners(race).length == 0"/>
-                    <ProjectedWinner :race="race" v-if="getWinners(race).length > 0"/>
+                    <CandidateBattle :race="race" v-if="!getWinner(race)"/>
+                    <ProjectedWinner :race="race" v-if="getWinner(race)"/>
 
                     <div class="px-4">
                         <div class="p-2 my-4 card border-slate-600 border">
@@ -136,18 +143,18 @@ import type { Race } from '~/server/types/ViewModel';
                 </div>
             </div>
 
-            <div class="w-full lg:w-1/2 relative">
+            <div class="w-full xl:w-1/2 relative">
                 <ZoomableMap class="sticky top-24" :race="race" minHeight="80vh"/>
             </div>
         </div>
 
-        <div class="lg:flex gap-6 py-12">
+        <div class="xl:flex gap-6 py-12">
 
-            <div class="w-full lg:w-1/2 p-4 card" v-if="(race.candidates.find(x => x.description != null))">
+            <div class="w-full xl:w-1/2 p-4 card" v-if="(race.candidates.find(x => x.description != ''))">
 
                 <h1 class="text-2xl mb-2 ml-4">About the Candidates</h1>
 
-                <div class="card py-2 px-4  gap-4 flex items-stretch" v-for="(candidate, index) of race.candidates.filter(x => x.description != null)">
+                <div class="card py-2 px-4  gap-4 flex items-stretch" v-for="(candidate, index) of race.candidates.filter(x => x.description != '')">
 
                     <div class="flex">
                         <div class="w-2 h-full rounded-sm" :style="{backgroundColor: candidate.party.colors[0]}"></div>
@@ -172,7 +179,7 @@ import type { Race } from '~/server/types/ViewModel';
 
             </div>
 
-            <div class="w-full lg:w-1/2">
+            <div class="w-full xl:w-1/2">
 
                 
 

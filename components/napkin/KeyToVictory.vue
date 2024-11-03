@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type Race from '~/server/types/Race';
-import { OfficeType } from '~/server/types/Race';
-import type { ReportingCandidate } from '~/server/types/ReportingUnit';
-import { getRaceProbabilities, hasProjectOMatic, roundPercentage } from '~/server/utils/RaceProbability';
+import { roundPercentage } from '~/server/utils/RaceProbability';
+import type {Candidate, Race} from "~/server/types/ViewModel";
+import OfficeType from "~/server/types/enum/OfficeType";
 
 const props = defineProps<{
         race: Race
@@ -21,10 +20,14 @@ const keyToVictory = computed(() => {
     if(props.race.candidates.length > 1) {
         cand = props.race.candidates[1];
         otherCand = props.race.candidates[0];
-    };
+    }
 
     
-    let incumbentCand = props.race.candidates.find(x => x.incumbent) || props.race.incumbents[0] || null;
+    let incumbentCand = props.race.incumbents.length > 0 ? props.race.incumbents[0] : null;
+
+    let incumbentCandSameParty = props.race.candidates.find(x => {
+      return x.party.partyID == incumbentCand?.party.partyID && props.race.results[x.polID].probability > 0.05
+    });
 
     if(props.race.lastWinningParty || incumbentCand){
         let incumbentParty = props.race.lastWinningParty;
@@ -33,7 +36,7 @@ const keyToVictory = computed(() => {
 
         if(incumbentParty){
 
-            let cand1 = props.race.candidates.find(x => x.party == incumbentParty) || null;
+            let cand1 = props.race.candidates.find(x => x.party.partyID == incumbentParty) || null;
             let cand2;
             if(cand1) cand2 = props.race.candidates.find(x => x.polID != cand1.polID) || null;
 
@@ -42,9 +45,9 @@ const keyToVictory = computed(() => {
                 otherCand = cand2;
             }
         }
-        else if (incumbentCand){
+        else if (incumbentCandSameParty){
 
-            let cand1 = incumbentCand;
+            let cand1 = incumbentCandSameParty;
             let cand2;
             if(cand1) cand2 = props.race.candidates.find(x => x.polID != cand1.polID) || null;
 
@@ -57,18 +60,23 @@ const keyToVictory = computed(() => {
     }
 
     if(props.race.officeID == OfficeType.BallotMeasure){
-        cand = props.race.candidates.find(x => x.last == 'Yes') as ReportingCandidate;
-        otherCand = props.race.candidates.find(x => x.last == 'No') as ReportingCandidate;
+        cand = props.race.candidates.find(x => x.party.partyID == 'Yes') as Candidate;
+        otherCand = props.race.candidates.find(x => x.party.partyID == 'No') as Candidate;
     }
 
     if(!otherCand) return null;
 
-    let gap = (cand.voteCount || 0) - (otherCand.voteCount || 0);
+    console.log(cand.polID, props.race.results);
+
+    let candVote = props.race.results[cand.polID].vote;
+    let otherVote = props.race.results[otherCand.polID].vote;
+
+    let gap = candVote - otherVote;
 
 
 
-    let expectedVotes = props.race.parameters.vote?.expected.actual || 0
-    let votesRemaining = expectedVotes - (props.race.parameters.vote?.total || 0);
+    let expectedVotes = props.race.expectedVotes;
+    let votesRemaining = expectedVotes - props.race.totalVotes;
 
     let needed = (votesRemaining - gap)/2;
     let percent = needed/votesRemaining;
@@ -81,7 +89,7 @@ const keyToVictory = computed(() => {
         percent: roundPercentage(percent),
         votesRemaining: votesRemaining,
         votesNeeded: (Math.ceil(needed)),
-        color: (cand.partyData?.colors[0]),
+        color: (cand.party.colors[0]),
         name: `${cand.fullName}`
     };
 

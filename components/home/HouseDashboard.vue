@@ -1,9 +1,10 @@
 
 <script lang="ts" setup>
-import type { Race } from '~/server/types/ViewModel';
+import type {Candidate, Race} from '~/server/types/ViewModel';
 import Projectomatic from '../napkin/Projectomatic.vue';
-import { getRaceURL } from '~/server/utils/Util';
+import {getProbability, getRaceURL} from '~/server/utils/Util';
 import { getBlendedColor } from '~/server/utils/Util';
+import RaceCallStatus from "../../server/types/enum/race/RaceCallStatus";
 
 const ROWS = 12;
 const COLS = 12;
@@ -54,6 +55,7 @@ const getRaceColor = (race: Race) => {
 function getDemAndGOP(race: Race){
 
       let topTwo = race.candidates.slice(0, 2);
+
 
       if(topTwo[0].party.partyID != 'GOP'){
         return {
@@ -123,31 +125,45 @@ const raceData = computed(() => {
     const { dem: aDem, gop: aGOP } = getDemAndGOP(a.race);
     const { dem: bDem, gop: bGOP } = getDemAndGOP(b.race);
 
-    let aMargin = ((aDem?.voteCount || 0) - (aGOP?.voteCount || 0)) / (a.race.parameters.vote?.total || 1);
-    let bMargin = ((bDem?.voteCount || 0) - (bGOP?.voteCount || 0)) / (b.race.parameters.vote?.total || 1);
 
-    if(aMargin > bMargin) return -1;
-    if(aMargin < bMargin) return 1;
 
-    if(aDem && bDem && (aDem.probability > bDem.probability)) return -1;
-    if(aDem && bDem && (aDem.probability < bDem.probability)) return 1;
+    let aResult = a.race.results;
+    let bResult = b.race.results;
 
-    if(aGOP && bGOP && (aGOP.probability > bGOP.probability)) return 1;
-    if(aGOP && bGOP && (aGOP.probability < bGOP.probability)) return -1;
+    if(aDem && aGOP && bDem && bGOP) {
+      let aMargin = (aResult[aDem.polID].vote - aResult[aGOP.polID].vote) / a.race.totalVotes;
+      let bMargin = (bResult[bDem.polID].vote - bResult[bGOP.polID].vote) / b.race.totalVotes;
+
+      if(aMargin > bMargin) return -1;
+      if(aMargin < bMargin) return 1;
+    }
+
+    if(aDem && bDem) {
+      if (aDem && bDem && (aResult[aDem.polID].probability > bResult[bDem.polID].probability)) return -1;
+      if (aDem && bDem && (aResult[aDem.polID].probability < bResult[bDem.polID].probability)) return 1;
+    }
+
+    if(aGOP && bGOP) {
+      if (aGOP && bGOP && (aResult[aGOP.polID].probability > bResult[bGOP.polID].probability)) return 1;
+      if (aGOP && bGOP && (aResult[aGOP.polID].probability < bResult[bGOP.polID].probability)) return -1;
+    }
+
+    if(aDem) return -1;
+    if(aGOP) return 1;
 
     return 0;
   }
 
   let demRaces = props.races.filter(x => !x.keyRace && x.candidates.reduce(
-    (prev: ReportingCandidate, curr: ReportingCandidate) => (curr && curr.probability > prev.probability ? curr : prev)
-    ).party == 'Dem'
+    (prev: Candidate, curr: Candidate) => (curr && getProbability(x, curr) > getProbability(x, prev) ? curr : prev)
+    ).party.partyID == 'Dem'
   ).map(x => getDashboardData(x)).sort(sort);
 
   let keyRaces = props.races.filter(x => x.keyRace).map(x => getDashboardData(x)).sort(sort);
 
   let gopRaces = props.races.filter(x => x && x.candidates.reduce(
-    (prev: ReportingCandidate, curr: ReportingCandidate) => (prev && prev.probability > curr.probability ? prev : curr)
-    ).party == 'GOP'
+    (prev: Candidate, curr: Candidate) => (prev && getProbability(x, prev) > getProbability(x, curr) ? prev : curr)
+    ).party.partyID == 'GOP'
   ).map(x => getDashboardData(x)).sort(sort);
 
   return {
@@ -177,12 +193,12 @@ const props = defineProps<{
     <div class="grid grid-cols-2 mt-4 gap-2">
       <div class="bg-lte-blue text-center rounded-sm">
         <h1 class="text-xl">Democrats</h1>
-        <h1 class="text-2xl">{{ races.filter(x => x.raceCallStatus == RaceCallStatus.Called && (x.candidates.find(c => c.winner == 'X'))?.party != 'GOP').length }}</h1>
+        <h1 class="text-2xl">{{ races.filter(x => x.call.status == RaceCallStatus.Called && (x.call.winner?.party.partyID != 'GOP')).length }}</h1>
       </div>
 
       <div class="bg-lte-red text-center rounded-sm">
         <h1 class="text-xl">Republicans</h1>
-        <h1 class="text-2xl">{{ races.filter(x => x.raceCallStatus == RaceCallStatus.Called && (x.candidates.find(c => c.winner == 'X'))?.party == 'GOP').length }}</h1>
+        <h1 class="text-2xl">{{ races.filter(x => x.call.status == RaceCallStatus.Called && (x.call.winner?.party.partyID == 'GOP')).length }}</h1>
       </div>
     </div>
     <div class="grid mt-2 gap-2 grid-flow-row grid-cols-3">

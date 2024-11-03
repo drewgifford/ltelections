@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import type Candidate from '~/server/types/Candidate';
-import type Race from '~/server/types/Race';
-import type { ReportingCandidate } from '~/server/types/ReportingUnit';
-import type { Raw } from '~/server/utils/Raw';
-import { getTopTwoCandidates } from '~/server/utils/Util';
+import {getCallText, getTopTwoCandidates, parseDateString} from '~/server/utils/Util';
+import type {Candidate, Race} from "~/server/types/ViewModel";
+import moment from "moment-timezone";
 
 const defaultImage = "/img/generic-candidate.png"
 
@@ -11,17 +9,17 @@ const props = defineProps<{
   race: Race
 }>();
 
-let voteTotal = props.race ? (props.race.parameters.vote?.total || 0) : 0
+const winner = computed(() => props.race.call.winner as Candidate);
 
-let winner = props.race.candidates.find(cand => cand.winner == "X") as ReportingCandidate;
+let backgroundGradient = `linear-gradient(to right, ${(winner.value.party.colors[0] || '#ffffff')+'80'} 0%, transparent 100%)`
 
-let backgroundGradient = `linear-gradient(to right, ${(winner.partyData?.colors[0] || '#ffffff')+'80'} 0%, transparent 100%)`
+const projectionText = computed(() => getCallText(props.race));
 
 </script>
 
 <template>
   
-  <div class="min-h-10 w-full flex justify-between rounded-tl-sm rounded-tr-sm" v-if="(race)" :style="{background: backgroundGradient}">
+  <div class="min-h-10 w-full flex justify-between rounded-tl-sm rounded-tr-sm" v-if="(race && winner)" :style="{background: backgroundGradient}">
             
       <div class="flex justify-between w-full">
 
@@ -41,7 +39,7 @@ let backgroundGradient = `linear-gradient(to right, ${(winner.partyData?.colors[
           <div class="py-4 self-center">
               <p class="text-slate-200">{{ winner.fullName }}</p>
               <h1 class="text-3xl">Projected Winner ✓</h1>
-              <p>Called at 11/05/2024 11:05PM EST</p>
+              <p>Called by {{ projectionText.caller }} on {{ parseDateString(projectionText.calls[projectionText.caller as string] as string) }}</p>
             </div>
         </div>
 
@@ -52,7 +50,7 @@ let backgroundGradient = `linear-gradient(to right, ${(winner.partyData?.colors[
 
   <div class="bg-slate-800 overflow-hidden h-2 relative">
 
-    <div class="block h-2 absolute left-0" :style="{width: '100%', backgroundColor: (winner.partyData?.colors[0]) }"></div>
+    <div class="block h-2 absolute left-0" :style="{width: '100%', backgroundColor: (winner.party.colors[0]) }"></div>
   </div>
 
 

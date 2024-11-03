@@ -1,30 +1,25 @@
 <script setup lang="ts">
-import type { ApiRace } from '~/server/types/ApiTypes';
-import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
-import axios from 'axios';
-import type { CanPin, Raw } from '~/server/utils/Raw';
 import States from '~/server/utils/States';
 import LoadingSection from '~/components/LoadingSection.vue';
 import { useIntervalFn } from "@vueuse/core";
-import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
-import type {RaceQueried} from "~/server/types/ViewModel";
+import {officeTypeFromString, officeTypeToString, sortRaces} from '~/server/utils/Util';
+import type {Race, RaceQueried} from "~/server/types/ViewModel";
+import type OfficeType from "~/server/types/enum/OfficeType";
+import axios from "axios";
 
     const route = useRoute();
     const router = useRouter();
 
-    const statePostal = ref(route.query.state || '*');
     const officeID = ref(officeTypeFromString(route.query.office as string || '*'));
+    const statePostal = ref(route.query.state as string || '*');
 
     watch(statePostal, (statePostal) => {
-        router.push({ query: { "state": statePostal, "office": officeTypeToString(officeID.value) } });
+        router.push({ query: { "state": statePostal, "office": officeTypeToString(officeID.value as OfficeType) } });
     });
     watch(officeID, (officeID) => {
-        router.push({ query: { "state": statePostal.value, "office": officeTypeToString(officeID) } });
+        router.push({ query: { "state": statePostal.value, "office": officeTypeToString(officeID as OfficeType) } });
     });
 
-
-    //const statePostal = ref('OH');
-    //const officeID = ref('*');
     const pinnedRaceIds = ref<string[]>([]);
 
     useSeoMeta({
@@ -32,8 +27,10 @@ import type {RaceQueried} from "~/server/types/ViewModel";
         ogImage: "/og-image.png",
     });
 
+    const races = ref<RaceQueried[]>([]);
+
     // Query races
-    const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
+    /*const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
         query: {
             statePostal: statePostal,
             officeID: officeID,
@@ -48,18 +45,41 @@ import type {RaceQueried} from "~/server/types/ViewModel";
             });
             
         }
-    });
+    });*/
 
-    useIntervalFn(async () => {
-        await refreshRaces();
-    }, 10000);
+
 
     onMounted(async () => {
-        pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
-        if(pinnedRaceIds.value.length > 0){
-            await refreshRaces();
-        }
+      pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
+
+      async function fetchRaces(){
+        console.info("Refreshing data");
+        const response = await axios.get("/api/searchRaces/", {
+          params: {
+            statePostal: statePostal.value,
+            officeID: officeID.value,
+            raceUUIDs: pinnedRaceIds.value,
+            date: route.params.date,
+          }
+        });
+
+        console.log(response.data);
+
+        races.value = sortRaces(response.data as RaceQueried[]) as RaceQueried[];
+      }
+
+      await fetchRaces();
+
+      watch(statePostal, async (statePostal) => {
+        await fetchRaces();
+      });
+      watch(officeID, async (officeID) => {
+        await fetchRaces();
+      });
+
     });
+
+
 
     // Pin races functionality
     const togglePin = (race: RaceQueried) => {
@@ -74,12 +94,17 @@ import type {RaceQueried} from "~/server/types/ViewModel";
             // Remove pin
             races.value[index].pinned = false;
             pinnedRaceIds.value.splice(idIndex, 1);
+            localStorage.setItem('pinnedRaces', JSON.stringify(pinnedRaceIds.value));
             
         } else {
 
             // Add pin
             races.value[index].pinned = true;
-            if(idIndex < 0) pinnedRaceIds.value.push(race.uuid as string);
+
+            if(idIndex < 0) {
+              pinnedRaceIds.value.push(race.uuid as string);
+              localStorage.setItem('pinnedRaces', JSON.stringify(pinnedRaceIds.value));
+            }
 
         }
         
@@ -93,19 +118,21 @@ import type {RaceQueried} from "~/server/types/ViewModel";
         raceView.value = race.uuid;
     }
 
-    const getNonPinnedRaces = () => {
-        if(!races) return [];
-        return races.value?.filter(x => x.inQuery);
+    const nonPinnedRaces = () => {
+      if(!races) return [];
+      return sortRaces(races.value?.filter(x => x.inQuery) as Race[]);
     }
-    const getPinnedRaces = () => {
-        if(!races) return [];
-        return races.value?.filter(x => x.pinned);
-    }
-    const getRaceView = () => {
-        if(!raceView.value) return null;
-        if(!races) return null;
-        return races.value?.find(x => x.uuid == raceView.value);
-    }
+
+    const pinnedRaces = computed(() => {
+      if(!races) return [];
+      return races.value?.filter(x => x.pinned);
+    })
+
+    const raceViewSide = computed(() => {
+      if(!raceView.value) return null;
+      if(!races) return null;
+      return races.value?.find(x => x.uuid == raceView.value);
+    })
 
 
 
@@ -114,9 +141,9 @@ import type {RaceQueried} from "~/server/types/ViewModel";
 <template>
 
     <Container class="mt-4">
-        <div class="lg:flex gap-6">
+        <div class="xl:flex gap-6">
             
-            <div class="flex flex-col gap-6 w-full lg:w-1/2">
+            <div class="flex flex-col gap-6 w-full xl:w-1/2">
 
                 <form class="flex gap-4 p-4 card z-10 sticky top-24 w-full items-stretch">
                     <div class="flex-1">
@@ -160,10 +187,10 @@ import type {RaceQueried} from "~/server/types/ViewModel";
                 </form>
 
                 <!-- Pinned races -->
-                <div v-if="(getPinnedRaces() || []).length > 0" class="flex flex-col gap-3 w-full">
-                    <p>{{ getPinnedRaces()?.length }} races pinned</p>
+                <div v-if="(pinnedRaces || []).length > 0" class="flex flex-col gap-3 w-full">
+                    <p>{{ pinnedRaces?.length }} races pinned</p>
                     <MiniRaceView 
-                        v-for="(race, index) of getPinnedRaces()"
+                        v-for="(race, index) of pinnedRaces"
                         :data-race="race.uuid"
                         @select="setView(race)"
                         @pin="togglePin(race)"
@@ -179,11 +206,11 @@ import type {RaceQueried} from "~/server/types/ViewModel";
                     <p>Showing {{ races?.length }} results</p>
 
                     <MiniRaceView 
-                        v-for="(race, index) of getNonPinnedRaces()"
+                        v-for="(race, index) of races"
                         :data-race="race.uuid"
-                        @select="setView(race)"
-                        @pin="togglePin(race)"
-                        :is-pinned="race.pinned"
+                        @select="setView(race as RaceQueried)"
+                        @pin="togglePin(race as RaceQueried)"
+                        :is-pinned="false"
                         :race="race"
                         :key="race.uuid"
                     />
@@ -195,9 +222,9 @@ import type {RaceQueried} from "~/server/types/ViewModel";
 
             </div>
 
-            <div class="display-none lg:block w-full lg:w-1/2">
+            <div class="display-none xl:block w-full xl:w-1/2">
 
-                <RaceCard v-if="(getRaceView() != null)" :key="(raceView || '')" :race="(getRaceView())" :map=true />
+                <RaceCard v-if="(raceViewSide != null)" :key="(raceView || '')" :race="(raceViewSide as Race)" :map=true />
                 
             </div>
 

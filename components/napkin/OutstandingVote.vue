@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { max } from 'd3';
-import type Race from '~/server/types/Race';
-import type ReportingUnit from '~/server/types/ReportingUnit';
-import { getRaceProbabilities, hasProjectOMatic, roundPercentage } from '~/server/utils/RaceProbability';
+import type {Race, RaceReportingUnit} from "~/server/types/ViewModel";
+import {getVotes, keys, sortCandidates} from "~/server/utils/Util";
+import { roundPercentage } from "~/server/utils/RaceProbability";
 
 const props = defineProps<{
         race: Race
@@ -10,14 +10,14 @@ const props = defineProps<{
 
 const outstandingVote = computed(() => {
 
-    let c = props.race.reportingUnits.filter(x => x.reportingunitLevel == 2);
+    let c = Object.values(props.race.reportingUnits).filter(x => x.reportingunitLevel == 2);
 
 
-    const getOutstanding = (ru: ReportingUnit) => {
-        return ((ru.parameters.vote?.expected.actual || 0) - (ru.parameters.vote?.total || 0))
+    const getOutstanding = (ru: RaceReportingUnit) => {
+        return ((ru.expectedVotes || 0) - (ru.totalVotes || 0))
     }
 
-    let counties = c.toSorted((a: ReportingUnit,b: ReportingUnit) => {
+    let counties = c.toSorted((a: RaceReportingUnit,b: RaceReportingUnit) => {
         return (getOutstanding(a) > getOutstanding(b)) ? -1 : 1;
     });
 
@@ -27,16 +27,20 @@ const outstandingVote = computed(() => {
 
         let bars = [];
 
-        if(ru.candidates.length > 0 && ru.candidates[0]){
-        
-            let leadingParty = ru.candidates[0].partyData;
-            let margin = (ru.candidates[0].voteCount || 0) - (ru.candidates[1].voteCount || 0);
+        if(keys(ru.results).length > 0){
+
+            let ruCandidates = sortCandidates(props.race, ru);
+
+            let leadingCand = ruCandidates[0];
+            let leadingParty = leadingCand.party;
+
+            let margin = getVotes(props.race, ruCandidates[0]) - (getVotes(props.race, ruCandidates[1]));
             let maxPercent = 0;
 
-            for(let candidate of ru.candidates.slice(0, 2)){
-                let percent = (candidate.voteCount || 0) / (ru.parameters.vote?.total || 1);
+            for(let candidate of ruCandidates.slice(0, 2)){
+                let percent = getVotes(props.race, candidate) / (ru.totalVotes || 1);
                 bars.push({
-                    color: candidate.partyData?.colors[0],
+                    color: candidate.party.colors[0],
                     percent: percent
                 })
 
@@ -84,7 +88,7 @@ const outstandingVote = computed(() => {
                 <div class="w-full mt-2" v-for="(elem, index) of outstandingVote">
 
                     <p class="text-md font-header">{{ elem.name }}</p>
-                    <p class="text-sm mt-1 inline-block rounded-sm py-1 px-2 text-white" :style="{backgroundColor: elem.leadingParty?.colors[0]+'80'}">{{ elem.leadingParty?.id }} +{{ elem.margin.toLocaleString() }}</p>
+                    <p class="text-sm mt-1 inline-block rounded-sm py-1 px-2 text-white" :style="{backgroundColor: elem.leadingParty?.colors[0]+'80'}">{{ elem.leadingParty?.partyID }} +{{ elem.margin.toLocaleString() }}</p>
                     <p class="text-sm mt-1">~{{ elem.outstanding.toLocaleString() }} remain</p>
 
                     <div class="flex mt-2">

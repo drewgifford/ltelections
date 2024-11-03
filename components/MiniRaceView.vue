@@ -1,17 +1,21 @@
 <script lang="ts" setup>
 import OfficeType from '~/server/types/enum/OfficeType';
 import type { Race } from '~/server/types/ViewModel';
-import type { Raw } from '~/server/utils/Raw';
- import { notZero } from '~/server/utils/Util';
+import {getRaceURL, getTopReportingUnit} from "~/server/utils/Util";
+import { useWindowSize } from "@vueuse/core";
 
-  const props = defineProps<{
+const props = defineProps<{
     race: Race,
     isPinned: boolean,
   }>();
 
+  const route = useRoute();
+
   let title = "";
   let desc = "";
   let mounted = true;
+
+  const { width } = useWindowSize();
 
   const bgColor = computed(() => {
 
@@ -37,7 +41,7 @@ import type { Raw } from '~/server/utils/Raw';
 </script>
 
 <template>
-  <a class="race relative transition-colors" v-if="mounted">
+  <a class="race relative transition-colors" v-if="mounted" :href="(width < 1280 ? getRaceURL(route.params.date as string, race) : null)">
 
     <!-- Pin Button -->
     <div @click="$emit('pin')" :class="[isPinned ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
@@ -52,28 +56,31 @@ import type { Raw } from '~/server/utils/Raw';
 
         <div class="flex w-full justify-between items-start">
             <div class="flex-1">
-                <h4 class="text-lg">{{ race.title}} <span v-if="(race.tabulationStatus == 'Active Tabulation')" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
-                <p class="text-sm">{{ race.description }}</p>
+                <h4 class="text-lg">
+                  <span class="py-1 px-2 text-md mr-1 border-2 border-slate-200/25 rounded-sn">{{ race.title.location }}</span>
+                  {{ race.title.text }}
+                  <span v-if="(race.tabulationStatus == 'Active Tabulation')" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
+              <div class="flex gap-2 items-center mt-2 pr-2">
+
+                <div class="bg-slate-700 w-full h-1">
+                  <div class="h-full bg-slate-200" :style="{'width': race.eevp + '%'}"></div>
+                </div>
+
+                <p class="text-xs text-nowrap">{{race.eevp}}% reporting</p>
+              </div>
             </div>
 
             <div class="flex gap-2">
 
               <div class="w-80">
 
-                <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="2" :reporting="false"/>
+                <ResultTable :race="race" :unit="getTopReportingUnit(race)" :max="2" :reporting="false"/>
 
               </div>
             </div>
         </div>
 
-        <div class="flex gap-2 items-center mt-2">
 
-            <div class="bg-slate-700 w-full h-1">
-                <div class="h-full bg-slate-200" :style="{'width': race.reportingUnits[0].eevp + '%'}"></div>
-            </div>
-
-            <p class="text-xs text-nowrap">{{race.reportingUnits[0].eevp}}% reporting</p>
-        </div>
     </div>
 
     </a>

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type Color from '~/server/types/Color';
-import type Race from '~/server/types/Race';
-import type { ReportingCandidate } from '~/server/types/ReportingUnit';
-import { getPollingAverage } from '~/server/utils/PollingAverage';
-import { getRaceProbabilities, hasProjectOMatic, roundPercentage } from '~/server/utils/RaceProbability';
-import { getBlendedColor } from "~/server/utils/Util";
+import { roundPercentage } from '~/server/utils/RaceProbability';
+import {getBlendedColor, getCallText, parseDateString} from "~/server/utils/Util";
+import type {Candidate, Race} from "~/server/types/ViewModel";
+import RaceCallStatus from "~/server/types/enum/race/RaceCallStatus";
+import { keys } from '~/server/utils/Util';
 
 const props = defineProps<{
         race: Race,
@@ -14,13 +13,16 @@ const LOW_QUALITY_NEEDLE_RACES = ["AK", "VT", "CT", "ME", "RI", "NH", "MA"];
 
 const projectomatic = computed(() => {
 
-    let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(a.probability) > Number(b.probability) ? -1 : 1);
+    let results = props.race.results;
+    console.log(results);
+    let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(results[a.polID].probability) > Number(results[b.polID].probability) ? -1 : 1);
+
     
     let leadingPct = getLeadingPct(topProbabilities);
     let colors = getColors(topProbabilities);
     let needleStyles = getNeedleStyles(topProbabilities);
-    let needleGradient = getNeedleGradient(colors as Color[]);
-    let leadingText = getLeadingText(topProbabilities, colors as Color[]);
+    let needleGradient = getNeedleGradient(colors as string[]);
+    let leadingText = getLeadingText(topProbabilities, colors as string[]);
     let needlePct = getNeedlePct(topProbabilities);
 
     return {
@@ -30,23 +32,23 @@ const projectomatic = computed(() => {
         needleGradient: needleGradient,
         colors: colors,
         needlePct: needlePct,
-        candidate: topProbabilities[0],
+        candidate: props.race.call.winner || topProbabilities[0],
     }
 });
 
-const getLeadingPct = (topProbabilities: ReportingCandidate[]) => {
+const getLeadingPct = (topProbabilities: Candidate[]) => {
 
-    let leadingPct = roundPercentage(topProbabilities[0].probability as number, 2);
-    if(props.race.raceCallStatus == "Called") leadingPct = "100%";
+    let leadingPct = roundPercentage(props.race.results[(props.race.call.winner || topProbabilities[0]).polID].probability as number, 2);
+    if(props.race.call.status == RaceCallStatus.Called) leadingPct = "100%";
 
     return leadingPct;
 }
 
-const getNeedlePct = (topProbabilities: ReportingCandidate[]) => {
+const getNeedlePct = (topProbabilities: Candidate[]) => {
 
-    let leadingPct = topProbabilities[0].probability as number*100;
+    let leadingPct = props.race.results[(props.race.call.winner || topProbabilities[0]).polID].probability as number*100;
 
-    if(props.race.raceCallStatus == "Called") leadingPct = 100;
+    if(props.race.call.status == RaceCallStatus.Called) leadingPct = 100;
 
     return (leadingPct-50)*2;
 
@@ -54,11 +56,11 @@ const getNeedlePct = (topProbabilities: ReportingCandidate[]) => {
 }
     
 
-const getNeedleStyles: any = (topProbabilities: ReportingCandidate[]) => {
+const getNeedleStyles: any = (topProbabilities: Candidate[]) => {
 
     let low = 0.45;
     let high = 1.00;
-    let pct = topProbabilities[0].probability as number;
+    let pct = props.race.results[(props.race.call.winner || topProbabilities[0]).polID].probability as number;
 
     let progress = 0;
     if(pct < low) progress = 0;
@@ -67,7 +69,7 @@ const getNeedleStyles: any = (topProbabilities: ReportingCandidate[]) => {
         progress = (pct - low) / (high-low);
     }
 
-    if(props.race.raceCallStatus == "Called") progress = 1;
+    if(props.race.call.status == "Called") progress = 1;
 
     let rotation = -(progress * 90);
 
@@ -82,19 +84,19 @@ const getNeedleStyles: any = (topProbabilities: ReportingCandidate[]) => {
 
 }
 
-const getColors = (topProbabilities: ReportingCandidate[]) => {
+const getColors = (topProbabilities: Candidate[]) => {
 
     let cands = topProbabilities;
 
-    let cand1 = cands[0];
-    let color1 = cand1?.partyData?.colors[0];
+    let cand1 = props.race.call.winner || cands[0];
+    let color1 = cand1?.party.colors[0];
 
     let color2 = color1;
     if(cands.length > 0){
         let cand2 = cands[1];
 
         if(cand2){
-            color2 = cand2?.partyData?.colors[0];
+            color2 = cand2?.party.colors[0];
         }
     }
 
@@ -108,7 +110,7 @@ const getColors = (topProbabilities: ReportingCandidate[]) => {
     return colors;
 }
 
-const getNeedleGradient = (colors: Color[]) => {
+const getNeedleGradient = (colors: string[]) => {
 
     let leftColor = colors[5]+'';
     let leftColorTransparent = colors[6]+'11';
@@ -122,15 +124,15 @@ const getNeedleGradient = (colors: Color[]) => {
     }
 }
 
-const getLeadingText = (topProbabilities: ReportingCandidate[], colors: Color[]) => {
+const getLeadingText = (topProbabilities: Candidate[], colors: string[]) => {
 
 
     let candidates = topProbabilities;
 
-    let leader = candidates[0];
+    let leader = props.race.call.winner || candidates[0];
 
-    let cand = candidates[0];
-    let leadingPct = leader.probability as number;
+    let cand = props.race.call.winner || candidates[0];
+    let leadingPct = props.race.results[leader.polID].probability as number;
 
     
     let text = "";
@@ -145,9 +147,9 @@ const getLeadingText = (topProbabilities: ReportingCandidate[], colors: Color[])
     };
 
     
-    if(props.race.raceCallStatus == "Called"){
+    if(props.race.call.status == "Called"){
         text = `projected`;
-        color = cand.partyData?.colors[0] as string;
+        color = cand.party.colors[0] as string;
     }
     else if(leadingPct > 0.95){
         text = `near certain`;
@@ -190,6 +192,8 @@ const getTickClass = (n: number) =>{
 
 }
 
+const projectionText = computed(() => getCallText(props.race));
+
 </script>
 
 
@@ -200,8 +204,13 @@ const getTickClass = (n: number) =>{
         <div class="w-full">
             <h1 class="text-xl mt-1">{{ projectomatic.candidate.last }} is <span class="px-2 rounded-sm" :style="{backgroundColor: projectomatic.leadingText.color+'80'}">{{ projectomatic.leadingText.text }}</span> to win.</h1>
 
-            <p class="mt-2">{{ projectomatic.candidate.fullName }} currently has a <span class="font-header">{{ projectomatic.leadingPct }}</span> chance of winning.</p>
-            
+            <p v-if="!(race.call.winner)" class="mt-2">{{ projectomatic.candidate.fullName }} currently has a <span class="font-header">{{ projectomatic.leadingPct }}</span> chance of winning.</p>
+            <div v-else>
+              <p class="mt-2"><span class="font-header text-white">{{ projectionText.caller }}</span> projects {{ race.call.winner.fullName }} will win this race.<br/></p>
+              <p v-for="(date, index) in projectionText.calls"><span class="text-xs">{{ index }} Call made on {{ parseDateString(date) }}</span></p>
+            </div>
+
+
         </div>
 
         <div class="relative hidden" :class="!props.forceSmall ? ['lg:block'] : []"> <!-- Desktop -->

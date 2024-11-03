@@ -1,0 +1,1 @@
+FT.CREATE races on JSON SCHEMA $.state.postalCode AS postalCode TAG $.officeID AS officeID TAG $.uuid AS uuid TEXT $.type AS type TAG

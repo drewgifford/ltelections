@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
 
   let resultDocuments = results.documents;
 
-  let array = redisToArray(resultDocuments || []);
+  let array = redisToArray(resultDocuments || []).filter(x => x.state.postalCode != 'US');
 
   return await transformRaces(redis, array);
   

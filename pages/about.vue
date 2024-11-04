@@ -67,7 +67,7 @@ const teamMembers: TeamMember[] = [
   name: "Toadally",
   roles: "Lead Web Developer, Decision Desk",
   imageUrl: "/img/decisiondesk/toadally_result.webp",
-  social: "@toadally"
+  social: "@iamtoadally"
 },
 {
   name: "SwiftlySalted",

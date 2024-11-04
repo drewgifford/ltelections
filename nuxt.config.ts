@@ -41,6 +41,7 @@ export default defineNuxtConfig({
 
   css: [
     '~/assets/fonts/OpenSauceSans.css',
+    '~/assets/fonts/Manrope.css',
     '~/assets/css/style.css'
   ],
 

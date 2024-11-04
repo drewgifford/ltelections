@@ -44,9 +44,9 @@ const props = defineProps<{
   <a class="race relative transition-colors" v-if="mounted" :href="(width < 1280 ? getRaceURL(route.params.date as string, race) : null)">
 
     <!-- Pin Button -->
-    <div @click="$emit('pin')" :class="[isPinned ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
+    <!--<div @click="$emit('pin')" :class="[isPinned ? 'bg-lte-yellow text-slate-950 hover:brightness-75' : 'bg-slate-900/75 hover:brightness-125']" class="absolute top-0 right-0 h-7 w-7 p-1 rounded-bl-md flex items-center justify-center hover:cursor-pointer ">
         <Icon :name="race ? 'pajamas:thumbtack-solid' : 'pajamas:thumbtack'"/>
-    </div>
+    </div>-->
 
     <div @click="$emit('select')" class="card p-3 pl-6 hover:bg-slate-800 hover:cursor-pointer">
         

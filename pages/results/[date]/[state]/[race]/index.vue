@@ -113,7 +113,7 @@ import type { Race } from '~/server/types/ViewModel';
 
     useIntervalFn(async () => {
         await refreshRaces();
-    }, 10000);
+    }, 30000);
 
     const getWinner = (race: Race) => {
         return race.call.winner;

@@ -61,7 +61,7 @@ import axios from "axios";
 
     useIntervalFn(async () => {
       await refreshRaces();
-    }, 10000);
+    }, 30000);
 
 
 

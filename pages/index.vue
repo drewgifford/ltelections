@@ -19,7 +19,7 @@ import { getMostLikelyCandidate } from '~/server/utils/Util';
 
     useIntervalFn(async () => {
         await refreshRaces();
-    }, 10000);
+    }, 30000);
 
     const presRace = computed(() => homeDashboard.value?.races.presidential);
     const senateRaces = computed(() => homeDashboard.value?.races.senate);

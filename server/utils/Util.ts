@@ -276,8 +276,8 @@ export const sortRaces = (races: Race[]) => {
 
   return races.sort((a,b) => {
 
-    if(a.state.stateID > b.state.stateID) return -1;
-    if(a.state.stateID < b.state.stateID) return 1;
+    if(a.state.name > b.state.name) return -1;
+    if(a.state.name < b.state.name) return 1;
 
     if(!OFFICE_HIERARCHY.includes(a.officeID as OfficeType)) return 1;
     if(!OFFICE_HIERARCHY.includes(b.officeID as OfficeType)) return -1;

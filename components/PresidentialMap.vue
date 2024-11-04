@@ -330,7 +330,8 @@ const getTopCandidate = (ru: any) => {
 
     <div class="relative">
 
-        <div class="overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
+
+        <div class="z-10 overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
 
             <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="selectedRu?.reportingunitID">
 
@@ -353,10 +354,17 @@ const getTopCandidate = (ru: any) => {
         </div>
 
         <div class="w-full" ref="svg" :style="(loading ? {filter: 'opacity(0)', minHeight: `${props.minHeight}`} : {minHeight: `${props.minHeight}`})">
+
+
         </div>
 
         <LoadingSection v-if="loading" :absolute=true :style="{minHeight: `${props.minHeight}`}"/>
+
+        <MapLegend/>
     </div>
+
+
+
 
     
                         

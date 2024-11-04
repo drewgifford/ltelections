@@ -145,7 +145,10 @@ import type { Race } from '~/server/types/ViewModel';
                     <CandidateBattle :race="race" v-if="!getWinner(race)"/>
                     <ProjectedWinner :race="race" v-if="getWinner(race)"/>
 
+
+
                     <div class="px-4">
+                        <p v-if="(race.summary)" class="text-md mt-4">{{ race.summary }}</p>
                         <div class="p-2 my-4 card border-slate-600 border">
                             <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="5" :reporting="true"/>
                         </div>

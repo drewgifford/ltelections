@@ -6,7 +6,8 @@ type TeamMember = {
 name: string,
 imageUrl: string,
 roles: string,
-description?: string
+description?: string,
+  social?: string,
 
 }
 
@@ -39,7 +40,8 @@ const teamMembers: TeamMember[] = [
 {
   name: "Sunset Coda",
   roles: "Election Manager, Decision Desk, Graphic Designer",
-  imageUrl: "/img/decisiondesk/sunsetcoda_result.webp"
+  imageUrl: "/img/decisiondesk/sunsetcoda_result.webp",
+  social: "@sunsetcoda"
 },
 {
   name: "Michael",
@@ -64,7 +66,8 @@ const teamMembers: TeamMember[] = [
 {
   name: "Toadally",
   roles: "Lead Web Developer, Decision Desk",
-  imageUrl: "/img/decisiondesk/toadally_result.webp"
+  imageUrl: "/img/decisiondesk/toadally_result.webp",
+  social: "@toadally"
 },
 {
   name: "SwiftlySalted",
@@ -115,6 +118,9 @@ const teamMembers: TeamMember[] = [
                         <div>
                             <h3 class="text-2xl">{{ member.name }}</h3>
                             <p>{{ member.roles }}</p>
+                            <a target="_blank" :href="'https://twitter.com/'+member.social.replace('@','')" class="font-header" v-if="member.social">
+                              <img class="inline h-4 mr-1" src="/img/twitter.svg"/>{{ member.social }}
+                            </a>
                         </div>
                     </div>
                     

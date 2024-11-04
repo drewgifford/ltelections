@@ -110,7 +110,7 @@ const teamMembers: TeamMember[] = [
 
             <div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
 
                     <div v-for="(member, index) in teamMembers" class="card p-4 flex items-center gap-4">
                         <img :src="member.imageUrl" class="w-20 h-20 rounded-sm"/>

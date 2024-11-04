@@ -245,7 +245,7 @@
             if(selectedRu && IS_NATIONAL_MAP()){
                 let s = "";
                 if((selectedRu.value as any).seatNum > 0) s = '-'+(selectedRu.value as any).seatNum;
-                d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state.name.toLowerCase()}/president${s}'`);
+                d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state?.name.toLowerCase()}/president${s}'`);
             }
         }
 
@@ -338,7 +338,7 @@ const getTopCandidate = (ru: any) => {
               <div v-if="IS_NATIONAL_MAP()">
                 <div class="flex">
                   <div class="flex-1">
-                    <p class="text-white text-left font-header mb-2">{{ru.state.name}}<span v-if="ru.seatNum > 0"> CD-{{ru.seatNum}}</span> | {{ ru.electTotal }} EV</p>
+                    <p class="text-white text-left font-header mb-2">{{ru.state?.name}}<span v-if="ru.seatNum > 0"> CD-{{ru.seatNum}}</span> | {{ ru.electTotal }} EV</p>
                   </div>
                 </div>
                 <ResultTable  :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>

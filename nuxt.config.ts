@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/image', 'nuxt-socket-io', "@nuxtjs/seo", "@nuxt/icon"],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/image', 'nuxt-socket-io', "@nuxtjs/seo", "@nuxt/icon", "@nuxtjs/robots"],
 
   site: {
     url: "https://ltelections.com",

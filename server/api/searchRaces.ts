@@ -5,7 +5,6 @@ import {CallData, Race, State, transformRaces} from "~/server/types/ViewModel";
 import {RedisUtil} from "~/server/plugins/RedisConnection";
 import {ApiCandidate, ApiParty, ApiRace} from "~/server/types/ApiTypes";
 import {pack} from "msgpackr";
-import {useRequestHeader} from "~/.nuxt/imports";
 import {H3Event} from "h3";
 
 let STALE_TIME = 30
@@ -53,8 +52,6 @@ export default cachedEventHandler(async (event) => {
 
   let resultDocuments = results.documents;
 
-
-  useRequestHeader("Cache-Control", "max-age=30")
 
   return await parseRaces(redis, redisToArray(resultDocuments || []));
 }, {

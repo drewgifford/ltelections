@@ -1,12 +1,10 @@
 import {RedisClientType} from "redis";
 import OfficeType from "../types/enum/OfficeType";
 import {redisReplace, redisToArray} from "~/server/utils/Util";
-import {CallData, Race, State, transformRaces} from "~/server/types/ViewModel";
 import {RedisUtil} from "~/server/plugins/RedisConnection";
 import {ApiCandidate, ApiParty, ApiRace} from "~/server/types/ApiTypes";
 import {parseRaces} from "~/server/api/searchRaces";
 import States from "~/server/utils/States";
-import {useRequestHeader} from "~/.nuxt/imports";
 import {H3Event} from "h3";
 
 let STALE_TIME = 30
@@ -54,8 +52,6 @@ export default cachedEventHandler(async (event) => {
   });
 
   let documents = redisToArray(results.documents) as ApiRace[];
-
-  useRequestHeader("Cache-Control", "max-age=30")
 
   // Filter if this matches the query
 

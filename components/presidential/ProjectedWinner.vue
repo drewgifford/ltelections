@@ -9,7 +9,9 @@ const props = defineProps<{
   race: Race
 }>();
 
-const winner = computed(() => props.race.call.winner as Candidate);
+const winner = computed(() => props.race.candidates.find(x => x.polID == props.race.call.winner as string));
+
+console.log("Race:", props.race);
 
 let backgroundGradient = `linear-gradient(to right, ${(winner.value.party?.colors[0] || '#ffffff')+'80'} 0%, transparent 100%)`
 

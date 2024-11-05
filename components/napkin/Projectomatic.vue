@@ -32,7 +32,7 @@ const projectomatic = computed(() => {
         needleGradient: needleGradient,
         colors: colors,
         needlePct: needlePct,
-        candidate: props.race.call.winner || topProbabilities[0],
+        candidate: props.race.candidates.find(x => x.polID == props.race.call.winner) || topProbabilities[0],
     }
 });
 
@@ -134,9 +134,9 @@ const getLeadingText = (topProbabilities: Candidate[], colors: string[]) => {
 
     let candidates = topProbabilities;
 
-    let leader = props.race.call.winner || candidates[0];
+    let leader = candidates.find(x => x.polID == props.race.call.winner) || candidates[0];
 
-    let cand = props.race.call.winner || candidates[0];
+    let cand = candidates.find(x => x.polID == props.race.call.winner) || candidates[0];
     let leadingPct = props.race.results[leader.polID]?.probability as number;
 
     
@@ -209,9 +209,9 @@ const projectionText = computed(() => getCallText(props.race));
         <div class="w-full">
             <h1 class="text-xl mt-1">{{ projectomatic.candidate.last }} {{plural ? 'are' : 'is'}} <span class="px-2 rounded-sm" :style="{backgroundColor: projectomatic.leadingText.color+'80'}">{{ projectomatic.leadingText.text }}</span> to win.</h1>
 
-            <p v-if="!(race.call.winner)" class="mt-2">{{ projectomatic.candidate.fullName }} currently {{plural ? 'have' : 'has'}} a <span class="font-header">{{ projectomatic.leadingPct }}</span> chance of winning.</p>
+            <p v-if="!race.call.winner" class="mt-2">{{ projectomatic.candidate.fullName }} currently {{plural ? 'have' : 'has'}} a <span class="font-header">{{ projectomatic.leadingPct }}</span> chance of winning.</p>
             <div v-else>
-              <p class="mt-2"><span class="font-header text-white">{{ projectionText.caller }}</span> projects {{ race.call.winner.fullName }} will win this race.<br/></p>
+              <p class="mt-2"><span class="font-header text-white">{{ projectionText.caller }}</span> projects {{ projectomatic.candidate.fullName }} will win this race.<br/></p>
               <p v-for="(date, index) in projectionText.calls"><span class="text-xs">{{ index }} Call made on {{ parseDateString(date) }}</span></p>
             </div>
 

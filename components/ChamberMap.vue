@@ -83,7 +83,10 @@ import {keys, nth} from "~/server/utils/Util";
 
 
 
-        if (candidates.length == 1) return colors[0];
+
+        if(reportingUnit.winner){
+          return colors[0];
+        }
 
         let voteTotal = reportingUnit.totalVotes || 0;
         let vt = (voteTotal == 0 ? 1 : voteTotal);

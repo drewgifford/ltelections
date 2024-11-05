@@ -11,8 +11,6 @@ const props = defineProps<{
     reporting: boolean
 }>();
 
-console.info(props.race);
-
 const getTotalVotes = (): number => {
   if(keys(props.unit).includes("call")) {
       return notZero(props.unit.totalVotes)

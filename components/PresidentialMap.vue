@@ -58,7 +58,6 @@
 
       function getColor(reportingUnit: any, forceHashed?: boolean){
 
-        console.log(race);
         let candidates = keys(keyedCandidates).toSorted(
             (a: string,b: string) =>
                 (reportingUnit.candidates.find((x: Candidate) => x.polID == a)?.vote || 0)
@@ -102,7 +101,6 @@
 
 
         let expectedVoteTotal = reportingUnit.expectedVotes;
-        console.log("Expected votes:", expectedVoteTotal);
 
         if(voteTotal == 0){
           return INVALID_FILL;

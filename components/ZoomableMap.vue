@@ -161,11 +161,15 @@ import type {Race, RaceReportingUnit, ReportingUnit} from "~/server/types/ViewMo
                 return INVALID_FILL;
             }
 
-            if((cand1Vote - cand2Vote) >= ((expectedVoteTotal || 0) - voteTotal)) {
-                // If the current number of outstanding votes is greater than the margin between the top two candidates, this county can be solid
-                return `${colors[getDifferenceNumber()]}`
+            if ((cand1Vote - cand2Vote) >= ((expectedVoteTotal || 0) - voteTotal)) {
+              // If the current number of outstanding votes is greater than the margin between the top two candidates, this county can be solid
+              if(difference == 0){
+                return getBlendedColor(NA_FILL, '#ffffff', 0.75);
+              }
+              return `${getBlendedColor(colors[getDifferenceNumber()], NA_FILL, 0.75)}`
             }
 
+            if(difference == 0) return `url(#pattern-tie)`;
             // If the candidate hasn't reached over 50% of the expected vote
             return `url(#pattern-${raceCand.party.partyID}-${getDifferenceNumber()})`
 
@@ -277,6 +281,21 @@ import type {Race, RaceReportingUnit, ReportingUnit} from "~/server/types/ViewMo
           if (stateFeature) d3.select(elem.value).select("#background").selectAll('path').data(stateFeature.features).join('path').attr('d', geoGenerator).attr("fill", BG_FILL).attr("stroke", BG_STROKE).attr("stroke-width", 1);
           let defs = d3.select(elem.value).append("defs");
           svg = d3.select(elem.value).select("#foreground").selectAll('path').data(features).join('path').attr('d', geoGenerator).attr("stroke", "#0C1325").attr("stroke-width", 0.75);
+
+
+          function addGreyPattern(){
+            let color1 = getBlendedColor(NA_FILL, "#ffffff", 0.75);
+            let color2 = getBlendedColor(NA_FILL, "#ffffff", 0.5);
+
+            let pattern = defs.append("pattern")
+                .attr('id',`pattern-tie`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
+
+            pattern.append("rect").attr("width","8").attr("height","8").attr("fill", color1);
+            pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
+                .attr("stroke-width", "3")
+                .attr("stroke", color2);
+          }
+          addGreyPattern();
 
 
           let parties: any[] = [];

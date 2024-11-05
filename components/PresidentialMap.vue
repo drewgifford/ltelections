@@ -4,7 +4,7 @@
   import * as d3 from "d3";
   import * as topojson from "topojson-client";
   import LoadingSection from "./LoadingSection.vue";
-  import type {PresidentialReportingUnit, Race, RaceReportingUnit} from "~/server/types/ViewModel";
+  import type {Candidate, PresidentialReportingUnit, Race, RaceReportingUnit} from "~/server/types/ViewModel";
   import OfficeType from "~/server/types/enum/OfficeType";
   import { keyBy } from "~/server/utils/Util";
   import { getBlendedColor} from "~/server/utils/Util";
@@ -54,11 +54,18 @@
 
     async function updateMapColors(race: Race, elements: any){
 
+      let keyedCandidates = keyBy(race.candidates, 'polID');
+
       function getColor(reportingUnit: any, forceHashed?: boolean){
 
-        let candidates = keys(reportingUnit.candidates).sort((a,b) => (reportingUnit.candidates[a].vote || 0) > (reportingUnit.candidates[b].vote || 0) ? -1 : 1);
+        console.log(race);
+        let candidates = keys(keyedCandidates).toSorted(
+            (a: string,b: string) =>
+                (reportingUnit.candidates.find((x: Candidate) => x.polID == a)?.vote || 0)
+                > (reportingUnit.candidates.find((x: Candidate) => x.polID == b)?.vote || 0) ? -1 : 1);
 
         let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0]);
+
 
         if(!raceCand) return INVALID_FILL;
 
@@ -76,8 +83,8 @@
         let voteTotal = reportingUnit.totalVotes || 0;
         let vt = (voteTotal == 0 ? 1 : voteTotal);
 
-        let cand1Vote = reportingUnit.results[candidates[0]].vote;
-        let cand2Vote = reportingUnit.results[candidates[1]].vote;
+        let cand1Vote = reportingUnit.candidates.find(x => x.polID == candidates[0])?.vote;
+        let cand2Vote = reportingUnit.candidates.find(x => x.polID == candidates[1])?.vote;
 
 
 
@@ -95,19 +102,23 @@
 
 
         let expectedVoteTotal = reportingUnit.expectedVotes;
+        console.log("Expected votes:", expectedVoteTotal);
 
         if(voteTotal == 0){
           return INVALID_FILL;
         }
 
         if(!forceHashed) {
-
           if ((cand1Vote - cand2Vote) >= ((expectedVoteTotal || 0) - voteTotal)) {
             // If the current number of outstanding votes is greater than the margin between the top two candidates, this county can be solid
+            if(difference == 0){
+              return getBlendedColor(NA_FILL, '#ffffff', 0.75);
+            }
             return `${getBlendedColor(colors[getDifferenceNumber()], NA_FILL, 0.75)}`
           }
         }
 
+        if(difference == 0) return `url(#pattern-tie)`;
         // If the candidate hasn't reached over 50% of the expected vote
         return `url(#pattern-${raceCand.party.partyID}-${getDifferenceNumber()})`
 
@@ -191,8 +202,19 @@
         // STATE LABELS FOR PRES
 
 
+        function addGreyPattern(){
+          let color1 = getBlendedColor(NA_FILL, "#ffffff", 0.75);
+          let color2 = getBlendedColor(NA_FILL, "#ffffff", 0.5);
 
+          let pattern = defs.append("pattern")
+              .attr('id',`pattern-tie`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
 
+          pattern.append("rect").attr("width","8").attr("height","8").attr("fill", color1);
+          pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
+              .attr("stroke-width", "3")
+              .attr("stroke", color2);
+        }
+        addGreyPattern();
 
         let parties: any[] = [];
 
@@ -248,7 +270,7 @@
 
             if(selectedRu && IS_NATIONAL_MAP()){
 
-                d.attr("style", "cursor: pointer");//.attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state.name.toLowerCase()}/president'`);
+                d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state.name.toLowerCase()}/president'`);
             }
         }
 

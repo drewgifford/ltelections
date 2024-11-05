@@ -46,9 +46,28 @@ export default defineEventHandler(async (event) => {
 
   let homeDashboard = await redis.json.get('homeDashboard') as ApiHomeDashboard;
 
-  console.log(homeDashboard.presRace);
+
 
   if(!homeDashboard) return {};
+
+  // Fix vote totals because they do not update quickly
+  for(let key of keys(homeDashboard.presRace.results)){
+    homeDashboard.presRace.results[key].vote = 0
+  }
+
+  for(let rid of keys(homeDashboard.presRaces)){
+    let race = homeDashboard.presRaces[rid];
+
+    for(let cand of Object.values(race.candidates)){
+      if(hasKey(homeDashboard.presRace.results, cand.polID)){
+        homeDashboard.presRace.results[cand.polID].vote += cand.vote;
+      }
+
+    }
+
+  }
+
+  console.log(homeDashboard.presRace.results);
 
   homeDashboard.presRace.candidates = await redis.json.mGet((homeDashboard.presRace as unknown as ApiRace).candidates.map(x => `candidates.${x}`), '.') as Candidate[];
 

@@ -80,9 +80,6 @@ const keyToVictory = computed(() => {
     let percent = needed/votesRemaining;
 
 
-
-
-
     return {
         percent: roundPercentage(percent),
         votesRemaining: votesRemaining,
@@ -120,7 +117,7 @@ const keyToVictory = computed(() => {
                         <h3 class="mx-auto text-xl">OR</h3>
                     </div>
 
-                    <div class="text-center md:text-center">
+                    <div class="text-center md:text-left">
                         <h1 class="text-2xl">
                             {{ keyToVictory.votesNeeded.toLocaleString() }}
                         </h1>

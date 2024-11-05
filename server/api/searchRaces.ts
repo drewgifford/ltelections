@@ -78,29 +78,32 @@ export async function parseRaces(redis: RedisClientType, races: ApiRace[]) {
 
   let array = races.filter(x => x.state.postalCode != 'US').map(
       race => {
-        let high = keys(race.results).reduce((a,b) => { return race.results[a].probability > race.results[b].probability ? a : b });
 
 
 
         let results: any = {};
-        let candidates = [high];
-        results[high] = race.results[high];
+        let candidates = race.candidates.toSorted((a,b) => {
+
+          if(race.results[a].vote > race.results[b].vote) return -1;
+          if(race.results[a].vote > race.results[b].vote) return 1;
+
+          if(race.results[a].probability > race.results[b].probability) return -1;
+          if(race.results[a].probability > race.results[b].probability) return 1;
+
+          return 0;
+        });
 
 
-        if(race.candidates.length > 1){
-          let second = keys(race.results).filter(x => x != high).reduce((a,b) => { return race.results[a].probability > race.results[b].probability ? a : b });
-          results[second] = race.results[second];
-          candidates.push(second);
-        }
 
         totalCandidates = [...totalCandidates, ...candidates, ...race.incumbents];
         return {
           uuid: race.uuid,
           eevp: race.eevp,
           candidates: candidates,
-          results: results as any,
+          results: race.results,
           state: race.state,
           totalVotes: race.totalVotes,
+          expectedVotes: race.expectedVotes,
           officeID: race.officeID,
           officeName: race.officeName,
           seatNum: race.seatNum,

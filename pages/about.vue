@@ -54,9 +54,9 @@ const teamMembers: TeamMember[] = [
   imageUrl: "/img/decisiondesk/python_result.webp"
 },
 {
-  name: "Selina",
+  name: "Dedalus",
   roles: "Decision Desk",
-  imageUrl: "/img/decisiondesk/selina_result.webp"
+  imageUrl: "/img/decisiondesk/dedalus_result.webp"
 },
 {
   name: "Aspect",

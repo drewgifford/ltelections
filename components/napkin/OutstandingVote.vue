@@ -27,34 +27,31 @@ const { data: outstandingVote, status, refresh } = useFetch("/api/results", {
   watch: [props.race],
   transform: async (res: {[key: string]: ReportingUnit & RaceReportingUnit}) => {
 
-    console.info("Transforming...")
-    if(!res) return null;
+    try {
 
-    if(!reportingUnitData || !keys(reportingUnitData.value || {}).includes(props.race.state.stateID)){
-      console.info("UH OH...")
-      await refreshRUs();
+
+      if (!res) return null;
+
+      if (!reportingUnitData || !keys(reportingUnitData.value || {}).includes(props.race.state.stateID)) {
+        await refreshRUs();
+      }
+
+      for (let obj of Object.entries(res)) {
+
+        obj[1] = Object.assign(obj[1], (reportingUnitData.value as any)[obj[0]]);
+      }
+
+
+      let r = res;
+
+      if (keys(res).includes(props.race.state.stateID)) {
+        r[props.race.state.stateID] = res[props.race.state.stateID];
+      }
+
+      return getOutstandingVote(r);
+    }catch(e){
+      console.error(e);
     }
-
-    console.info("Phew...")
-
-    for(let obj of Object.entries(res)){
-
-      obj[1] = Object.assign(obj[1], (reportingUnitData.value as any)[obj[0]]);
-    }
-
-    console.info("AHHHH")
-
-
-    let r = res;
-    //let r = keyBy(Object.values(res).filter(x => x.reportingunitLevel == 2), 'fipsCode') as {[fips: string]: RaceReportingUnit};
-
-    console.info("we good?")
-
-    if(keys(res).includes(props.race.state.stateID)){
-      r[props.race.state.stateID] = res[props.race.state.stateID];
-    }
-    console.info("Almost done!", r);
-    return getOutstandingVote(r);
   },
   server: false,
 });
@@ -63,22 +60,23 @@ const { data: outstandingVote, status, refresh } = useFetch("/api/results", {
 
 const getOutstandingVote = (results: any) => {
 
+
   if(results == null) return null;
 
   let countyIDs = Object.keys(results).filter(e => e != props.race.state.stateID);
 
 
-    const getOutstanding = (ru: RaceReportingUnit) => {
-        return ((ru.expectedVotes || 0) - (ru.totalVotes || 0))
-    }
+  const getOutstanding = (ru: RaceReportingUnit) => {
+      return ((ru.expectedVotes || 0) - (ru.totalVotes || 0))
+  }
+
 
   let counties = countyIDs.toSorted((a: string,b: string) => {
-      return (getOutstanding(results[a]) > results[b]) ? -1 : 1;
+      return (getOutstanding(results[a]) > getOutstanding(results[b])) ? -1 : 1;
   });
 
     let retVal = [];
 
-    console.log("counties", counties);
     for(let ruid of counties.slice(0, 4)){
 
       let ru = results[ruid];
@@ -91,15 +89,16 @@ const getOutstandingVote = (results: any) => {
             let leadingCand = ruCandidates[0];
             let leadingParty = leadingCand.party;
 
-            console.log(leadingCand, leadingParty);
 
-            let margin = props.race.results[ruCandidates[0].polID].vote - props.race.results[ruCandidates[1].polID].vote;
+            let margin = ru.results[ruCandidates[0].polID].vote - ru.results[ruCandidates[1].polID].vote;
+
             let maxPercent = 0;
 
-            console.log(margin);
 
             for(let candidate of ruCandidates.slice(0, 2)){
-                let percent = getVotes(props.race, candidate) / (ru.totalVotes || 1);
+                let percent = getVotes(ru, candidate) / (ru.totalVotes || 1);
+
+
                 bars.push({
                     color: candidate.party.colors[0],
                     percent: percent
@@ -121,7 +120,6 @@ const getOutstandingVote = (results: any) => {
                     maxPercent: maxPercent + 0.1
                 });
 
-                console.log(retVal);
             }
         }
 

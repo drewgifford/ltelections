@@ -15,7 +15,7 @@ const props = defineProps<{
     <NapkinItem v-if="(race.candidates.length > 1 && race.hasProjectomatic)" :color="(getMostLikelyCandidate(race).party.colors[0] || '#ffffff')">
         <Projectomatic :race="(race)" :forceSmall="false"/>
     </NapkinItem>
-    <KeyToVictory v-if="(race.candidates.length > 1)" class="mt-6" :race="(race)"/>
+    <!--<KeyToVictory v-if="(race.candidates.length > 1)" class="mt-6" :race="(race)"/>-->
     <OutstandingVote v-if="(race.candidates.length > 1)" class="mt-6" :race="(race)"/>
 
 </template>

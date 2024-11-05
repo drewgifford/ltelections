@@ -129,7 +129,7 @@ const mockSenateRace = computed(() => {
        <div class="mt-4">
 
             <div class="grid xl:grid-cols-2 gap-4 flex items-center">
-                <div>
+                <div class="order-1 sm:order-0">
                   <ChamberMap :type="'senate'" :home-dashboard="homeDashboard" minHeight="500px"/>
                 </div>
                 <div class="card p-4">

@@ -97,7 +97,7 @@ import {keys, nth} from "~/server/utils/Util";
         let cand2Vote = reportingUnit.candidates.find((x: any) => x.party != leadingParty.partyID)?.vote || 0;
 
 
-        let difference = ((cand1Vote-cand2Vote)/vt)*100/2;
+        let difference = ((cand1Vote-cand2Vote)/vt)*100;
 
 
         function getDifferenceNumber(){

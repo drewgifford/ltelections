@@ -88,7 +88,7 @@
 
 
 
-        let difference = ((cand1Vote-cand2Vote)/vt)*100/2;
+        let difference = ((cand1Vote-cand2Vote)/vt)*100;
 
 
         function getDifferenceNumber(){

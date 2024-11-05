@@ -24,14 +24,7 @@ const getVotes = (candidate: Candidate) => {
 const getElectoralVotes = (candidate: any) => {
 
   let sum = 0;
-  for(let r of Object.values(props.homeDashboard.presRaces) as any){
-
-    if(!r.call) continue;
-    if(r.call.winner && r.call.winner == candidate.polID){
-      sum += r.electTotal;
-    }
-  }
-  return sum;
+  return props.homeDashboard?.values.president[candidate.party.partyID];
 
 }
 

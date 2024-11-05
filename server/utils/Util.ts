@@ -56,7 +56,7 @@ export function sortCandidates(race: Race, unit?: HasResults){
     if(incumbent && incumbent.polID == a.polID) return -1;
     if(incumbent && incumbent.polID == b.polID) return 1;
 
-    if(!(incumbent && incumbent.polID == b.polID) && (a.party.partyID == 'Dem' || a.party.partyID == 'GOP')) return -1;
+    if(!(incumbent && incumbent.polID == b.polID) && (a.party?.partyID == 'Dem' || a.party?.partyID == 'GOP')) return -1;
 
     return 1;
 
@@ -315,8 +315,17 @@ export const sortRaces = (races: Race[]) => {
 
 }
 
-export const parseDateString = (dateStr: string) => {
-  let date = new Date(dateStr);
+export const parseDateString = (dateStr: any) => {
+  let date;
+
+  let num = Number(dateStr);
+
+  if(isNaN(num)){
+    date = new Date(dateStr);
+  }
+  else {
+    date = new Date(num * 1000);
+  }
 
   return moment.tz(date, "America/New_York").format("MM/DD @ hh:mmA z")
 

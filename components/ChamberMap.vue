@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-  import { keys } from "~/server/utils/Util";
+import {keys, nth} from "~/server/utils/Util";
   import * as d3 from "d3";
   import * as topojson from "topojson-client";
   import LoadingSection from "./LoadingSection.vue";
@@ -10,70 +10,75 @@
   import { getBlendedColor} from "~/server/utils/Util";
   import type {ApiHomeDashboard, ApiMinimalRace} from "~/server/api/homeDashboard";
   import MinimalResultTable from "~/components/race/MinimalResultTable.vue";
+  import { hasKey } from "~/server/utils/Util";
+  import States from "~/server/utils/States";
 
 
   const props = defineProps<{
-        race: Race,
         minHeight: string,
-        homeDashboard: ApiHomeDashboard
+        homeDashboard: ApiHomeDashboard,
+        type: string,
     }>();
+
+  const races = computed(() => props.type == "senate" ? props.homeDashboard.senateRaces : props.homeDashboard.houseRaces);
 
   const INVALID_FILL = "#2a384d";
   const NA_FILL = "#1C2533";
   const BG_FILL = "#1C2533";
   const EV_FILL = "#676C79";
   const BG_STROKE = "#0C1325";
+  const STROKE_WIDTH = props.type == "senate" ? 0.75 : 0.15;
 
     const getReportingUnit = (d: any) => {
       if(!d) return null;
-      return props.homeDashboard.presRaces[d3.select(d).attr("id")];
+
+      if(!hasKey(races.value, d3.select(d).attr("id"))) return null;
+      return races.value[d3.select(d).attr("id")];
     }
 
 
 
-    const elem = useTemplateRef("svg");
+    const elem = useTemplateRef("map");
     const tooltip = useTemplateRef("tooltip");
-
-    const NEW_ENGLAND_STATES = ["VT", "CT", "ME", "RI", "NH", "MA"];
-
-    const IS_NATIONAL_MAP =() => {
-        return props.race.state.stateID == '0' && props.race.officeID == OfficeType.President
-    };
 
 
 
     // Tooltip values
     let selectedRu = ref<ApiMinimalRace>();
 
-    let statePostal = props.race.state?.postalCode;
-
-    async function updateTooltipData(race: Race){
+    async function updateTooltipData(){
       if(selectedRu){
-        selectedRu.value = Object.values(props.homeDashboard.presRaces).find(x => x.uuid == selectedRu.value?.uuid);
+        selectedRu.value = Object.values(races.value).find(x => x.uuid == selectedRu.value?.uuid);
       }
     }
 
-    async function updateMapColors(race: Race, elements: any){
+    async function updateMapColors(elements: any){
 
-      let keyedCandidates = keyBy(race.candidates, 'polID');
 
       function getColor(reportingUnit: any, forceHashed?: boolean){
 
-        let candidates = keys(keyedCandidates).toSorted(
+        if(!reportingUnit) return BG_FILL;
+
+
+
+
+        let candidates = reportingUnit.candidates.toSorted(
             (a: string,b: string) =>
                 (reportingUnit.candidates.find((x: Candidate) => x.polID == a)?.vote || 0)
                 > (reportingUnit.candidates.find((x: Candidate) => x.polID == b)?.vote || 0) ? -1 : 1);
 
-        let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0]);
+
+        let leadingParty = Object.values(props.homeDashboard.parties).find(party => party.partyID == candidates[0].party);
 
 
-        if(!raceCand) return INVALID_FILL;
+
+        if(!leadingParty) return NA_FILL;
 
 
 
         let defaultColors: string[] = ["#ffffff","#aaaaaa","#999999","#777777"]
 
-        let colors = raceCand.party.colors;
+        let colors = leadingParty.colors;
         if(!colors || colors.length < 4) colors = defaultColors;
 
 
@@ -83,9 +88,10 @@
         let voteTotal = reportingUnit.totalVotes || 0;
         let vt = (voteTotal == 0 ? 1 : voteTotal);
 
-        let cand1Vote = reportingUnit.candidates.find(x => x.polID == candidates[0])?.vote;
-        let cand2Vote = reportingUnit.candidates.find(x => x.polID == candidates[1])?.vote;
 
+
+        let cand1Vote = reportingUnit.candidates.find((x: any) => x.party == leadingParty.partyID)?.vote || 0;
+        let cand2Vote = reportingUnit.candidates.find((x: any) => x.party != leadingParty.partyID)?.vote || 0;
 
 
         let difference = ((cand1Vote-cand2Vote)/vt)*100/2;
@@ -113,37 +119,23 @@
             if(difference == 0){
               return getBlendedColor(NA_FILL, '#ffffff', 0.75);
             }
-            return `${getBlendedColor(colors[getDifferenceNumber()], NA_FILL, 0.75)}`
+            return `${getBlendedColor(colors[getDifferenceNumber()], NA_FILL, 0.100)}`
           }
         }
 
         if(difference == 0) return `url(#pattern-tie)`;
         // If the candidate hasn't reached over 50% of the expected vote
-        return `url(#pattern-${raceCand.party.partyID}-${getDifferenceNumber()})`
+        return `url(#pattern-${leadingParty.partyID}-${getDifferenceNumber()})`
 
       }
-
-      let votes = elements.select("#electoralVotes").selectAll("path");
-      votes.attr("fill", (d: any, i: any, nodes: any) => {
-
-        let state = nodes[i];
-        let statePostal = d3.select(state).attr("id").replace("-votes", "");
-        let reportingUnit = props.homeDashboard.presRaces[statePostal] as ApiMinimalRace;
-
-        if(reportingUnit.totalVotes == 0){
-          return EV_FILL;
-        }
-
-        if(reportingUnit.winner){
-          return props.race.candidates.find(x => x.polID == reportingUnit.winner as any)?.party.colors[0];
-        }
-        return getColor(reportingUnit, true);
-      });
 
       let states = elements.select("#states").selectAll("path");
         states.attr("fill", (d: any, i: any, nodes: any) => {
 
+
+
           let state = nodes[i];
+
 
           let reportingUnit = getReportingUnit(state);
 
@@ -174,8 +166,13 @@
         // TEST: add state behind house projection
 
 
+        let xmlDocument;
+        if(props.type == 'house'){
+          xmlDocument = await d3.xml("/img/house.svg");
+        } else {
+          xmlDocument = await d3.xml("/img/senate.svg");
+        }
 
-        let xmlDocument = await d3.xml("/img/electoralCollege.svg");
 
 
         elem.value?.appendChild(xmlDocument.documentElement);
@@ -190,15 +187,16 @@
 
         svg.selectAll('path')
             .attr("stroke", "#0C1325")
-            .attr("stroke-width",0.75)
+            .attr("stroke-width",STROKE_WIDTH)
             .attr("shape-rendering", "geometricPosition")
 
         svg.select("#electoralVotes").selectAll('path').attr("pointer-events","none")
-        svg.select("#text").selectAll('text').attr("pointer-events","none")
+        svg.selectAll('text').attr("pointer-events","none")
 
         //var svg = d3.select(elem.value).select("#foreground").selectAll('path').data(features).attr("stroke","#0C1325").attr("stroke-width", 0.75);
 
         // STATE LABELS FOR PRES
+
 
 
         function addGreyPattern(){
@@ -217,18 +215,17 @@
 
         let parties: any[] = [];
 
-        for(let candidate of props.race.candidates){
-            if(parties.includes(candidate.party)) continue;
+        for(let party of Object.values(props.homeDashboard.parties)){
 
-            parties.push(candidate.party);
+            parties.push(party);
 
-            for(let i = 0; i < (candidate.party.colors.length || 0); i++){
+            for(let i = 0; i < (party.colors.length || 0); i++){
 
-                let color1 = getBlendedColor(NA_FILL, candidate.party.colors[i], 0.75);
-                let color2 = getBlendedColor(NA_FILL, candidate.party.colors[i], 0.5);
+                let color1 = getBlendedColor(NA_FILL, party.colors[i], 0.75);
+                let color2 = getBlendedColor(NA_FILL, party.colors[i], 0.5);
 
                 let pattern = defs.append("pattern")
-                    .attr('id',`pattern-${candidate.party.partyID}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
+                    .attr('id',`pattern-${party.partyID}-${i}`).attr('patternUnits', 'userSpaceOnUse').attr("width","8").attr("height","8");
 
                 pattern.append("rect").attr("width","8").attr("height","8").attr("fill", color1);
                 pattern.append("path").attr("d","M 0,8 l 8,-8 M -2,2 l 4,-4 M 6,10 l 4,-4")
@@ -239,11 +236,11 @@
 
         }
 
-        watch(() => props.race, async (race) => {
-            await updateMapColors(race, svg);
-            await updateTooltipData(race);
+        watch(() => props.homeDashboard.senateRaces, async (race) => {
+            await updateMapColors(svg);
+            await updateTooltipData();
         });
-        await updateMapColors(props.race, svg);
+        await updateMapColors(svg);
 
 
 
@@ -257,6 +254,8 @@
             let d = d3.select(this);
             reportingUnit = getReportingUnit(this);
 
+            if(!reportingUnit) return;
+
 
             selectedRu.value = reportingUnit || undefined;
 
@@ -265,11 +264,29 @@
             }
             ruIdx++;
 
-            d.attr('stroke', 'white').attr("stroke-width", 1.5).raise();
+            d.attr('stroke', 'white').attr("stroke-width", STROKE_WIDTH*2).raise();
 
-            if(selectedRu && IS_NATIONAL_MAP()){
+            if(selectedRu.value){
 
-                d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state.name.toLowerCase()}/president'`);
+              let state = States.find(x => x.postalCode == d.attr("id").split("-")[0]);
+
+
+              let k = keys(races.value).find(x => {
+                return races.value[x].uuid == selectedRu.value?.uuid;
+              }) || "undefined-undefined";
+
+              let apx = "";
+              if(selectedRu.value.special){
+                apx += "-special";
+              }
+
+                if(props.type == 'senate'){
+                  d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${state?.name.toLowerCase()}/senate${apx}'`);
+                }
+                else {
+                  d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${state?.name.toLowerCase()}/house-${k.split('-')[1]}'`);
+                }
+
             }
         }
 
@@ -310,7 +327,7 @@
 
             if(tooltip.value){
                 tooltip.value.style.filter = 'opacity(0)';
-                d3.select(this).attr('stroke', '#0C1325').attr("stroke-width", 0.75).lower();
+                d3.select(this).attr('stroke', '#0C1325').attr("stroke-width", STROKE_WIDTH).lower();
             }
         }
 
@@ -322,6 +339,30 @@
 
 
     });
+
+
+
+const getStateName = () => {
+  if(!selectedRu.value) return null;
+
+  let k = keys(races.value).find(x => {
+    return races.value[x].uuid == selectedRu.value?.uuid;
+  }) || "undefined-undefined";
+
+  let state = States.find(x => x.postalCode == k.split("-")[0]);
+
+  let name = state.name;
+
+  if(props.type == "house"){
+
+    let num = k.split("-")[1]
+    name = name + "'s " + num + nth(num);
+
+  }
+
+  if(selectedRu.value.special) return name + " Special";
+  return name;
+}
 
 </script>
 
@@ -335,16 +376,16 @@
 
               <div class="flex">
                 <div class="flex-1">
-                  <p class="text-white text-left font-header mb-2">{{ru.state?.name}}<span v-if="ru.seatNum > 0"> CD-{{ru.seatNum}}</span> | {{ ru.electTotal }} EV</p>
+                  <p class="text-white text-left font-header mb-2">{{ getStateName() }}</p>
                 </div>
               </div>
-              <MinimalResultTable :home-dashboard="homeDashboard" :key="ruIdx" :race="race" :unit="ru"/>
+              <ChamberResultTable :home-dashboard="homeDashboard" :race="ru" :key="ruIdx"/>
 
 
             </div>
         </div>
 
-        <div class="w-full" ref="svg" :style="(loading ? {filter: 'opacity(0)', minHeight: `${props.minHeight}`} : {minHeight: `${props.minHeight}`})">
+        <div class="w-full" ref="map" :style="(loading ? {filter: 'opacity(0)', minHeight: `${props.minHeight}`} : {minHeight: `${props.minHeight}`})">
         </div>
 
         <LoadingSection v-if="loading" :absolute=true :style="{minHeight: `${props.minHeight}`}"/>

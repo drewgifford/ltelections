@@ -1,4 +1,4 @@
-import {keys} from "~/server/utils/Util";
+import {keys, sortRaces} from "~/server/utils/Util";
 
 export function parseAPIResponse(res: any){
     if(!res) return [];
@@ -17,8 +17,7 @@ export function parseAPIResponse(res: any){
             race.candidates = race.candidates.map((x: string) => res.candidates[x]);
             race.incumbents = race.incumbents.map((x: string) => res.candidates[x]);
         }
-        console.log("Parties", res.parties);
-        return res.races;
+        return sortRaces(res.races);
 
     } catch(e){
         console.error(e);

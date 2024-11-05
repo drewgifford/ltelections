@@ -67,8 +67,6 @@ export default defineEventHandler(async (event) => {
 
   }
 
-  console.log(homeDashboard.presRace.results);
-
   homeDashboard.presRace.candidates = await redis.json.mGet((homeDashboard.presRace as unknown as ApiRace).candidates.map(x => `candidates.${x}`), '.') as Candidate[];
 
   return homeDashboard;

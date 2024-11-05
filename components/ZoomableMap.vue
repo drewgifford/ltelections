@@ -13,10 +13,11 @@ import type {Race, RaceReportingUnit, ReportingUnit} from "~/server/types/ViewMo
         minHeight: string,
     }>();
 
-  const INVALID_FILL = "#1E293B";
-  const NA_FILL = "#141c30";
-  const BG_FILL = "#141c30";
-  const BG_STROKE = "#0C1325";
+const INVALID_FILL = "#2a384d";
+const NA_FILL = "#1C2533";
+const BG_FILL = "#1C2533";
+const EV_FILL = "#676C79";
+const BG_STROKE = "#0C1325";
 
   const { data: reportingUnitData, refresh: refreshRUs } = useFetch(`https://l2bytldico4wuatx.public.blob.vercel-storage.com/reportingUnits/${props.race.state.postalCode}.json`,
       {
@@ -321,7 +322,6 @@ import type {Race, RaceReportingUnit, ReportingUnit} from "~/server/types/ViewMo
           }
         }
         watch(results, async () => {
-            await updateMap();
             await updateMapColors(props.race, svg);
             await updateTooltipData(props.race);
             loading.value = false;
@@ -429,12 +429,6 @@ const tooltipData = computed(() => {
 
 });
 
-const getTopCandidate = (ru: any) => {
-  let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(ru.results[a.polID].probability) > Number(ru.results[b.polID].probability) ? -1 : 1);
-
-  return topProbabilities[0];
-
-}
 
 </script>
 
@@ -442,7 +436,7 @@ const getTopCandidate = (ru: any) => {
 
     <div class="relative pb-10">
 
-        <div v-if="!loading" class="z-10 overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
+        <div class="z-20 overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
 
             <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="selectedRu?.reportingunitID">
 
@@ -464,7 +458,7 @@ const getTopCandidate = (ru: any) => {
             </div>
         </div>
 
-        <svg class="w-full" ref="svg" :style="(loading ? {filter: 'opacity(0)', minHeight: `${props.minHeight}`} : {minHeight: `${props.minHeight}`})">
+        <svg class="w-full" ref="svg" :style="{minHeight: `${props.minHeight}`}">
             <g id="background"></g>
             <g id="foreground"></g>
             

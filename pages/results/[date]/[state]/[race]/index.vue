@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@vueuse/core';
 import {getOfficeTypeFromOfficeURL, getTitle} from '~/server/utils/Util';
-import { nth } from '~/server/utils/Util';
-import OfficeType from "~/server/types/enum/OfficeType";
-import type { Race } from '~/server/types/ViewModel';
+import {getRaceTitle, type Race} from '~/server/types/ViewModel';
 import { parseAPIResponse} from "~/server/utils/ParseAPI";
 
 
@@ -15,7 +13,7 @@ const route = useRoute();
     const raceParam = route.params.race as string;
     const officeID = getOfficeTypeFromOfficeURL(raceParam);
 
-    const { data: races, status, error, refresh: refreshRaces } = await useFetch("/api/race", {
+    const { data: races, status, error, refresh } = await useFetch("/api/race", {
         query: {
             stateName: stateName,
             raceParam: raceParam,
@@ -23,14 +21,29 @@ const route = useRoute();
         },
         transform: (res: any) => {
           if(!res) return null;
+
           let d = parseAPIResponse(res);
-          console.log(d);
+
           return d;
         },
         server: false,
     });
   const race = computed(() => races.value ? races.value[0] : null);
 
+onMounted(async () => {
+  let interval: any = null;
+
+  function resetInterval() {
+    if (interval) clearInterval(interval);
+    interval = setInterval(async () => {
+      console.log("Refreshing");
+      await refresh();
+    }, 30000);
+
+
+  }
+  resetInterval();
+});
 
     if(!race){
         throw({status: 404})
@@ -44,12 +57,9 @@ const route = useRoute();
 
     });
 
-    useIntervalFn(async () => {
-        await refreshRaces();
-    }, 30000);
+
 
     const getWinner = (race: Race) => {
-      console.log(race);
       return race.call.winner;
     }
 
@@ -71,7 +81,7 @@ const route = useRoute();
 
                 <div class="my-4">
                     <p><a :href="`/results/${route.params.date}/?state=${race.state?.postalCode}&office=any`">&lt; See all races in {{ race.state?.name }}</a></p>
-                    <h1 class="text-2xl">{{ getTitle() }}</h1>
+                    <h1 class="text-2xl">{{ getTitle(race) }}</h1>
                 </div>
 
                 <div class="card">

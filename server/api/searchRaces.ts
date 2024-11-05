@@ -5,11 +5,13 @@ import {CallData, Race, State, transformRaces} from "~/server/types/ViewModel";
 import {RedisUtil} from "~/server/plugins/RedisConnection";
 import {ApiCandidate, ApiParty, ApiRace} from "~/server/types/ApiTypes";
 import {pack} from "msgpackr";
+import {useRequestHeader} from "~/.nuxt/imports";
+import {H3Event} from "h3";
 
 let STALE_TIME = 30
 let ELECTION_DATE = "2024-11-05"
 
-export default defineEventHandler(async (event) => {
+export default cachedEventHandler(async (event) => {
 
   type BodyRes = {
     statePostal: string,
@@ -51,7 +53,13 @@ export default defineEventHandler(async (event) => {
 
   let resultDocuments = results.documents;
 
+
+  useRequestHeader("Cache-Control", "max-age=30")
+
   return await parseRaces(redis, redisToArray(resultDocuments || []));
+}, {
+  maxAge: 30,
+  getKey: (event: H3Event) => event.path,
 });
 
 type RaceViewModel = {
@@ -76,10 +84,11 @@ type RaceViewModel = {
 export async function parseRaces(redis: RedisClientType, races: ApiRace[]) {
   let totalCandidates: string[] = [];
 
+
   let array = races.filter(x => x.state.postalCode != 'US').map(
       race => {
 
-
+        console.log(race.winThreshold);
 
         let results: any = {};
         let candidates = race.candidates.toSorted((a,b) => {
@@ -96,6 +105,7 @@ export async function parseRaces(redis: RedisClientType, races: ApiRace[]) {
 
 
         totalCandidates = [...totalCandidates, ...candidates, ...race.incumbents];
+
         return {
           uuid: race.uuid,
           eevp: race.eevp,
@@ -111,6 +121,7 @@ export async function parseRaces(redis: RedisClientType, races: ApiRace[]) {
           raceType: race.raceType,
           incumbents: race.incumbents,
           designation: race.designation,
+          winThreshold: race.winThreshold,
           hasProjectomatic: race.hasProjectomatic,
         } as unknown as RaceViewModel;
       }
@@ -132,11 +143,12 @@ export async function parseRaces(redis: RedisClientType, races: ApiRace[]) {
   for(let cand of cands){
     if(!partyStrs.includes(cand.party)) partyStrs.push(cand.party);
   }
-  console.log(partyStrs);
+
   if(partyStrs.length > 0){
     parties = await redis.json.mGet(partyStrs.map(x => `parties.${x}`), '.') as ApiParty[];
   }
-  console.log(parties);
+
+
 
 
   return {

@@ -56,6 +56,7 @@ import {unpack} from "msgpackr";
       function resetInterval(){
         if(interval) clearInterval(interval);
         interval = setInterval(async () => {
+          console.log("Refreshing");
           await refresh();
         }, 30000);
       }
@@ -70,6 +71,8 @@ import {unpack} from "msgpackr";
         await refresh();
         resetInterval();
       });
+
+      resetInterval();
 
     });
 

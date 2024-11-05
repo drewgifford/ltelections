@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const getTotalVotes = (): number => {
   if(keys(props.unit).includes("call")) {
-      return notZero(props.unit.totalVotes*2)
+      return notZero(props.unit.totalVotes)
   } else return notZero(props.unit.totalVotes);
 }
 

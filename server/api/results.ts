@@ -6,11 +6,12 @@ import {RedisUtil} from "~/server/plugins/RedisConnection";
 import {ApiCandidate, ApiParty, ApiRace} from "~/server/types/ApiTypes";
 import {parseRaces} from "~/server/api/searchRaces";
 import {pack} from "msgpackr";
+import {H3Event} from "h3";
 
 let STALE_TIME = 30
 let ELECTION_DATE = "2024-11-05"
 
-export default defineEventHandler(async (event) => {
+export default cachedEventHandler(async (event) => {
 
   type BodyRes = {
     raceUuid: string,
@@ -24,7 +25,8 @@ export default defineEventHandler(async (event) => {
 
   let results = await redis.json.get(`results.${query.raceUuid}`) as ApiRace;
 
-  console.log(results, query);
-
   return results;
+}, {
+  maxAge: 30,
+  getKey: (event: H3Event) => event.path,
 });

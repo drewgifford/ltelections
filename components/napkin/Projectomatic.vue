@@ -7,14 +7,15 @@ import { keys } from '~/server/utils/Util';
 
 const props = defineProps<{
         race: Race,
-        forceSmall: boolean
+        forceSmall: boolean,
+        plural?: boolean,
     }>();
 const LOW_QUALITY_NEEDLE_RACES = ["AK", "VT", "CT", "ME", "RI", "NH", "MA"];
 
 const projectomatic = computed(() => {
 
     let results = props.race.results;
-    let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(results[a.polID].probability) > Number(results[b.polID].probability) ? -1 : 1);
+    let topProbabilities =  props.race.candidates.toSorted((a: any,b: any) => Number(results[a.polID]?.probability) > Number(results[b.polID]?.probability) ? -1 : 1);
 
     
     let leadingPct = getLeadingPct(topProbabilities);
@@ -37,7 +38,7 @@ const projectomatic = computed(() => {
 
 const getLeadingPct = (topProbabilities: Candidate[]) => {
 
-    let leadingPct = roundPercentage(props.race.results[(props.race.call.winner || topProbabilities[0]).polID].probability as number, 2);
+    let leadingPct = roundPercentage(props.race.results[(props.race.call.winner || topProbabilities[0]).polID]?.probability as number, 2);
     if(props.race.call.status == RaceCallStatus.Called) leadingPct = "100%";
 
     return leadingPct;
@@ -45,7 +46,7 @@ const getLeadingPct = (topProbabilities: Candidate[]) => {
 
 const getNeedlePct = (topProbabilities: Candidate[]) => {
 
-    let leadingPct = props.race.results[(props.race.call.winner || topProbabilities[0]).polID].probability as number*100;
+    let leadingPct = props.race.results[(props.race.call.winner || topProbabilities[0]).polID]?.probability as number*100;
 
     if(props.race.call.status == RaceCallStatus.Called) leadingPct = 100;
 
@@ -59,7 +60,7 @@ const getNeedleStyles: any = (topProbabilities: Candidate[]) => {
 
     let low = 0.45;
     let high = 1.00;
-    let pct = props.race.results[(props.race.call.winner || topProbabilities[0]).polID].probability as number;
+    let pct = props.race.results[(props.race.call.winner || topProbabilities[0]).polID]?.probability as number;
 
     let progress = 0;
     if(pct < low) progress = 0;
@@ -88,14 +89,19 @@ const getColors = (topProbabilities: Candidate[]) => {
     let cands = topProbabilities;
 
     let cand1 = props.race.call.winner || cands[0];
-    let color1 = cand1?.party.colors[0];
+    let color1 = cand1?.party?.colors[0];
 
     let color2 = color1;
-    if(cands.length > 0){
+
+
+
+    if(cands.length > 1){
         let cand2 = cands[1];
 
+      console.log(cand2);
+
         if(cand2){
-            color2 = cand2?.party.colors[0];
+            color2 = cand2?.party?.colors[0];
         }
     }
 
@@ -131,7 +137,7 @@ const getLeadingText = (topProbabilities: Candidate[], colors: string[]) => {
     let leader = props.race.call.winner || candidates[0];
 
     let cand = props.race.call.winner || candidates[0];
-    let leadingPct = props.race.results[leader.polID].probability as number;
+    let leadingPct = props.race.results[leader.polID]?.probability as number;
 
     
     let text = "";
@@ -148,7 +154,7 @@ const getLeadingText = (topProbabilities: Candidate[], colors: string[]) => {
     
     if(props.race.call.status == "Called"){
         text = `projected`;
-        color = cand.party.colors[0] as string;
+        color = cand.party?.colors[0] as string;
     }
     else if(leadingPct > 0.95){
         text = `near certain`;
@@ -201,9 +207,9 @@ const projectionText = computed(() => getCallText(props.race));
     <div class="pb-4 flex-1 relative" :style="{width: 'calc(100% - 1.5rem)'}">
 
         <div class="w-full">
-            <h1 class="text-xl mt-1">{{ projectomatic.candidate.last }} is <span class="px-2 rounded-sm" :style="{backgroundColor: projectomatic.leadingText.color+'80'}">{{ projectomatic.leadingText.text }}</span> to win.</h1>
+            <h1 class="text-xl mt-1">{{ projectomatic.candidate.last }} {{plural ? 'are' : 'is'}} <span class="px-2 rounded-sm" :style="{backgroundColor: projectomatic.leadingText.color+'80'}">{{ projectomatic.leadingText.text }}</span> to win.</h1>
 
-            <p v-if="!(race.call.winner)" class="mt-2">{{ projectomatic.candidate.fullName }} currently has a <span class="font-header">{{ projectomatic.leadingPct }}</span> chance of winning.</p>
+            <p v-if="!(race.call.winner)" class="mt-2">{{ projectomatic.candidate.fullName }} currently {{plural ? 'have' : 'has'}} a <span class="font-header">{{ projectomatic.leadingPct }}</span> chance of winning.</p>
             <div v-else>
               <p class="mt-2"><span class="font-header text-white">{{ projectionText.caller }}</span> projects {{ race.call.winner.fullName }} will win this race.<br/></p>
               <p v-for="(date, index) in projectionText.calls"><span class="text-xs">{{ index }} Call made on {{ parseDateString(date) }}</span></p>

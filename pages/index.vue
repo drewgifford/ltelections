@@ -11,6 +11,8 @@ import { keys } from '~/server/utils/Util';
 import axios from "axios";
 import States from "~/server/utils/States";
 import type {ApiState} from "~/server/types/ApiTypes";
+import PartyBattle from "~/components/presidential/PartyBattle.vue";
+import type {Race} from "~/server/types/ViewModel";
 
 
 useSeoMeta({
@@ -42,6 +44,56 @@ const { data: homeDashboard, refresh } = useFetch("/api/homeDashboard", {
 });
 
 
+onMounted(async () => {
+
+  setInterval(async () => {
+    await refresh();
+  }, 30000);
+
+});
+
+const mockSenateRace = computed(() => {
+
+    let candidates: any[] = [];
+    let results: {[key: string]: any} = {};
+
+    for(let polID of keys(homeDashboard.value?.senateModel)){
+
+      let party = homeDashboard.value?.parties[polID];
+
+      if(!party){
+        party = homeDashboard.value?.parties['Ind'];
+      }
+
+      let label = "No Majority";
+      if(polID == 'Dem') label = "Democrats";
+      else if (polID == 'GOP') label = "Republicans";
+
+      candidates.push({
+        polID: polID,
+        fullName: label,
+        last: label,
+        party: party,
+      });
+
+      results[polID] = {
+        probability: homeDashboard.value?.senateModel[polID]
+      }
+
+    }
+
+    return {
+      uuid: "senate",
+      state: "US",
+      results: results,
+      candidates: candidates,
+      call: {
+        winner: null,
+        calls: []
+      }
+    } as any;
+})
+
 
 </script>
 
@@ -59,7 +111,7 @@ const { data: homeDashboard, refresh } = useFetch("/api/homeDashboard", {
                     <CandidateBattle :home-dashboard="(homeDashboard)" :race="(homeDashboard.presRace)"/>
                     
                     <div class="p-4">
-                        <NapkinItem :color="(getMostLikelyCandidate(homeDashboard.presRace).party.colors[0] || '#ffffff')">
+                        <NapkinItem :color="(getMostLikelyCandidate(homeDashboard.presRace).party?.colors[0] || '#ffffff')">
                             <Projectomatic :race="(homeDashboard.presRace)" :forceSmall="false"/>
                         </NapkinItem>
                     </div>
@@ -74,20 +126,35 @@ const { data: homeDashboard, refresh } = useFetch("/api/homeDashboard", {
 
         </div>
 
-      <p class="text-center text-2xl font-header">Senate and House Dashboards are being updated. Check back tomorrow!</p>
+       <div class="mt-4">
 
-      <!-- <div class="mt-4">
-          Senate Dashboard
-            <div class="grid xl:grid-cols-2 gap-4">
+            <div class="grid xl:grid-cols-2 gap-4 flex items-center">
+                <div>
+                  <ChamberMap :type="'senate'" :home-dashboard="homeDashboard" minHeight="500px"/>
+                </div>
                 <div class="card p-4">
-                    <SenateDashboard :races="senateRaces"/>
+                  <PartyBattle :gop-number="homeDashboard.values.senate.GOP" :dem-number="homeDashboard.values.senate.Dem" :label="'Senate'" :needed="50" />
+
+                  <Projectomatic class="mt-4" v-if="mockSenateRace != null" :plural="true" :race="mockSenateRace" :force-small="false"/>
+                    <!--<SenateDashboard :races="senateRaces"/>-->
                 </div>
-                <div class="card px-6 py-4">
-                    <HouseDashboard :races="houseRaces"/>
-                </div>
+
             </div>
 
-        </div> -->
+         <div class="mt-12">
+           <div class="w-full xl:w-2/3 mx-auto mb-4">
+             <div class="card px-6 py-4">
+               <PartyBattle :gop-number="homeDashboard.values.house.GOP" :dem-number="homeDashboard.values.house.Dem" :label="'House'" :needed="218" />
+               <!--<HouseDashboard :races="houseRaces"/>-->
+             </div>
+
+
+           </div>
+           <ChamberMap :type="'house'" :home-dashboard="homeDashboard" minHeight="600px"/>
+
+         </div>
+
+        </div>
 
         
     </Container>

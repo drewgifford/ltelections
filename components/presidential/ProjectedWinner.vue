@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const winner = computed(() => props.race.call.winner as Candidate);
 
-let backgroundGradient = `linear-gradient(to right, ${(winner.value.party.colors[0] || '#ffffff')+'80'} 0%, transparent 100%)`
+let backgroundGradient = `linear-gradient(to right, ${(winner.value.party?.colors[0] || '#ffffff')+'80'} 0%, transparent 100%)`
 
 const projectionText = computed(() => getCallText(props.race));
 
@@ -50,7 +50,7 @@ const projectionText = computed(() => getCallText(props.race));
 
   <div class="bg-slate-800 overflow-hidden h-2 relative">
 
-    <div class="block h-2 absolute left-0" :style="{width: '100%', backgroundColor: (winner.party.colors[0]) }"></div>
+    <div class="block h-2 absolute left-0" :style="{width: '100%', backgroundColor: (winner.party?.colors[0]) }"></div>
   </div>
 
 

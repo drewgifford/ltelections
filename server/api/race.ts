@@ -6,11 +6,13 @@ import {RedisUtil} from "~/server/plugins/RedisConnection";
 import {ApiCandidate, ApiParty, ApiRace} from "~/server/types/ApiTypes";
 import {parseRaces} from "~/server/api/searchRaces";
 import States from "~/server/utils/States";
+import {useRequestHeader} from "~/.nuxt/imports";
+import {H3Event} from "h3";
 
 let STALE_TIME = 30
 let ELECTION_DATE = "2024-11-05"
 
-export default defineEventHandler(async (event) => {
+export default cachedEventHandler(async (event) => {
 
   type BodyRes = {
     stateName?: string,
@@ -53,8 +55,10 @@ export default defineEventHandler(async (event) => {
 
   let documents = redisToArray(results.documents) as ApiRace[];
 
+  useRequestHeader("Cache-Control", "max-age=30")
+
   // Filter if this matches the query
-  console.log(query);
+
   let race = documents.find(race => {
 
     // If the race param specifies this is a special election and this is not a special election, return false
@@ -94,4 +98,7 @@ export default defineEventHandler(async (event) => {
   let res = await parseRaces(redis, [race]);
 
   return res;
+}, {
+  maxAge: 30,
+  getKey: (event: H3Event) => event.path,
 });

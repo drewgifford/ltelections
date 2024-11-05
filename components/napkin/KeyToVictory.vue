@@ -76,6 +76,11 @@ const keyToVictory = computed(() => {
     let expectedVotes = props.race.expectedVotes;
     let votesRemaining = expectedVotes - props.race.totalVotes;
 
+    let div = 2;
+    if(props.race.winThreshold){
+      console.log(props.race.winThreshold);
+    }
+
     let needed = (votesRemaining - gap)/2;
     let percent = needed/votesRemaining;
 
@@ -95,7 +100,7 @@ const keyToVictory = computed(() => {
 
 <template>
 
-    <div v-if="keyToVictory" class="flex gap-4 my-4">
+    <div v-if="race.officeID != OfficeType.BallotMeasure && keyToVictory" class="flex gap-4 my-4">
 
         <div class="w-2 rounded-sm" :style="{backgroundColor: keyToVictory.color}"></div>
 

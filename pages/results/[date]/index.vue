@@ -6,6 +6,10 @@ import {officeTypeFromString, officeTypeToString, sortRaces} from '~/server/util
 import type {Race, RaceQueried} from "~/server/types/ViewModel";
 import type OfficeType from "~/server/types/enum/OfficeType";
 import axios from "axios";
+import { keys } from '~/server/utils/Util';
+import {parseAPIResponse} from "~/server/utils/ParseAPI";
+import {unpack} from "msgpackr";
+import { Buffer } from "buffer";
 
     const route = useRoute();
     const router = useRouter();
@@ -21,47 +25,54 @@ import axios from "axios";
     });
 
     const pinnedRaceIds = ref<string[]>([]);
+    //const races = ref<RaceQueried[]>([]);
 
     useSeoMeta({
         title: "Race Dashboard",
         ogImage: "/og-image.png",
     });
 
-    // Query races
-    const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
-        query: {
-            statePostal: statePostal,
-            officeID: officeID,
-            raceUUIDs: pinnedRaceIds,
-            date: route.params.date,
-        },
-        transform: (races: {[key: string]: RaceQueried}) => {
-            return sortRaces(Object.values(races).map(r => {
-                //r.pinned = pinnedRaceIds.value.includes(r.uuid);
-                //r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
-                return r;
-            })) as RaceQueried[];
-            
+    const { data: races, refresh } = await useFetch<RaceQueried[]>('/api/searchRaces', {
+      query: {
+        statePostal: statePostal,
+        officeID: officeID,
+        raceUUIDs: pinnedRaceIds,
+        date: route.params.date
+      },
+      server: false,
+      transform: (res: any) => {
+        try {
+          return parseAPIResponse(res);
         }
+        catch(e){
+          console.error(e);
+        }
+
+      }
     });
-
-
 
     onMounted(async () => {
-      pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
+      let interval: any = null;
+
+      function resetInterval(){
+        if(interval) clearInterval(interval);
+        interval = setInterval(async () => {
+          await refresh();
+        }, 30000);
+      }
+
+      //pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
 
       watch(statePostal, async (statePostal) => {
-        await refreshRaces();
+        await refresh();
+        resetInterval();
       });
       watch(officeID, async (officeID) => {
-        await refreshRaces();
+        await refresh();
+        resetInterval();
       });
 
     });
-
-    useIntervalFn(async () => {
-      await refreshRaces();
-    }, 30000);
 
 
 
@@ -101,22 +112,16 @@ import axios from "axios";
     const setView = (race: RaceQueried) => {
         raceView.value = race.uuid;
     }
+    const raceViewObject = computed(() => {
+
+      return races.value?.find(x => x.uuid == raceView.value);
+
+    });
 
     const nonPinnedRaces = () => {
       if(!races) return [];
       return sortRaces(races.value?.filter(x => x.inQuery) as Race[]);
     }
-
-    const pinnedRaces = computed(() => {
-      if(!races) return [];
-      return races.value?.filter(x => x.pinned);
-    })
-
-    const raceViewSide = computed(() => {
-      if(!raceView.value) return null;
-      if(!races) return null;
-      return races.value?.find(x => x.uuid == raceView.value);
-    })
 
 
 
@@ -170,24 +175,9 @@ import axios from "axios";
 
                 </form>
 
-                <!-- Pinned races -->
-                <div v-if="(pinnedRaces || []).length > 0" class="flex flex-col gap-3 w-full">
-                    <p>{{ pinnedRaces?.length }} races pinned</p>
-                    <MiniRaceView 
-                        v-for="(race, index) of pinnedRaces"
-                        :data-race="race.uuid"
-                        @select="setView(race)"
-                        @pin="togglePin(race)"
-                        :is-pinned="race.pinned"
-                        :race="race"
-                        :key="race.uuid"
-                        class="race relative transition-colors"
-                    />
-                </div>
-
                 <!-- Non-pinned races -->
                 <div class="flex flex-col gap-3 w-full pb-24">
-                    <p>Showing {{ races?.length }} results</p>
+                    <p>Showing {{ races?.length || 0 }} results</p>
 
                     <MiniRaceView 
                         v-for="(race, index) of races"
@@ -197,6 +187,7 @@ import axios from "axios";
                         :is-pinned="false"
                         :race="race"
                         :key="race.uuid"
+                        :selected="raceView == race.uuid"
                     />
                 </div>
 
@@ -208,7 +199,7 @@ import axios from "axios";
 
             <div class="display-none xl:block w-full xl:w-1/2">
 
-                <RaceCard v-if="(raceViewSide != null)" :key="(raceView || '')" :race="(raceViewSide as Race)" :map=true />
+                <RaceCard v-if="(raceViewObject)" :key="(raceView || '')" :race="(raceViewObject)" :map=true />
                 
             </div>
 

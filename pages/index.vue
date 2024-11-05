@@ -1,88 +1,66 @@
 <script setup lang="ts">
-import { useIntervalFn } from '@vueuse/core';
+import {useIntervalFn} from '@vueuse/core';
 import HouseDashboard from '~/components/home/HouseDashboard.vue';
 import SenateDashboard from '~/components/home/SenateDashboard.vue';
 import NapkinItem from '~/components/napkin/NapkinItem.vue';
 import Projectomatic from '~/components/napkin/Projectomatic.vue';
 import CandidateBattle from '~/components/presidential/CandidateBattle.vue';
-import ZoomableMap from '~/components/ZoomableMap.vue';
-import { getMostLikelyCandidate } from '~/server/utils/Util';
-
-    
-    useSeoMeta({
-        title: "Home",
-        ogImage: "/og-image.png",
-    });
+import {getMostLikelyCandidate} from '~/server/utils/Util';
+import type { ApiHomeDashboard } from "~/server/api/homeDashboard";
+import { keys } from '~/server/utils/Util';
+import axios from "axios";
+import States from "~/server/utils/States";
+import type {ApiState} from "~/server/types/ApiTypes";
 
 
-    const { data: homeDashboard, status, error, refresh: refreshRaces } = await useFetch("/api/homeDashboard");
+useSeoMeta({
+    title: "Home",
+    ogImage: "/og-image.png",
+});
 
-    useIntervalFn(async () => {
-        await refreshRaces();
-    }, 30000);
+const { data: homeDashboard, refresh } = useFetch("/api/homeDashboard", {
+  transform: (ret: ApiHomeDashboard) => {
+    try {
+      for (let candidate of ret.presRace.candidates) {
+        candidate.party = ret.parties[keys(ret.parties).includes(candidate.party as unknown as string) ? candidate.party as unknown as string : 'Ind'];
+      }
 
-    const presRace = computed(() => homeDashboard.value?.races.presidential);
-    const senateRaces = computed(() => homeDashboard.value?.races.senate);
-    const houseRaces = computed(() => homeDashboard.value?.races.house);
+      for(let key of Object.keys(ret.presRaces)){
+        let split = key.split("-");
+        ret.presRaces[key].state = States.find(x => x.postalCode == split[0]) as unknown as ApiState;
+        ret.presRaces[key].seatNum = split.length > 0 ? Number(split[1]) : -1;
+      }
+
+
+      return ret as ApiHomeDashboard;
+    } catch(e){
+      console.error(e);
+      throw e;
+    }
+  },
+  server: false,
+});
+
 
 
 </script>
 
 <template>
 
-    <Container v-if="presRace">
-
-        <div>
-            <!-- Recent Projections-->
-            <!--<div class="flex items-center gap-4">
-                <h3 class="text-xl w-36">Recent Projections</h3>
-
-                <div class="!bg-lte-blue/40 flex px-4 py-2 rounded-sm items-center gap-4 card">
-                    <h1 class="text-xl">D</h1>
-                    <div>
-                        <h3 class="text-md">New Mexico</h3>
-                        <p class="text-sm -mt-1 text-slate-200">President</p>
-                    </div>
-                </div>
-                <div class="!bg-lte-blue/40 flex px-4 py-2 rounded-sm items-center gap-4 card">
-                    <h1 class="text-xl">D</h1>
-                    <div>
-                        <h3 class="text-md">Colorado</h3>
-                        <p class="text-sm -mt-1 text-slate-200">President</p>
-                    </div>
-                </div>
-                <div class="!bg-lte-red/40 flex px-4 py-2 rounded-sm items-center gap-4 card">
-                    <h1 class="text-xl">R</h1>
-                    <div>
-                        <h3 class="text-md">Ohio</h3>
-                        <p class="text-sm -mt-1 text-slate-200">President</p>
-                    </div>
-                </div>
-                <div class="!bg-lte-red/40 flex px-4 py-2 rounded-sm items-center gap-4 card">
-                    <h1 class="text-xl">R</h1>
-                    <div>
-                        <h3 class="text-md">North Dakota</h3>
-                        <p class="text-sm -mt-1 text-slate-200">Senate</p>
-                    </div>
-                </div>
-
-
-            </div>-->
-
-        </div>
+    <Container v-if="homeDashboard">
 
         <div class="xl:flex mt-4 gap-4 items-center">
             <div class="xl:w-1/2 w-full">
                 <h1 class="text-2xl text-center py-4"><img class="h-12 inline-block mr-2" src="/img/logo.png"/>Presidential Race Overview</h1>
                 <div class="card">
 
-                    
 
-                    <CandidateBattle :race="(presRace)"/>
+
+                    <CandidateBattle :home-dashboard="(homeDashboard)" :race="(homeDashboard.presRace)"/>
                     
                     <div class="p-4">
-                        <NapkinItem :color="(getMostLikelyCandidate(presRace).party.colors[0] || '#ffffff')">
-                            <Projectomatic :race="(presRace)" :forceSmall="false"/>
+                        <NapkinItem :color="(getMostLikelyCandidate(homeDashboard.presRace).party.colors[0] || '#ffffff')">
+                            <Projectomatic :race="(homeDashboard.presRace)" :forceSmall="false"/>
                         </NapkinItem>
                     </div>
                     
@@ -91,13 +69,15 @@ import { getMostLikelyCandidate } from '~/server/utils/Util';
             
             <div class="w-full xl:w-1/2">
                 <!--<ZoomableMap :race="(presRace)" minHeight="500px"/>-->
-                <PresidentialMap :race="(presRace)" minHeight="500px"/>
+                <PresidentialMap :home-dashboard="homeDashboard" :race="(homeDashboard.presRace)" minHeight="500px"/>
             </div>
 
         </div>
 
-        <div class="mt-4">
-            <!-- Senate Dashboard -->
+      <p class="text-center text-2xl font-header">Senate and House Dashboards are being updated. Check back tomorrow!</p>
+
+      <!-- <div class="mt-4">
+          Senate Dashboard
             <div class="grid xl:grid-cols-2 gap-4">
                 <div class="card p-4">
                     <SenateDashboard :races="senateRaces"/>
@@ -107,7 +87,7 @@ import { getMostLikelyCandidate } from '~/server/utils/Util';
                 </div>
             </div>
 
-        </div>
+        </div> -->
 
         
     </Container>

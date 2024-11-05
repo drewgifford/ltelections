@@ -4,11 +4,12 @@ import { getTopTwoCandidates } from '~/server/utils/Util';
 import { getBlendedColor } from '~/server/utils/Util';
 import type {Race, Candidate} from "~/server/types/ViewModel";
 import OfficeType from "~/server/types/enum/OfficeType";
+import type {ApiHomeDashboard} from "~/server/api/homeDashboard";
 
-const defaultImage = "/img/generic-candidate.png"
 
 const props = defineProps<{
-  race: Race
+  race: Race,
+  homeDashboard?: ApiHomeDashboard
 }>();
 
 const isPresidentialOverview = props.race.state.stateID == '0' && props.race.officeID == OfficeType.President;
@@ -23,7 +24,7 @@ const getVotes = (candidate: Candidate) => {
 const getElectoralVotes = (candidate: any) => {
 
   let sum = 0;
-  for(let r of Object.values(props.race.reportingUnits) as any){
+  for(let r of Object.values(props.homeDashboard.presRaces) as any){
 
     if(!r.call) continue;
     if(r.call.winner && r.call.winner == candidate.polID){

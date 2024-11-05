@@ -138,34 +138,12 @@ export async function transformRaces(redis: RedisClientType, apiRaces: ApiRace[]
         return acc;
     }, [] as string[]))];
 
-    let reportingUnits;
-
 
 
     let apiCandidates = (
         await Promise.all(polIDs.map(async (x) => await redis.json.get(`candidates.${x}`)))
     ) as ApiCandidate[];
 
-
-    if(!skipRus) {
-        let reportingUnitIDs = [...new Set(apiRaces.reduce((acc, race) => {
-            acc = [...acc, ...keys(race.reportingUnits)];
-            return acc;
-        }, [] as string[]))];
-
-        reportingUnits = keyBy(
-            await Promise.all(reportingUnitIDs.map(async (x) => await redis.json.get(`reportingUnits.${x}`))),
-            'reportingunitID'
-        );
-    } else {
-        reportingUnits = apiRaces.reduce((acc, race) => {
-
-            for(let key of keys(race.reportingUnits)){
-                acc[key] = race.reportingUnits[key];
-            }
-            return acc;
-        }, {} as {[key: string]: ApiRaceReportingUnit})
-    }
 
 
 
@@ -207,14 +185,6 @@ export async function transformRaces(redis: RedisClientType, apiRaces: ApiRace[]
 
         race.title = getRaceTitle(apiRace);
 
-        race.reportingUnits = keys(apiRace.reportingUnits).reduce((acc, reportingunitID) => {
-            let ru = Object.assign({}, reportingUnits[reportingunitID]) as unknown as RaceReportingUnit;
-            ru = Object.assign(ru, apiRace.reportingUnits[reportingunitID]);
-
-            acc[reportingunitID] = ru;
-            return acc;
-        }, {} as {[key: string]: RaceReportingUnit});
-
         return race;
     });
     
@@ -250,4 +220,27 @@ export type HasResults = {
     }},
     totalVotes: number,
     expectedVotes: number,
+}
+
+export const getRaceTitle = (r: ApiRace) => {
+    let districtText = '';
+    let officeText = r.officeName;
+
+    if(r.officeID == OfficeType.BallotMeasure){
+        officeText = `${r.officeName} ${r.designation}`
+    }
+    else if(r.officeID == OfficeType.House || r.officeID == OfficeType.President){
+        if(r.seatNum > 0){
+            districtText = `-${r.seatNum}`;
+        }
+    }
+
+    if(r.raceType.includes("Special")){
+        officeText += ` Special`;
+    }
+
+    return {
+        location: `${r.state.postalCode}${districtText}`,
+        text: officeText
+    }
 }

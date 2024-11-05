@@ -1,19 +1,38 @@
-
-import {Race, transformRace, transformRaces} from "../types/ViewModel";
-import { filterDuplicateRaces } from "../utils/Util";
 import {RedisClientType} from "redis";
 import {RedisUtil} from "~/server/plugins/RedisConnection";
-import {ApiRace} from "~/server/types/ApiTypes";
+import {ApiCandidate, ApiParty, ApiRace, ApiState} from "~/server/types/ApiTypes";
+import {parseRaces} from "~/server/api/searchRaces";
+import {Candidate, Race} from "~/server/types/ViewModel";
 
 let STALE_TIME = 30
 let ELECTION_DATE = "2024-11-05"
 
-type HomeDashboard = {
-  races: {
-    presidential: Race,
-    senate: Race[],
-    house: Race[]
-  }
+export type ApiMinimalRace = {
+  candidates: {
+    last: string,
+    party: string,
+    probability: number,
+    vote: number,
+    polID: string,
+  }[],
+  state?: ApiState,
+  uuid: string,
+  eevp: number,
+  special: boolean,
+  totalVotes: number,
+  winner: string | null,
+  electTotal: number,
+  seatNum?: number,
+}
+
+export type ApiHomeDashboard = {
+  presRace: Race,
+  presRaces: {[key: string]: ApiMinimalRace},
+  senateRaces: {[key: string]: ApiMinimalRace},
+  houseRaces: {[key: string]: ApiMinimalRace},
+  parties: {[key: string]: ApiParty},
+  values: any,
+  senateModel: any,
 }
 type RaceOverview = {
 
@@ -23,26 +42,17 @@ export default defineEventHandler(async (event) => {
 
   const redis: RedisClientType = RedisUtil.getConnection();
 
-  let presRace = await redis.json.get('races.2024-11-05-0-0') as ApiRace;
+  if(!redis) return {};
 
-  let senateRaces = await redis.ft.search('races', `'@type:{races}, @officeID:{S}'`, {
-    LIMIT: {from: 0, size: 100}
-  });
+  let homeDashboard = await redis.json.get('homeDashboard') as ApiHomeDashboard;
 
-  let houseRaces = await redis.ft.search('races', `'@type:{races}, @officeID:{H}'`, {
-    LIMIT: {from: 0, size: 500}
-  });
+  console.log(homeDashboard.presRace);
 
-  return {
-    races: {
-      presidential: await transformRace(redis, presRace, true),
-      senate: await transformRaces(redis, redisToArray(senateRaces.documents || [])),
-      house: await transformRaces(redis, redisToArray(houseRaces.documents || [])),
-    }
-  } as HomeDashboard
+  if(!homeDashboard) return {};
 
-  
+  homeDashboard.presRace.candidates = await redis.json.mGet((homeDashboard.presRace as unknown as ApiRace).candidates.map(x => `candidates.${x}`), '.') as Candidate[];
 
+  return homeDashboard;
 
   
 })

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@vueuse/core';
-import { getOfficeTypeFromOfficeURL } from '~/server/utils/Util';
+import {getOfficeTypeFromOfficeURL, getTitle} from '~/server/utils/Util';
 import { nth } from '~/server/utils/Util';
 import OfficeType from "~/server/types/enum/OfficeType";
 import type { Race } from '~/server/types/ViewModel';
+import { parseAPIResponse} from "~/server/utils/ParseAPI";
 
 
-    const route = useRoute();
+const route = useRoute();
 
     
 
@@ -14,100 +15,32 @@ import type { Race } from '~/server/types/ViewModel';
     const raceParam = route.params.race as string;
     const officeID = getOfficeTypeFromOfficeURL(raceParam);
 
-    const idTypes = [OfficeType.House, OfficeType.BallotMeasure]
-
-    
-
-    const { data: races, status, error, refresh: refreshRaces } = await useFetch("/api/searchRaces", {
+    const { data: races, status, error, refresh: refreshRaces } = await useFetch("/api/race", {
         query: {
             stateName: stateName,
+            raceParam: raceParam,
             officeID: officeID,
-            date: route.params.date,
         },
-        transform: (races: {[key: string]: Race}) => {
-            return Object.values(races).filter(r => {
-
-                let s = (route.params.race as string || '').split("-");
-                let last = s[s.length-1];
-                let lastIdx = (idTypes.includes(officeID as OfficeType) ? 2 : 1)
-
-
-                if(s.length > lastIdx){
-                    if(last == "special" && !r.raceType?.includes("Special")){
-                        return false;
-                    }
-                    if(last != "special" && r.raceType?.includes("Special")){
-                        return false;
-                    }
-                    if(last == "special" && r.raceType?.includes("Special")){
-                        return true;
-                    }
-                }
-
-                
-
-                if(officeID == OfficeType.House || officeID == OfficeType.President){
-                    let sn = Number(raceParam.split("-")[1]);
-                    if(sn > 0) {
-                      return (r.seatNum == Number(raceParam.split("-")[1]));
-                    }
-                    if(r.seatNum <= 0) return true;
-                    return false;
-
-                }
-                else if (officeID == OfficeType.BallotMeasure){
-                    r.designation = r.designation.replace("_"," ");
-
-                    if(isNaN(Number(r.designation))){
-                      return (r.designation == raceParam.split("-")[1].replace("_"," "));
-                    } else {
-                      return (Number(r.designation) == Number(raceParam.split("-")[1].replace("_"," ")));
-                    }
-
-                }
-                return true;
-            }).splice(0, 1);
-        }
+        transform: (res: any) => {
+          if(!res) return null;
+          let d = parseAPIResponse(res);
+          console.log(d);
+          return d;
+        },
+        server: false,
     });
+  const race = computed(() => races.value ? races.value[0] : null);
 
-    if((races.value?.length || 0) <= 0){
+
+    if(!race){
         throw({status: 404})
     }
 
-    const getTitle = () => {
 
-        if(!races.value || races.value.length <= 0) return "";
 
-        let stateName = races.value[0].state.name;
-
-        let raceLabel;
-
-        if(!races.value) return "";
-
-        if(officeID == OfficeType.Senate) raceLabel = `Senate`;
-        else if(officeID == OfficeType.President) {
-          raceLabel = `Presidential`
-
-          if(races.value[0].seatNum > 0){
-            raceLabel = `CD Presidential`;
-            stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
-          }
-        }
-        else if(officeID == OfficeType.House) {
-            raceLabel = `District`;
-            stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
-        }
-        else if(officeID == OfficeType.Governor) raceLabel = `Governor`;
-        else if(officeID == OfficeType.BallotMeasure) raceLabel = `${races.value[0].officeName} ${races.value[0].designation}`;
-
-        let s = races.value[0].raceType?.includes('Special') ? " Special" : ""
-
-        return `${route.params.date} ${stateName} ${raceLabel}${s} Election Results`;
-
-    };
 
     useSeoMeta({
-    title: () => getTitle(),
+    title: () => getTitle(race.value),
 
     });
 
@@ -116,7 +49,8 @@ import type { Race } from '~/server/types/ViewModel';
     }, 30000);
 
     const getWinner = (race: Race) => {
-        return race.call.winner;
+      console.log(race);
+      return race.call.winner;
     }
 
 
@@ -128,7 +62,7 @@ import type { Race } from '~/server/types/ViewModel';
 <template>
 
     
-    <Container v-for="(race, index) of races" :key="race.uuid">
+    <Container :key="race" v-if="race">
 
         
 
@@ -150,7 +84,7 @@ import type { Race } from '~/server/types/ViewModel';
                     <div class="px-4">
                         <p v-if="(race.summary)" class="text-md mt-4">{{ race.summary }}</p>
                         <div class="p-2 my-4 card border-slate-600 border">
-                            <ResultTable :race="race" :unit="race.reportingUnits[race.state.stateID]" :max="5" :reporting="true"/>
+                            <ResultTable :race="race" :unit="race" :max="5" :reporting="true"/>
                         </div>
                         <div class="px-4">
                             <NapkinMath :race="race"/>

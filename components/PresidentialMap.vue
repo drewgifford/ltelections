@@ -8,10 +8,14 @@
   import OfficeType from "~/server/types/enum/OfficeType";
   import { keyBy } from "~/server/utils/Util";
   import { getBlendedColor} from "~/server/utils/Util";
+  import type {ApiHomeDashboard, ApiMinimalRace} from "~/server/api/homeDashboard";
+  import MinimalResultTable from "~/components/race/MinimalResultTable.vue";
+
 
   const props = defineProps<{
         race: Race,
         minHeight: string,
+        homeDashboard: ApiHomeDashboard
     }>();
 
   const INVALID_FILL = "#1E293B";
@@ -21,7 +25,7 @@
 
     const getReportingUnit = (d: any) => {
       if(!d) return null;
-      return props.race.reportingUnits[d3.select(d).attr("id")];
+      return props.homeDashboard.presRaces[d3.select(d).attr("id")];
     }
 
 
@@ -38,13 +42,13 @@
 
 
     // Tooltip values
-    let selectedRu = ref<RaceReportingUnit>();
+    let selectedRu = ref<ApiMinimalRace>();
 
     let statePostal = props.race.state?.postalCode;
 
     async function updateTooltipData(race: Race){
       if(selectedRu){
-        selectedRu.value = Object.values(race.reportingUnits).find(x => x.uuid == selectedRu.value?.uuid);
+        selectedRu.value = Object.values(props.homeDashboard.presRaces).find(x => x.uuid == selectedRu.value?.uuid);
       }
     }
 
@@ -52,7 +56,7 @@
 
       function getColor(reportingUnit: any, forceHashed?: boolean){
 
-        let candidates = keys(reportingUnit.results).sort((a,b) => (reportingUnit.results[a].vote || 0) > (reportingUnit.results[b].vote || 0) ? -1 : 1);
+        let candidates = keys(reportingUnit.candidates).sort((a,b) => (reportingUnit.candidates[a].vote || 0) > (reportingUnit.candidates[b].vote || 0) ? -1 : 1);
 
         let raceCand = props.race.candidates.find(cand => cand.polID == candidates[0]);
 
@@ -114,14 +118,14 @@
 
         let state = nodes[i];
         let statePostal = d3.select(state).attr("id").replace("-votes", "");
-        let reportingUnit = props.race.reportingUnits[statePostal] as PresidentialReportingUnit;
+        let reportingUnit = props.homeDashboard.presRaces[statePostal] as ApiMinimalRace;
 
         if(reportingUnit.totalVotes == 0){
           return BG_FILL;
         }
 
-        if(reportingUnit.call.winner){
-          return props.race.candidates.find(x => x.polID == reportingUnit.call.winner as any)?.party.colors[0];
+        if(reportingUnit.winner){
+          return props.race.candidates.find(x => x.polID == reportingUnit.winner as any)?.party.colors[0];
         }
         return getColor(reportingUnit, true);
       });
@@ -145,8 +149,8 @@
     let ruIdx = 0;
     const loading = ref(true);
 
-    
-    
+
+
 
     onMounted(async () => {
 
@@ -191,7 +195,7 @@
 
 
         let parties: any[] = [];
-        
+
         for(let candidate of props.race.candidates){
             if(parties.includes(candidate.party)) continue;
 
@@ -211,7 +215,7 @@
                     .attr("stroke", color2);
             }
 
-            
+
         }
 
         watch(() => props.race, async (race) => {
@@ -232,7 +236,7 @@
             let d = d3.select(this);
             reportingUnit = getReportingUnit(this);
 
-            
+
             selectedRu.value = reportingUnit || undefined;
 
             if(selectedRu.value){
@@ -243,9 +247,8 @@
             d.attr('stroke', 'white').attr("stroke-width", 1.5).raise();
 
             if(selectedRu && IS_NATIONAL_MAP()){
-                let s = "";
-                if((selectedRu.value as any).seatNum > 0) s = '-'+(selectedRu.value as any).seatNum;
-                d.attr("style", "cursor: pointer").attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state?.name.toLowerCase()}/president${s}'`);
+
+                d.attr("style", "cursor: pointer");//.attr("onclick", `window.location.href='/results/2024/${selectedRu.value?.state.name.toLowerCase()}/president'`);
             }
         }
 
@@ -255,7 +258,7 @@
             let x = event.offsetX;
             let y = event.offsetY;
 
-            
+
 
             // Fix tooltip if it's clipping outside boundaries
 
@@ -295,7 +298,7 @@
             .on("mousemove", mousemove)
             .on("mouseleave", mouseleave);
 
-        
+
 
     });
 
@@ -324,50 +327,40 @@ const getTopCandidate = (ru: any) => {
 
 }
 
+const otherData = ref<any>();
+watch(selectedRu, () => {
+
+})
+
 </script>
 
 <template>
 
     <div class="relative">
 
+        <div class="overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
 
-        <div class="z-10 overflow-x-auto rounded-sm absolute top-0 left-0 bg-slate-900/90 px-4 py-2 min-w-80 shadow-lg pointer-events-none !duration-0" style="filter: opacity(0)" ref="tooltip">
+            <div v-for="ru in [selectedRu]" v-if="selectedRu">
 
-            <div v-for="ru in [selectedRu]" v-if="selectedRu" :key="selectedRu?.reportingunitID">
-
-              <div v-if="IS_NATIONAL_MAP()">
-                <div class="flex">
-                  <div class="flex-1">
-                    <p class="text-white text-left font-header mb-2">{{ru.state?.name}}<span v-if="ru.seatNum > 0"> CD-{{ru.seatNum}}</span> | {{ ru.electTotal }} EV</p>
-                  </div>
+              <div class="flex">
+                <div class="flex-1">
+                  <p class="text-white text-left font-header mb-2">{{ru.state?.name}}<span v-if="ru.seatNum > 0"> CD-{{ru.seatNum}}</span> | {{ ru.electTotal }} EV</p>
                 </div>
-                <ResultTable  :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>
               </div>
-              <div v-else>
-                <p class="text-white font-header mb-2">{{ ru.reportingunitName }}</p>
-
-                <ResultTable v-if="!IS_NATIONAL_MAP()"  :key="ruIdx" :race="race" :unit="ru" :max="5" :reporting="true"/>
-              </div>
+              <MinimalResultTable :home-dashboard="homeDashboard" :key="ruIdx" :race="race" :unit="ru"/>
 
 
             </div>
         </div>
 
         <div class="w-full" ref="svg" :style="(loading ? {filter: 'opacity(0)', minHeight: `${props.minHeight}`} : {minHeight: `${props.minHeight}`})">
-
-
         </div>
 
         <LoadingSection v-if="loading" :absolute=true :style="{minHeight: `${props.minHeight}`}"/>
-
-        <MapLegend/>
     </div>
 
 
 
-
-    
-                        
 </template>
 
 <style>

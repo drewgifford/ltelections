@@ -1,17 +1,16 @@
 <script lang="ts" setup>
 import OfficeType from '~/server/types/enum/OfficeType';
-import type { Race } from '~/server/types/ViewModel';
+import {getRaceTitle, type Race} from '~/server/types/ViewModel';
 import {getRaceURL, getTopReportingUnit} from "~/server/utils/Util";
 import { useWindowSize } from "@vueuse/core";
 
 const props = defineProps<{
     race: Race,
     isPinned: boolean,
+    selected: boolean,
   }>();
 
   const route = useRoute();
-
-  let title = "";
   let desc = "";
   let mounted = true;
 
@@ -37,6 +36,9 @@ const props = defineProps<{
     }
 
   })
+const title = computed(() => {
+  return getRaceTitle(props.race);
+})
   
 </script>
 
@@ -48,7 +50,7 @@ const props = defineProps<{
         <Icon :name="race ? 'pajamas:thumbtack-solid' : 'pajamas:thumbtack'"/>
     </div>-->
 
-    <div @click="$emit('select')" class="card p-3 pl-6 hover:bg-slate-800 hover:cursor-pointer">
+    <div @click="$emit('select')" class="card p-3 pl-6 hover:bg-slate-800 hover:cursor-pointer" :class="selected ? '!bg-slate-800' : ''">
         
         <div class="absolute left-0 top-0 h-full w-2 rounded-l-sm" :style="{backgroundColor: bgColor}"></div>
 
@@ -57,8 +59,8 @@ const props = defineProps<{
         <div class="md:flex w-full justify-between items-start">
             <div class="flex-1">
                 <h4 class="text-lg">
-                  <span class="py-1 px-2 text-md mr-1 border-2 border-slate-200/25 rounded-sn">{{ race.title.location }}</span>
-                  {{ race.title.text }}
+                  <span class="py-1 px-2 text-md mr-1 border-2 border-slate-200/25 rounded-sn">{{ title.location }}</span>
+                  {{ title.text }}
                   <span v-if="(race.tabulationStatus == 'Active Tabulation')" class="live-bg text-slate-200 text-sm rounded-sm px-1 font-header relative bottom-px">LIVE</span></h4>
               <div class="flex gap-2 items-center mt-2 pr-2">
 
@@ -74,7 +76,7 @@ const props = defineProps<{
 
               <div class="w-full md:w-80">
 
-                <ResultTable :race="race" :unit="getTopReportingUnit(race)" :max="2" :reporting="false"/>
+                <ResultTable :race="race" :unit="race" :max="2" :reporting="false"/>
 
               </div>
             </div>

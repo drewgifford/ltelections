@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { max } from 'd3';
-import type {Race, RaceReportingUnit} from "~/server/types/ViewModel";
+import type {Race, RaceReportingUnit, ReportingUnit} from "~/server/types/ViewModel";
 import {getVotes, keys, sortCandidates} from "~/server/utils/Util";
 import { roundPercentage } from "~/server/utils/RaceProbability";
 
@@ -8,34 +8,95 @@ const props = defineProps<{
         race: Race
     }>();
 
-const outstandingVote = computed(() => {
+const { data: reportingUnitData, refresh: refreshRUs } = useFetch(`https://l2bytldico4wuatx.public.blob.vercel-storage.com/reportingUnits/${props.race.state.postalCode}.json`,
+    {
+      transform: (res) => {
+        return res as unknown as {[key: string]: any}
+      },
+      server: false,
+      immediate: false,
+      watch: false,
+    }
+);
 
-    let c = Object.values(props.race.reportingUnits).filter(x => x.reportingunitLevel == 2);
+/* GET RESULTS */
+const { data: outstandingVote, status, refresh } = useFetch("/api/results", {
+  query: {
+    raceUuid: props.race.uuid
+  },
+  watch: [props.race],
+  transform: async (res: {[key: string]: ReportingUnit & RaceReportingUnit}) => {
+
+    console.info("Transforming...")
+    if(!res) return null;
+
+    if(!reportingUnitData || !keys(reportingUnitData.value || {}).includes(props.race.state.stateID)){
+      console.info("UH OH...")
+      await refreshRUs();
+    }
+
+    console.info("Phew...")
+
+    for(let obj of Object.entries(res)){
+
+      obj[1] = Object.assign(obj[1], (reportingUnitData.value as any)[obj[0]]);
+    }
+
+    console.info("AHHHH")
+
+
+    let r = res;
+    //let r = keyBy(Object.values(res).filter(x => x.reportingunitLevel == 2), 'fipsCode') as {[fips: string]: RaceReportingUnit};
+
+    console.info("we good?")
+
+    if(keys(res).includes(props.race.state.stateID)){
+      r[props.race.state.stateID] = res[props.race.state.stateID];
+    }
+    console.info("Almost done!", r);
+    return getOutstandingVote(r);
+  },
+  server: false,
+});
+
+
+
+const getOutstandingVote = (results: any) => {
+
+  if(results == null) return null;
+
+  let countyIDs = Object.keys(results).filter(e => e != props.race.state.stateID);
 
 
     const getOutstanding = (ru: RaceReportingUnit) => {
         return ((ru.expectedVotes || 0) - (ru.totalVotes || 0))
     }
 
-    let counties = c.toSorted((a: RaceReportingUnit,b: RaceReportingUnit) => {
-        return (getOutstanding(a) > getOutstanding(b)) ? -1 : 1;
-    });
+  let counties = countyIDs.toSorted((a: string,b: string) => {
+      return (getOutstanding(results[a]) > results[b]) ? -1 : 1;
+  });
 
     let retVal = [];
 
-    for(let ru of counties.slice(0, 4)){
+    console.log("counties", counties);
+    for(let ruid of counties.slice(0, 4)){
+
+      let ru = results[ruid];
 
         let bars = [];
-
-        if(keys(ru.results).length > 0){
+        if(keys(results).length > 0){
 
             let ruCandidates = sortCandidates(props.race, ru);
 
             let leadingCand = ruCandidates[0];
             let leadingParty = leadingCand.party;
 
-            let margin = getVotes(props.race, ruCandidates[0]) - (getVotes(props.race, ruCandidates[1]));
+            console.log(leadingCand, leadingParty);
+
+            let margin = props.race.results[ruCandidates[0].polID].vote - props.race.results[ruCandidates[1].polID].vote;
             let maxPercent = 0;
+
+            console.log(margin);
 
             for(let candidate of ruCandidates.slice(0, 2)){
                 let percent = getVotes(props.race, candidate) / (ru.totalVotes || 1);
@@ -59,6 +120,8 @@ const outstandingVote = computed(() => {
                     outstanding: getOutstanding(ru),
                     maxPercent: maxPercent + 0.1
                 });
+
+                console.log(retVal);
             }
         }
 
@@ -70,7 +133,8 @@ const outstandingVote = computed(() => {
     return retVal;
 
 
-});
+};
+
 
 </script>
 

@@ -236,6 +236,7 @@ export const keyBy = <T>(objects: any[], key: T) =>{
 }
 
 export const getVotes = (race: HasResults, candidate: Candidate) => {
+
   if(hasKey(race.results, candidate.polID)){
     return race.results[candidate.polID].vote;
   }
@@ -378,3 +379,34 @@ export function redisReplace(value: string) {
     return replacements[x]
   })
 }
+
+export const getTitle = (race: Race) => {
+
+  if(!race) return "";
+  let officeID = race.officeID;
+
+  let stateName = race.state.name;
+
+  let raceLabel;
+
+  if(officeID == OfficeType.Senate) raceLabel = `Senate`;
+  else if(officeID == OfficeType.President) {
+    raceLabel = `Presidential`
+
+    if(race.seatNum > 0){
+      raceLabel = `CD Presidential`;
+      stateName += `'s ${race.seatNum}${nth(Number(race.seatNum))}`
+    }
+  }
+  else if(officeID == OfficeType.House) {
+    raceLabel = `District`;
+    stateName += `'s ${race.seatNum}${nth(Number(race.seatNum))}`
+  }
+  else if(officeID == OfficeType.Governor) raceLabel = `Governor`;
+  else if(officeID == OfficeType.BallotMeasure) raceLabel = `${race.officeName} ${race.designation}`;
+
+  let s = race.raceType?.includes('Special') ? " Special" : ""
+
+  return `${stateName} ${raceLabel}${s} Election Results`;
+
+};

@@ -63,13 +63,31 @@ import {keys, nth} from "~/server/utils/Util";
 
 
         let candidates = reportingUnit.candidates.toSorted(
-            (a: string,b: string) =>
-                (reportingUnit.candidates.find((x: Candidate) => x.polID == a)?.vote || 0)
-                > (reportingUnit.candidates.find((x: Candidate) => x.polID == b)?.vote || 0) ? -1 : 1);
+            (a: string,b: string) => {
+              let aCand = reportingUnit.candidates.find((x: Candidate) => x.polID == a)?.vote;
+              let bCand = reportingUnit.candidates.find((x: Candidate) => x.polID == b)?.vote;
 
+              if(aCand > bCand) return -1;
+              if(aCand < bCand) return 1;
+              return 0;
+
+            }
+
+
+
+        );
+
+        console.log(candidates);
 
         let leadingParty = Object.values(props.homeDashboard.parties).find(party => party.partyID == candidates[0].party);
 
+
+        let county = Object.keys(races.value).find(x => races.value[x].uuid == reportingUnit.uuid)
+
+        if(county == 'IN-9'){
+          console.log(county);
+          console.log(leadingParty)
+        }
 
 
         if(!leadingParty) return NA_FILL;

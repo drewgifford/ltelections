@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import axios from "axios";
 import {createClient, RedisClientType} from "redis";
+import {inject} from "@vercel/analytics";
 
 export class RedisUtil {
 
@@ -23,6 +24,8 @@ export class RedisUtil {
 
         RedisUtil.setConnection(redis);
     }
+
+
 }
 
 export default defineNitroPlugin(async (nitroApp) => {
@@ -38,5 +41,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     }
 
     await RedisUtil.connect(config);
+
+    inject();
 
 });

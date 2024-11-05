@@ -74,6 +74,7 @@
         let defaultColors: string[] = ["#ffffff","#aaaaaa","#999999","#777777"]
 
         let colors = raceCand.party.colors;
+
         if(!colors || colors.length < 4) colors = defaultColors;
 
 

@@ -120,12 +120,14 @@ import {keys, nth} from "~/server/utils/Util";
 
 
         if(reportingUnit.winner){
+
+          console.log(reportingUnit.winner);
+          console.log(reportingUnit.candidates);
           let winner = reportingUnit.candidates.find((x: any) => x.polID == reportingUnit.winner);
 
-          if(winner) {
-            let party = props.homeDashboard.parties[winner.party];
-            return party.colors[0];
-          }
+
+          let partyColor = winner ? props.homeDashboard.parties[winner.party].colors[0] : INVALID_FILL;
+          return partyColor;
         }
 
 

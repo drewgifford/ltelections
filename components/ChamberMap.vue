@@ -77,17 +77,11 @@ import {keys, nth} from "~/server/utils/Util";
 
         );
 
-        console.log(candidates);
 
         let leadingParty = Object.values(props.homeDashboard.parties).find(party => party.partyID == candidates[0].party);
 
 
         let county = Object.keys(races.value).find(x => races.value[x].uuid == reportingUnit.uuid)
-
-        if(county == 'IN-9'){
-          console.log(county);
-          console.log(leadingParty)
-        }
 
 
         if(!leadingParty) return NA_FILL;

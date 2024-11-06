@@ -100,6 +100,11 @@
           else return 3;
         }
 
+        if(reportingUnit.winner && voteTotal == 0){
+          let winner = reportingUnit.candidates.find(x => x.polID == reportingUnit.winner);
+          return getBlendedColor(props.homeDashboard.parties[winner.party].colors[0], NA_FILL, 0.75);
+        }
+
 
 
         let expectedVoteTotal = reportingUnit.expectedVotes;

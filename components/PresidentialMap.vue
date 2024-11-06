@@ -134,14 +134,18 @@
 
         let state = nodes[i];
         let statePostal = d3.select(state).attr("id").replace("-votes", "");
+
         let reportingUnit = props.homeDashboard.presRaces[statePostal] as ApiMinimalRace;
 
-        if(reportingUnit.totalVotes == 0){
-          return EV_FILL;
-        }
 
-        if(reportingUnit.winner){
-          return props.race.candidates.find(x => x.polID == reportingUnit.winner as any)?.party.colors[0];
+
+        if(reportingUnit.winner != null){
+          let cand = props.race.candidates.find(x => x.polID == reportingUnit.winner as any);
+
+          return props.homeDashboard.parties[cand.party.partyID].colors[0];
+        }
+        else if(reportingUnit.totalVotes == 0){
+          return EV_FILL;
         }
         return getColor(reportingUnit, true);
       });

@@ -96,9 +96,7 @@ import {keys, nth} from "~/server/utils/Util";
 
 
 
-        if(reportingUnit.winner){
-          return colors[0];
-        }
+
 
         let voteTotal = reportingUnit.totalVotes || 0;
         let vt = (voteTotal == 0 ? 1 : voteTotal);
@@ -118,6 +116,14 @@ import {keys, nth} from "~/server/utils/Util";
           else if (difference >= 2) { return 2 }
           else if (difference > 0) { return 3 }
           else return 3;
+        }
+
+
+        if(reportingUnit.winner){
+          let winner = reportingUnit.candidates.find((x: any) => x.polID == reportingUnit.winner);
+          console.log(winner);
+          let party = props.homeDashboard.parties[winner.party];
+          return party.colors[0];
         }
 
 

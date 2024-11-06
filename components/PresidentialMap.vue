@@ -100,7 +100,13 @@
           else return 3;
         }
 
-        if(reportingUnit.winner && voteTotal == 0){
+
+        let race = Object.values(props.homeDashboard.presRaces).find(x => x.uuid == reportingUnit.uuid);
+        if(race.state.postalCode == 'SC'){
+          console.log(reportingUnit);
+        }
+
+        if(reportingUnit.winner){
           let winner = reportingUnit.candidates.find(x => x.polID == reportingUnit.winner);
           return getBlendedColor(props.homeDashboard.parties[winner.party].colors[0], NA_FILL, 0.75);
         }

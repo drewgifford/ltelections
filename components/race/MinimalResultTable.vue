@@ -19,17 +19,7 @@ const getTotalVotes = (): number => {
 
 const isWinner = (candidate: Candidate): boolean => {
 
-  if(keys(props.unit).includes("call")){
-
-    let u = props.unit as ApiMinimalRace;
-
-    if(u.winner as string == candidate.polID) return true;
-    return false;
-  }
-  if(props.race.call.winner?.polID == candidate.polID){
-    return true;
-  }
-  return false;
+  return (props.unit.winner == candidate.polID);
 
 
 }

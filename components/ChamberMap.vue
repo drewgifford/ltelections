@@ -121,9 +121,11 @@ import {keys, nth} from "~/server/utils/Util";
 
         if(reportingUnit.winner){
           let winner = reportingUnit.candidates.find((x: any) => x.polID == reportingUnit.winner);
-          console.log(winner);
-          let party = props.homeDashboard.parties[winner.party];
-          return party.colors[0];
+
+          if(winner) {
+            let party = props.homeDashboard.parties[winner.party];
+            return party.colors[0];
+          }
         }
 
 

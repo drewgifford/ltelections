@@ -1,42 +1,106 @@
 <script setup lang="ts">
 import { max } from 'd3';
-import type Race from '~/server/types/Race';
-import type ReportingUnit from '~/server/types/ReportingUnit';
-import { getRaceProbabilities, hasProjectOMatic, roundPercentage } from '~/server/utils/RaceProbability';
+import type {Race, RaceReportingUnit, ReportingUnit} from "~/server/types/ViewModel";
+import {getVotes, keys, sortCandidates} from "~/server/utils/Util";
+import { roundPercentage } from "~/server/utils/RaceProbability";
 
 const props = defineProps<{
         race: Race
     }>();
 
-const outstandingVote = computed(() => {
-
-    let c = props.race.reportingUnits.filter(x => x.reportingunitLevel == 2);
-
-
-    const getOutstanding = (ru: ReportingUnit) => {
-        return ((ru.parameters.vote?.expected.actual || 0) - (ru.parameters.vote?.total || 0))
+const { data: reportingUnitData, refresh: refreshRUs } = useFetch(`https://l2bytldico4wuatx.public.blob.vercel-storage.com/reportingUnits/${props.race.state.postalCode}.json`,
+    {
+      transform: (res) => {
+        return res as unknown as {[key: string]: any}
+      },
+      server: false,
+      immediate: false,
+      watch: false,
     }
+);
 
-    let counties = c.toSorted((a: ReportingUnit,b: ReportingUnit) => {
-        return (getOutstanding(a) > getOutstanding(b)) ? -1 : 1;
-    });
+/* GET RESULTS */
+const { data: outstandingVote, status, refresh } = useFetch("/api/results", {
+  query: {
+    raceUuid: props.race.uuid
+  },
+  watch: [props.race],
+  transform: async (res: {[key: string]: ReportingUnit & RaceReportingUnit}) => {
+
+    try {
+
+
+      if (!res) return null;
+
+      if (!reportingUnitData || !keys(reportingUnitData.value || {}).includes(props.race.state.stateID)) {
+        await refreshRUs();
+      }
+
+      for (let obj of Object.entries(res)) {
+
+        obj[1] = Object.assign(obj[1], (reportingUnitData.value as any)[obj[0]]);
+      }
+
+
+      let r = res;
+
+      if (keys(res).includes(props.race.state.stateID)) {
+        r[props.race.state.stateID] = res[props.race.state.stateID];
+      }
+
+      return getOutstandingVote(r);
+    }catch(e){
+      console.error(e);
+    }
+  },
+  server: false,
+});
+
+
+
+const getOutstandingVote = (results: any) => {
+
+
+  if(results == null) return null;
+
+  let countyIDs = Object.keys(results).filter(e => e != props.race.state.stateID);
+
+
+  const getOutstanding = (ru: RaceReportingUnit) => {
+      return ((ru.expectedVotes || 0) - (ru.totalVotes || 0))
+  }
+
+
+  let counties = countyIDs.toSorted((a: string,b: string) => {
+      return (getOutstanding(results[a]) > getOutstanding(results[b])) ? -1 : 1;
+  });
 
     let retVal = [];
 
-    for(let ru of counties.slice(0, 4)){
+    for(let ruid of counties.slice(0, 4)){
+
+      let ru = results[ruid];
 
         let bars = [];
+        if(keys(results).length > 0){
 
-        if(ru.candidates.length > 0 && ru.candidates[0]){
-        
-            let leadingParty = ru.candidates[0].partyData;
-            let margin = (ru.candidates[0].voteCount || 0) - (ru.candidates[1].voteCount || 0);
+            let ruCandidates = sortCandidates(props.race, ru);
+
+            let leadingCand = ruCandidates[0];
+            let leadingParty = leadingCand.party;
+
+
+            let margin = ru.results[ruCandidates[0].polID].vote - ru.results[ruCandidates[1].polID].vote;
+
             let maxPercent = 0;
 
-            for(let candidate of ru.candidates.slice(0, 2)){
-                let percent = (candidate.voteCount || 0) / (ru.parameters.vote?.total || 1);
+
+            for(let candidate of ruCandidates.slice(0, 2)){
+                let percent = getVotes(ru, candidate) / (ru.totalVotes || 1);
+
+
                 bars.push({
-                    color: candidate.partyData?.colors[0],
+                    color: candidate.party.colors[0],
                     percent: percent
                 })
 
@@ -55,6 +119,7 @@ const outstandingVote = computed(() => {
                     outstanding: getOutstanding(ru),
                     maxPercent: maxPercent + 0.1
                 });
+
             }
         }
 
@@ -66,25 +131,26 @@ const outstandingVote = computed(() => {
     return retVal;
 
 
-});
+};
+
 
 </script>
 
 <template>
 
-    <div class="flex gap-4" v-if="(outstandingVote && outstandingVote.length > 0)">
+    <div class="hidden sm:flex gap-4 pb-4" v-if="(outstandingVote && outstandingVote.length > 0)">
 
         <div class="w-2 rounded-sm bg-slate-600"></div>
 
         <div class="flex-1">
             <p class="my-1"><b class="font-header">Outstanding Vote:</b> Key counties currently have outstanding votes.</p>
             
-            <div class="flex gap-6">
+            <div class="sm:grid sm:grid-cols-2 md:flex flex gap-6">
 
-                <div class="w-full mt-2" v-for="(elem, index) of outstandingVote">
+                <div class="w-1/2 md:w-full mt-2" v-for="(elem, index) of outstandingVote">
 
                     <p class="text-md font-header">{{ elem.name }}</p>
-                    <p class="text-sm mt-1 inline-block rounded-sm py-1 px-2 text-white" :style="{backgroundColor: elem.leadingParty?.colors[0]+'80'}">{{ elem.leadingParty?.id }} +{{ elem.margin.toLocaleString() }}</p>
+                    <p class="text-sm mt-1 inline-block rounded-sm py-1 px-2 text-white" :style="{backgroundColor: elem.leadingParty?.colors[0]+'80'}">{{ elem.leadingParty?.partyID }} +{{ elem.margin.toLocaleString() }}</p>
                     <p class="text-sm mt-1">~{{ elem.outstanding.toLocaleString() }} remain</p>
 
                     <div class="flex mt-2">

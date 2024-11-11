@@ -1,101 +1,66 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@vueuse/core';
-import type Race from '~/server/types/Race';
-import { OfficeType } from '~/server/types/Race';
-import State from '~/server/types/State';
-import { getOfficeTypeFromOfficeURL } from '~/server/utils/Util';
-import { nth } from '~/server/utils/Util';
+import {getOfficeTypeFromOfficeURL, getTitle} from '~/server/utils/Util';
+import {getRaceTitle, type Race} from '~/server/types/ViewModel';
+import { parseAPIResponse} from "~/server/utils/ParseAPI";
 
 
-    const route = useRoute();
+const route = useRoute();
 
     
 
     const stateName = (route.params.state as string || '').replace('-',' ').toLowerCase();
-    const state = new State(stateName);
     const raceParam = route.params.race as string;
     const officeID = getOfficeTypeFromOfficeURL(raceParam);
-    const idTypes = [OfficeType.House, OfficeType.BallotMeasure]
 
-    
-
-    const { data: races, status, error, refresh: refreshRaces } = await useFetch("/api/searchRaces", {
+    const { data: races, status, error, refresh } = await useFetch("/api/race", {
         query: {
-            statePostal: state.postalCode,
+            stateName: stateName,
+            raceParam: raceParam,
             officeID: officeID,
-            date: route.params.date,
         },
-        transform: (races: Race[]) => {
-            return races.filter(r => {
+        transform: (res: any) => {
+          if(!res) return null;
 
-                let s = (route.params.race as string || '').split("-");
-                let last = s[s.length-1];
-                let lastIdx = (idTypes.includes(officeID as OfficeType) ? 2 : 1)
+          let d = parseAPIResponse(res);
 
-                if(s.length > lastIdx){
-                    if(last == "special" && !r.raceType?.includes("Special")){
-                        return false;
-                    }
-                    if(last != "special" && r.raceType?.includes("Special")){
-                        return false;
-                    }
-                    if(last == "special" && r.raceType?.includes("Special")){
-                        return true;
-                    }
-                    return false;
-                }
-
-                
-
-                if(officeID == OfficeType.House){
-                    return (r.seatNum == raceParam.split("-")[1]);
-                }
-                else if (officeID == OfficeType.BallotMeasure){
-                    return (r.designation == raceParam.split("-")[1]);
-                }
-                return true;
-            }).splice(0, 1);
-        }
+          return d;
+        },
+        server: false,
     });
+  const race = computed(() => races.value ? races.value[0] : null);
 
-    if((races.value?.length || 0) <= 0){
+onMounted(async () => {
+  let interval: any = null;
+
+  function resetInterval() {
+    if (interval) clearInterval(interval);
+    interval = setInterval(async () => {
+      console.log("Refreshing");
+      await refresh();
+    }, 30000);
+
+
+  }
+  resetInterval();
+});
+
+    if(!race){
         throw({status: 404})
     }
 
-    const getTitle = () => {
 
-        let stateName = state.name;
 
-        let raceLabel;
-
-        if(!races.value) return "";
-
-        if(officeID == OfficeType.Senate) raceLabel = `Senate`;
-        else if(officeID == OfficeType.President) raceLabel = `Presidential`;
-        else if(officeID == OfficeType.House) {
-            raceLabel = `District`;
-            stateName += `'s ${races.value[0].seatNum}${nth(Number(races.value[0].seatNum))}`
-        }
-        else if(officeID == OfficeType.Governor) raceLabel = `Governor`;
-        else if(officeID == OfficeType.BallotMeasure) raceLabel = `${races.value[0].officeName} ${races.value[0].designation}`;
-
-        let s = races.value[0].raceType?.includes('Special') ? " Special" : ""
-
-        return `${route.params.date} ${stateName} ${raceLabel}${s} Election Results`;
-
-    };
 
     useSeoMeta({
-    title: () => getTitle(),
+    title: () => getTitle(race.value),
 
     });
 
-    useIntervalFn(async () => {
-        await refreshRaces();
-    }, 10000);
+
 
     const getWinner = (race: Race) => {
-        return race.candidates.find(cand => cand.winner == 'X');
+      return race.call.winner;
     }
 
 
@@ -107,16 +72,16 @@ import { nth } from '~/server/utils/Util';
 <template>
 
     
-    <Container v-for="(race, index) of races" :key="race.uuid">
+    <Container :key="race" v-if="race">
 
         
 
-        <div class="lg:flex gap-6">
-            <div class="w-full lg:w-1/2 mt-2">
+        <div class="xl:flex gap-6">
+            <div class="w-full xl:w-1/2 mt-2">
 
                 <div class="my-4">
                     <p><a :href="`/results/${route.params.date}/?state=${race.state?.postalCode}&office=any`">&lt; See all races in {{ race.state?.name }}</a></p>
-                    <h1 class="text-2xl">{{ getTitle() }}</h1>
+                    <h1 class="text-2xl">{{ getTitle(race) }}</h1>
                 </div>
 
                 <div class="card">
@@ -124,9 +89,12 @@ import { nth } from '~/server/utils/Util';
                     <CandidateBattle :race="race" v-if="!getWinner(race)"/>
                     <ProjectedWinner :race="race" v-if="getWinner(race)"/>
 
+
+
                     <div class="px-4">
+                        <p v-if="(race.summary)" class="text-md mt-4">{{ race.summary }}</p>
                         <div class="p-2 my-4 card border-slate-600 border">
-                            <ResultTable :unit="race" :max="5" :reporting="true"/>
+                            <ResultTable :race="race" :unit="race" :max="5" :reporting="true"/>
                         </div>
                         <div class="px-4">
                             <NapkinMath :race="race"/>
@@ -136,21 +104,21 @@ import { nth } from '~/server/utils/Util';
                 </div>
             </div>
 
-            <div class="w-full lg:w-1/2 relative">
+            <div class="w-full xl:w-1/2 relative">
                 <ZoomableMap class="sticky top-24" :race="race" minHeight="80vh"/>
             </div>
         </div>
 
-        <div class="lg:flex gap-6 py-12">
+        <div class="xl:flex gap-6 py-12">
 
-            <div class="w-full lg:w-1/2 p-4 card" v-if="(race.candidates.find(x => x.description != null))">
+            <div class="w-full xl:w-1/2 p-4 card" v-if="(race.candidates.find(x => x.description != ''))">
 
                 <h1 class="text-2xl mb-2 ml-4">About the Candidates</h1>
 
-                <div class="card py-2 px-4  gap-4 flex items-stretch" v-for="(candidate, index) of race.candidates.filter(x => x.description != null)">
+                <div class="card py-2 px-4  gap-4 flex items-stretch" v-for="(candidate, index) of race.candidates.filter(x => x.description != '')">
 
                     <div class="flex">
-                        <div class="w-2 h-full rounded-sm" :style="{backgroundColor: candidate.partyData?.colors[0]}"></div>
+                        <div class="w-2 h-full rounded-sm" :style="{backgroundColor: candidate.party.colors[0]}"></div>
                     </div>
     
                     <div class="flex items-center">
@@ -165,17 +133,10 @@ import { nth } from '~/server/utils/Util';
 
                     <div class="flex-1 flex flex-col justify-center">
                         <h2 class="text-xl">{{ candidate.first }} {{ candidate.last }}</h2>
-                        <p><span class="text-sm py-1 px-2 rounded-md inline-block font-header" :style="{backgroundColor: candidate.partyData?.colors[0]+'80'}">{{ candidate.partyData?.demonym }}</span></p>
-                        <p class="text-sm mt-2">{{candidate.description}}</p>
+                        <p><span class="text-sm py-1 px-2 rounded-md inline-block font-header" :style="{backgroundColor: candidate.party.colors[0]+'80'}">{{ candidate.party.partyID }}</span></p>
+                        <p class="text-md mt-2">{{candidate.description}}</p>
                     </div>
                 </div>
-
-            </div>
-
-            <div class="w-full lg:w-1/2">
-
-                
-
 
             </div>
 

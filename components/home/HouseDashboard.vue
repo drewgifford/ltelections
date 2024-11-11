@@ -1,31 +1,27 @@
 
 <script lang="ts" setup>
-import { e } from 'mathjs';
-import type Color from '~/server/types/Color';
-import type Race from '~/server/types/Race';
-import State from '~/server/types/State';
+import type {Candidate, Race} from '~/server/types/ViewModel';
 import Projectomatic from '../napkin/Projectomatic.vue';
-import { getRaceURL } from '~/server/utils/Util';
+import {getProbability, getRaceURL} from '~/server/utils/Util';
 import { getBlendedColor } from '~/server/utils/Util';
-import type { ReportingCandidate } from '~/server/types/ReportingUnit';
-import { RaceCallStatus } from '~/server/types/Race';
+import RaceCallStatus from "../../server/types/enum/race/RaceCallStatus";
 
 const ROWS = 12;
 const COLS = 12;
 
 const getRaceColor = (race: Race) => {
 
-  let colors = race.candidates[0]?.partyData?.colors as Color[];
+  let colors = race.candidates[0].party.colors as string[];
   if(race.candidates.length == 1) return colors[0];
 
-  let margin = ((race.candidates[0]?.voteCount || 0) - (race.candidates[1]?.voteCount || 0))/(race.parameters.vote?.total || 1);
+  let margin = (race.results[race.candidates[0].polID].vote - (race.results[race.candidates[1].polID]).vote)/(race.totalVotes || 1);
   
 
-  margin *= 100;
+  margin *= 50;
 
   if(margin == 0){
     // Use probabilities
-    let probability = race.candidates[0].probability;
+    let probability = race.results[race.candidates[0].polID].probability;
 
     if(probability > 0.95){
       return colors[0]
@@ -60,7 +56,8 @@ function getDemAndGOP(race: Race){
 
       let topTwo = race.candidates.slice(0, 2);
 
-      if(topTwo[0].party != 'GOP'){
+
+      if(topTwo[0].party.partyID != 'GOP'){
         return {
           dem: topTwo[0],
           gop: topTwo[1]
@@ -88,25 +85,25 @@ const getGridPosition = (idx: number) => {
 const getDashboardData = (race: Race) => {
 
   let leadingCand = race.candidates[0];
-  let partyLabel = leadingCand.partyData?.id || 'Undefined';
+  let partyLabel = leadingCand.party.partyID || 'Undefined';
 
   let margin;
   
   if(race.candidates.length == 1) {
-    margin = race.parameters.vote?.total;
+    margin = race.totalVotes;
   } else {
-    margin = (race.candidates[0].voteCount || 0) - (race.candidates[1].voteCount || 0);
+    margin = (race.results[race.candidates[0].polID].vote || 0) - (race.results[race.candidates[1].polID].vote || 0);
   }
   
-  let marginPct = margin / (race.parameters.vote?.total || 1);
+  let marginPct = margin / (race.totalVotes || 1);
 
   return {
     race: race,
     leadingCand: leadingCand,
     color: getRaceColor(race)+'80',
     partyLabel: partyLabel,
-    state: race.state || new State(),
-    marginPct: marginPct,
+    state: race.state,
+    marginPct: marginPct/2,
     margin: margin,
     seatNum: race.seatNum || 0
   }
@@ -128,31 +125,45 @@ const raceData = computed(() => {
     const { dem: aDem, gop: aGOP } = getDemAndGOP(a.race);
     const { dem: bDem, gop: bGOP } = getDemAndGOP(b.race);
 
-    let aMargin = ((aDem?.voteCount || 0) - (aGOP?.voteCount || 0)) / a.race.parameters.vote.total;
-    let bMargin = ((bDem?.voteCount || 0) - (bGOP?.voteCount || 0)) / b.race.parameters.vote.total;
 
-    if(aMargin > bMargin) return -1;
-    if(aMargin < bMargin) return 1;
 
-    if(aDem && bDem && (aDem.probability > bDem.probability)) return -1;
-    if(aDem && bDem && (aDem.probability < bDem.probability)) return 1;
+    let aResult = a.race.results;
+    let bResult = b.race.results;
 
-    if(aGOP && bGOP && (aGOP.probability > bGOP.probability)) return 1;
-    if(aGOP && bGOP && (aGOP.probability < bGOP.probability)) return -1;
+    if(aDem && aGOP && bDem && bGOP) {
+      let aMargin = (aResult[aDem.polID].vote - aResult[aGOP.polID].vote) / a.race.totalVotes;
+      let bMargin = (bResult[bDem.polID].vote - bResult[bGOP.polID].vote) / b.race.totalVotes;
+
+      if(aMargin > bMargin) return -1;
+      if(aMargin < bMargin) return 1;
+    }
+
+    if(aDem && bDem) {
+      if (aDem && bDem && (aResult[aDem.polID].probability > bResult[bDem.polID].probability)) return -1;
+      if (aDem && bDem && (aResult[aDem.polID].probability < bResult[bDem.polID].probability)) return 1;
+    }
+
+    if(aGOP && bGOP) {
+      if (aGOP && bGOP && (aResult[aGOP.polID].probability > bResult[bGOP.polID].probability)) return 1;
+      if (aGOP && bGOP && (aResult[aGOP.polID].probability < bResult[bGOP.polID].probability)) return -1;
+    }
+
+    if(aDem) return -1;
+    if(aGOP) return 1;
 
     return 0;
   }
 
   let demRaces = props.races.filter(x => !x.keyRace && x.candidates.reduce(
-    (prev: ReportingCandidate, curr: ReportingCandidate) => (curr && curr.probability > prev.probability ? curr : prev)
-    ).party == 'Dem'
+    (prev: Candidate, curr: Candidate) => (curr && getProbability(x, curr) > getProbability(x, prev) ? curr : prev)
+    ).party.partyID == 'Dem'
   ).map(x => getDashboardData(x)).sort(sort);
 
   let keyRaces = props.races.filter(x => x.keyRace).map(x => getDashboardData(x)).sort(sort);
 
   let gopRaces = props.races.filter(x => x && x.candidates.reduce(
-    (prev: ReportingCandidate, curr: ReportingCandidate) => (prev && prev.probability > curr.probability ? prev : curr)
-    ).party == 'GOP'
+    (prev: Candidate, curr: Candidate) => (prev && getProbability(x, prev) > getProbability(x, curr) ? prev : curr)
+    ).party.partyID == 'GOP'
   ).map(x => getDashboardData(x)).sort(sort);
 
   return {
@@ -182,16 +193,16 @@ const props = defineProps<{
     <div class="grid grid-cols-2 mt-4 gap-2">
       <div class="bg-lte-blue text-center rounded-sm">
         <h1 class="text-xl">Democrats</h1>
-        <h1 class="text-2xl">{{ races.filter(x => x.raceCallStatus == RaceCallStatus.Called && (x.candidates.find(c => c.winner == 'X'))?.party != 'GOP').length }}</h1>
+        <h1 class="text-2xl">{{ races.filter(x => x.call.status == RaceCallStatus.Called && (x.call.winner?.party.partyID != 'GOP')).length }}</h1>
       </div>
 
       <div class="bg-lte-red text-center rounded-sm">
         <h1 class="text-xl">Republicans</h1>
-        <h1 class="text-2xl">{{ races.filter(x => x.raceCallStatus == RaceCallStatus.Called && (x.candidates.find(c => c.winner == 'X'))?.party == 'GOP').length }}</h1>
+        <h1 class="text-2xl">{{ races.filter(x => x.call.status == RaceCallStatus.Called && (x.call.winner?.party.partyID == 'GOP')).length }}</h1>
       </div>
     </div>
-    <div class="grid mt-2 gap-2 grid-flow-row grid-cols-3">
-      <a v-for="(race, index) of raceData.keyRaces" :href="getRaceURL('2024', race.race)" :id="(`senate-${index}`)" class="senate-race relative px-2 py-1 rounded-sm border-2 border-transparent hover:cursor-pointer hover:brightness-150" :style="{backgroundColor: race.color}">
+    <div class="block lg:grid mt-2 gap-2 grid-flow-row grid-cols-3">
+      <a v-for="(race, index) of raceData.keyRaces" :href="getRaceURL('2024', race.race)" :id="(`senate-${index}`)" class="block mb-2 lg:mb-0 lg:grid senate-race relative px-2 py-1 rounded-sm border-2 border-transparent hover:cursor-pointer hover:brightness-150" :style="{backgroundColor: race.color}">
         <div>
           <p class="text-xs text-white/60">{{ race.state.name }}-{{ race.seatNum }}</p>
           <h1 class="text-sm">{{ race.leadingCand.last }}+{{ (race.marginPct*100).toFixed(2) }}%</h1>

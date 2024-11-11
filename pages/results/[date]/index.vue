@@ -1,70 +1,89 @@
 <script setup lang="ts">
-import Race, { type RacePinnable } from '~/server/types/Race';
-import type State from '~/server/types/State';
-import { LocalStorageHandler } from '~/server/utils/LocalStorageHandler';
-import axios from 'axios';
-import type { CanPin, Raw } from '~/server/utils/Raw';
 import States from '~/server/utils/States';
 import LoadingSection from '~/components/LoadingSection.vue';
 import { useIntervalFn } from "@vueuse/core";
-import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
+import {officeTypeFromString, officeTypeToString, sortRaces} from '~/server/utils/Util';
+import type {Race, RaceQueried} from "~/server/types/ViewModel";
+import type OfficeType from "~/server/types/enum/OfficeType";
+import axios from "axios";
+import { keys } from '~/server/utils/Util';
+import {parseAPIResponse} from "~/server/utils/ParseAPI";
+import {unpack} from "msgpackr";
 
     const route = useRoute();
     const router = useRouter();
 
-    const statePostal = ref(route.query.state || '*');
     const officeID = ref(officeTypeFromString(route.query.office as string || '*'));
+    const statePostal = ref(route.query.state as string || '*');
 
     watch(statePostal, (statePostal) => {
-        router.push({ query: { "state": statePostal, "office": officeTypeToString(officeID.value) } });
+        router.push({ query: { "state": statePostal, "office": officeTypeToString(officeID.value as OfficeType) } });
     });
     watch(officeID, (officeID) => {
-        router.push({ query: { "state": statePostal.value, "office": officeTypeToString(officeID) } });
+        router.push({ query: { "state": statePostal.value, "office": officeTypeToString(officeID as OfficeType) } });
     });
 
-
-    //const statePostal = ref('OH');
-    //const officeID = ref('*');
     const pinnedRaceIds = ref<string[]>([]);
+    //const races = ref<RaceQueried[]>([]);
 
     useSeoMeta({
         title: "Race Dashboard",
         ogImage: "/og-image.png",
     });
 
-    // Query races
-    const { data: races, status, error, refresh: refreshRaces } = useFetch("/api/searchRaces", {
-        query: {
-            statePostal: statePostal,
-            officeID: officeID,
-            raceUUIDs: pinnedRaceIds,
-            date: route.params.date,
-        },
-        transform: (races: RacePinnable[]) => {
-            return races.map(r => {
-                r.pinned = (pinnedRaceIds.value.includes(r.uuid));
-                r.inQuery = ((statePostal.value == '*' || r.state?.postalCode == statePostal.value) && (officeID.value == '*' || r.officeID == officeID.value));
-                return r;
-            });
-            
+    const { data: races, refresh } = await useFetch<RaceQueried[]>('/api/searchRaces', {
+      query: {
+        statePostal: statePostal,
+        officeID: officeID,
+        raceUUIDs: pinnedRaceIds,
+        date: route.params.date
+      },
+      server: false,
+      transform: (res: any) => {
+        try {
+          return parseAPIResponse(res);
         }
-    });
+        catch(e){
+          console.error(e);
+        }
 
-    useIntervalFn(async () => {
-        await refreshRaces();
-    }, 10000);
+      }
+    });
 
     onMounted(async () => {
-        pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
-        if(pinnedRaceIds.value.length > 0){
-            await refreshRaces();
-        }
+      let interval: any = null;
+
+      function resetInterval(){
+        if(interval) clearInterval(interval);
+        interval = setInterval(async () => {
+          console.log("Refreshing");
+          await refresh();
+        }, 30000);
+      }
+
+      //pinnedRaceIds.value = JSON.parse(localStorage.getItem("pinnedRaces")??'[]');
+
+      watch(statePostal, async (statePostal) => {
+        await refresh();
+        resetInterval();
+      });
+      watch(officeID, async (officeID) => {
+        await refresh();
+        resetInterval();
+      });
+
+      resetInterval();
+
     });
 
-    // Pin races functionality
-    const togglePin = (race: RacePinnable) => {
 
-        let index = races.value.indexOf(race);
+
+    // Pin races functionality
+    const togglePin = (race: RaceQueried) => {
+
+        if(!races.value) return;
+
+        let index = races.value?.indexOf(race);
         let idIndex = pinnedRaceIds.value.indexOf(race.uuid);
 
         if(race.pinned){
@@ -72,12 +91,17 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
             // Remove pin
             races.value[index].pinned = false;
             pinnedRaceIds.value.splice(idIndex, 1);
+            localStorage.setItem('pinnedRaces', JSON.stringify(pinnedRaceIds.value));
             
         } else {
 
             // Add pin
             races.value[index].pinned = true;
-            if(idIndex < 0) pinnedRaceIds.value.push(race.uuid as string);
+
+            if(idIndex < 0) {
+              pinnedRaceIds.value.push(race.uuid as string);
+              localStorage.setItem('pinnedRaces', JSON.stringify(pinnedRaceIds.value));
+            }
 
         }
         
@@ -87,22 +111,18 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
     let states = States;
 
     const raceView = ref<string | null>(null);
-    const setView = (race: Race) => {
+    const setView = (race: RaceQueried) => {
         raceView.value = race.uuid;
     }
+    const raceViewObject = computed(() => {
 
-    const getNonPinnedRaces = () => {
-        if(!races) return [];
-        return races.value?.filter(x => x.inQuery);
-    }
-    const getPinnedRaces = () => {
-        if(!races) return [];
-        return races.value?.filter(x => x.pinned);
-    }
-    const getRaceView = () => {
-        if(!raceView.value) return null;
-        if(!races) return null;
-        return races.value?.find(x => x.uuid == raceView.value);
+      return races.value?.find(x => x.uuid == raceView.value);
+
+    });
+
+    const nonPinnedRaces = () => {
+      if(!races) return [];
+      return sortRaces(races.value?.filter(x => x.inQuery) as Race[]);
     }
 
 
@@ -112,9 +132,9 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
 <template>
 
     <Container class="mt-4">
-        <div class="lg:flex gap-6">
+        <div class="xl:flex gap-6">
             
-            <div class="flex flex-col gap-6 w-full lg:w-1/2">
+            <div class="flex flex-col gap-6 w-full xl:w-1/2">
 
                 <form class="flex gap-4 p-4 card z-10 sticky top-24 w-full items-stretch">
                     <div class="flex-1">
@@ -157,46 +177,31 @@ import { officeTypeFromString, officeTypeToString } from '~/server/utils/Util';
 
                 </form>
 
-                <!-- Pinned races -->
-                <div v-if="(getPinnedRaces() || []).length > 0" class="flex flex-col gap-3 w-full">
-                    <p>{{ getPinnedRaces()?.length }} races pinned</p>
-                    <MiniRaceView 
-                        v-for="(race, index) of getPinnedRaces()"
-                        :data-race="race.uuid"
-                        @select="setView(race)"
-                        @pin="togglePin(race)"
-                        :is-pinned="race.pinned"
-                        :race="race"
-                        :key="race.uuid"
-                        class="race relative transition-colors"
-                    />
-                </div>
-
                 <!-- Non-pinned races -->
-                <div v-if="true || (status !== 'pending')" class="flex flex-col gap-3 w-full pb-24">
-                    <p>Showing {{ races?.length }} results</p>
+                <div class="flex flex-col gap-3 w-full pb-24">
+                    <p>Showing {{ races?.length || 0 }} results</p>
 
                     <MiniRaceView 
-                        v-for="(race, index) of getNonPinnedRaces()"
+                        v-for="(race, index) of races"
                         :data-race="race.uuid"
-                        @select="setView(race)"
-                        @pin="togglePin(race)"
-                        :is-pinned="race.pinned"
+                        @select="setView(race as RaceQueried)"
+                        @pin="togglePin(race as RaceQueried)"
+                        :is-pinned="false"
                         :race="race"
                         :key="race.uuid"
+                        :selected="raceView == race.uuid"
                     />
                 </div>
 
-                <!-- Loader for non-pinned races -->
-                 <LoadingSection :absolute="false" v-else/>
+
 
                 
 
             </div>
 
-            <div class="display-none lg:block w-full lg:w-1/2">
+            <div class="display-none xl:block w-full xl:w-1/2">
 
-                <RaceCard v-if="(getRaceView() != null)" :key="(raceView || '')" :race="(getRaceView())" :map=true />
+                <RaceCard v-if="(raceViewObject)" :key="(raceView || '')" :race="(raceViewObject)" :map=true />
                 
             </div>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type Race from '~/server/types/Race';
+import { getMostLikelyCandidate } from '~/server/utils/Util';
+import type {Race} from "~/server/types/ViewModel";
 
 
 
@@ -11,7 +12,9 @@ const props = defineProps<{
 </script>
 
 <template>
-    <Projectomatic v-if="(race.candidates.length > 1)" :race="race" :forceSmall="false"/>
+    <NapkinItem v-if="(race.candidates.length > 1 && race.hasProjectomatic)" :color="(getMostLikelyCandidate(race).party.colors[0] || '#ffffff')">
+        <Projectomatic :race="(race)" :forceSmall="false"/>
+    </NapkinItem>
     <KeyToVictory v-if="(race.candidates.length > 1)" class="mt-6" :race="(race)"/>
     <OutstandingVote v-if="(race.candidates.length > 1)" class="mt-6" :race="(race)"/>
 

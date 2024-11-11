@@ -1,16 +1,38 @@
-import ApiResponse from "../types/ApiResponse";
-import Race, { OfficeType } from "../types/Race";
-import { filterDuplicateRaces } from "../utils/Util";
+import {RedisClientType} from "redis";
+import {RedisUtil} from "~/server/plugins/RedisConnection";
+import {ApiCandidate, ApiParty, ApiRace, ApiState} from "~/server/types/ApiTypes";
+import {parseRaces} from "~/server/api/searchRaces";
+import {Candidate, Race} from "~/server/types/ViewModel";
 
 let STALE_TIME = 30
 let ELECTION_DATE = "2024-11-05"
 
-type HomeDashboard = {
-  races: {
-    presidential: Race,
-    senate: Race[],
-    house: Race[]
-  }
+export type ApiMinimalRace = {
+  candidates: {
+    last: string,
+    party: string,
+    probability: number,
+    vote: number,
+    polID: string,
+  }[],
+  state?: ApiState,
+  uuid: string,
+  eevp: number,
+  special: boolean,
+  totalVotes: number,
+  winner: string | null,
+  electTotal: number,
+  seatNum?: number,
+}
+
+export type ApiHomeDashboard = {
+  presRace: Race,
+  presRaces: {[key: string]: ApiMinimalRace},
+  senateRaces: {[key: string]: ApiMinimalRace},
+  houseRaces: {[key: string]: ApiMinimalRace},
+  parties: {[key: string]: ApiParty},
+  values: any,
+  senateModel: any,
 }
 type RaceOverview = {
 
@@ -18,49 +40,36 @@ type RaceOverview = {
 
 export default defineEventHandler(async (event) => {
 
-  type BodyRes = {
-    date: string,
+  const redis: RedisClientType = RedisUtil.getConnection();
+
+  if(!redis) return {};
+
+  let homeDashboard = await redis.json.get('homeDashboard') as ApiHomeDashboard;
+
+
+
+  if(!homeDashboard) return {};
+
+  // Fix vote totals because they do not update quickly
+  for(let key of keys(homeDashboard.presRace.results)){
+    homeDashboard.presRace.results[key].vote = 0
   }
 
+  for(let rid of keys(homeDashboard.presRaces)){
+    let race = homeDashboard.presRaces[rid];
 
-  const query: BodyRes = getQuery(event);
+    for(let cand of Object.values(race.candidates)){
+      if(hasKey(homeDashboard.presRace.results, cand.polID)){
+        homeDashboard.presRace.results[cand.polID].vote += cand.vote;
+      }
 
-  if(query.date == '2024') query.date = '2024-11-05';
-
-  const data = (await useStorage().getItem(query.date || "") || {}) as ApiResponse;
-
-  if(!data.races) data.races = [];
-
-  const PRESIDENTIAL_RACE = data.races.find(x => x.stateID == '0' && x.officeID == OfficeType.President);
-
-  let PRES_RACES = data.races.filter(x => x.stateID != '0' && x.officeID == OfficeType.President);
-  PRES_RACES.forEach(race => {
-    PRESIDENTIAL_RACE?.reportingUnits.push(race.reportingUnits[0]);
-  });
-
-  // SENATE RACES
-  const SENATE_RACES = data.races.filter(x => x.officeID == OfficeType.Senate).map(race => {
-    race.reportingUnits = [race.reportingUnits[0]];
-    return race;
-  });
-
-  const HOUSE_RACES = data.races.filter(x => x.officeID == OfficeType.House && !x.raceType?.includes('Special')).map(race => {
-    race.reportingUnits = [race.reportingUnits[0]];
-    return race;
-  });
-  
-
-
-  return {
-
-    races: {
-      presidential: PRESIDENTIAL_RACE,
-      senate: filterDuplicateRaces(SENATE_RACES),
-      house: filterDuplicateRaces(HOUSE_RACES)
     }
 
-  } as HomeDashboard;
+  }
 
+  homeDashboard.presRace.candidates = await redis.json.mGet((homeDashboard.presRace as unknown as ApiRace).candidates.map(x => `candidates.${x}`), '.') as Candidate[];
+
+  return homeDashboard;
 
   
 })

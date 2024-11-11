@@ -1,28 +1,52 @@
 <script setup lang="ts">
-import type Race from '~/server/types/Race';
-import type ReportingUnit from '~/server/types/ReportingUnit';
-import { notZero } from '~/server/utils/Util';
+import type {Candidate, PresidentialReportingUnit, Race, RaceReportingUnit} from '~/server/types/ViewModel';
+import { notZero, sortCandidates } from '~/server/utils/Util';
+import { keys } from '~/server/utils/Util';
 
 
 const props = defineProps<{
-    unit: Race | ReportingUnit,
+    race: Race | PresidentialReportingUnit,
+    unit: RaceReportingUnit,
     max: number,
     reporting: boolean
 }>();
+
+const getTotalVotes = (): number => {
+  if(keys(props.unit).includes("call")) {
+      return notZero(props.unit.totalVotes)
+  } else return notZero(props.unit.totalVotes);
+}
+
+const isWinner = (candidate: Candidate): boolean => {
+
+  if(keys(props.unit).includes("call")){
+
+    let u = props.unit as PresidentialReportingUnit;
+
+    if(u.call.winner as string == candidate.polID) return true;
+    return false;
+  }
+  if(props.race.call.winner?.polID == candidate.polID){
+    return true;
+  }
+  return false;
+
+
+}
 
 </script>
 
 <template>
 
-    <div class="flex w-full"  v-for="candidate of props.unit.candidates.slice(0, max)" :key="candidate.polID">
+    <div class="flex w-full"  v-for="candidate of sortCandidates(race, unit).slice(0, max)" :key="candidate.polID">
 
-        <div v-if="candidate.winner == 'X'" :style="[{backgroundColor: candidate.partyData?.colors[0]}]" class="rounded-l-sm text-xs px-1 w-4 flex items-center font-header text-center">✓</div>
+        <div v-if="isWinner(candidate)" :style="[{backgroundColor: candidate.party?.colors[0]}]" class="rounded-l-sm text-xs px-1 w-4 flex items-center font-header text-center">✓</div>
 
-        <div :style="[{backgroundColor: candidate.partyData?.colors[0]+'40'}]" class="flex flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
-            <p class="text-sm text-slate-200">{{ candidate.last }}<span v-if="(candidate.incumbent)">*</span> <span class="text-slate-400 text-xs ml-1/2">{{ candidate.party }}</span></p>
+        <div :style="[{backgroundColor: candidate.party?.colors[0]+'40'}]" class="flex flex-1 px-2 py-1 justify-between items-center rounded-r-sm">
+            <p class="text-sm text-slate-200">{{ candidate.last }}<span v-if="(race.incumbents.find(x => x.polID == candidate.polID))">*</span> <span class="text-slate-400 text-xs ml-1/2">{{ candidate.party?.partyID || 'Ind' }}</span></p>
 
             <div class="text-right">
-                <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ (candidate.voteCount || 0).toLocaleString() }}</span>&nbsp;{{ (((candidate.voteCount || 0) / notZero(unit.parameters.vote?.total) as number)*100).toFixed(2) }}%</p>
+                <p class="text-sm text-slate-200"><span class="text-xs text-slate-200/50">{{ (unit.results[candidate.polID].vote).toLocaleString() }}</span>&nbsp;{{ (((unit.results[candidate.polID].vote) / getTotalVotes() as number)*100).toFixed(2) }}%</p>
             </div>
         </div>
     </div>

@@ -1,7 +1,6 @@
-import { Raw } from "vue";
-import Race, { OfficeType } from "../types/Race";
-import ReportingUnit, { ReportingCandidate } from "../types/ReportingUnit";
-import Color from "../types/Color";
+import {Candidate, HasResults, Race, RaceReportingUnit} from "../types/ViewModel";
+import OfficeType from "~/server/types/enum/OfficeType";
+import moment from "moment-timezone";
 
 export function notZero(n: number | undefined) {
 
@@ -22,70 +21,55 @@ export function nth(d: number) {
     case 3:  return "rd";
     default: return "th";
   }
-};
-
-export function sortedCandidates(unit: Raw<Race> | Raw<ReportingUnit>){
-
-  // Get candidates, place top two automatically at the top and sort the remainder.
-  if(unit.parameters.vote && unit.parameters.vote.total > 0){
-
-    let candidates = unit?.candidates;
-    let topTwo = getTopTwoCandidates(unit);
-
-    for(let cand of topTwo) candidates.splice(candidates.indexOf(cand), 1);
-
-    return topTwo.concat(candidates.sort((a,b) => b.ballotOrder - a.ballotOrder));
-
-  }
-  else {
-
-    return unit.candidates.sort((a,b) => b.voteCount - a.voteCount);
-
-  }
-
 }
 
 export function filterDuplicateRaces(races: Race[]){
 
   return races.filter(race => {
     // If this race is a special election and there is another race with the same seat number of the same office type and same state
-    let val = !(race.raceType?.includes('Special') && races.find(x => !x.raceType?.includes('Special') && (x.seatNum == race.seatNum) && (x.officeID == race.officeID) && (x.stateID == race.stateID)));
-
-    return val;
+    return !(race.raceType?.includes('Special') && races.find(x => !x.raceType?.includes('Special') && (x.seatNum == race.seatNum) && (x.officeID == race.officeID) && (x.state.stateID == race.state.stateID)));
   });
 
 }
 
-export function sortCandidates(candidates: ReportingCandidate[]){
+export function sortCandidates(race: Race, unit?: HasResults){
 
-  let incumbent = candidates.find(cand => cand.incumbent);
+  if(!unit) unit = race;
+
+  let candidates = race.candidates.filter(x => keys(unit.results).includes(x.polID));
+  let incumbent = race.incumbents.find(x => candidates.includes(x));
 
 
-  return candidates.toSorted((a: ReportingCandidate, b: ReportingCandidate) => {
+  return candidates.toSorted((a: Candidate, b: Candidate) => {
 
-    if((a.voteCount || 0) > (b.voteCount || 0)) return -1;
-    if((a.voteCount || 0) < (b.voteCount || 0)) return 1;
+    let aResults = unit.results[a.polID];
+    let bResults = unit.results[b.polID];
 
-    if(a.probability > b.probability) return -1;
-    if(a.probability < b.probability) return 1;
+    if(aResults.vote > bResults.vote) return -1;
+    if(aResults.vote < bResults.vote) return 1;
 
-    if(a.incumbent) return -1;
+    if(aResults.probability && bResults.probability){
+      if(aResults.probability > bResults.probability) return -1;
+      if(aResults.probability < bResults.probability) return 1;
+    }
 
-    if(a.party == 'Dem' || a.party == 'GOP') return -1;
+    if(incumbent && incumbent.polID == a.polID) return -1;
+    if(incumbent && incumbent.polID == b.polID) return 1;
+
+    if(!(incumbent && incumbent.polID == b.polID) && (a.party?.partyID == 'Dem' || a.party?.partyID == 'GOP')) return -1;
+
     return 1;
 
 
   })
-
-
 }
 
 export function getMostLikelyCandidate(race: Race){
-  return race.candidates.reduce((prev: ReportingCandidate, curr: ReportingCandidate) => curr.probability > prev.probability ? curr : prev);
+  return race.candidates.reduce((prev: Candidate, curr: Candidate) => race.results[curr.polID].probability > race.results[curr.polID].probability ? curr : prev);
 }
 
-export function getTopTwoCandidates(unit: Raw<Race> | Raw<ReportingUnit>) {
-    return sortCandidates(unit.candidates).slice(0, 2);
+export function getTopTwoCandidates(race: Race, unit?: RaceReportingUnit) {
+    return sortCandidates(race, unit || race).slice(0, 2);
 }
 
 var hex = function(x: any) {
@@ -96,7 +80,7 @@ var hex = function(x: any) {
   return ret;
 };
 
-export function getBlendedColor(color1: Color, color2: Color, d: number){
+export function getBlendedColor(color1: string, color2: string, d: number){
   var r = Math.ceil(parseInt(color1.substring(1,3), 16) * d + parseInt(color2.substring(1,3), 16) * (1-d));
   var g = Math.ceil(parseInt(color1.substring(3,5), 16) * d + parseInt(color2.substring(3,5), 16) * (1-d));
   var b = Math.ceil(parseInt(color1.substring(5,7), 16) * d + parseInt(color2.substring(5,7), 16) * (1-d));
@@ -105,7 +89,7 @@ export function getBlendedColor(color1: Color, color2: Color, d: number){
 
 }
 
-export function getBlendedMapColor(colors: Color[], threshold: number){
+export function getBlendedMapColor(colors: string[], threshold: number){
 
   
 
@@ -192,7 +176,7 @@ export function getOfficeURL(race: Race){
     case OfficeType.House:
         return `house-${race.seatNum}`;
     case OfficeType.BallotMeasure:
-        return `issue-${race.designation}`;
+        return `${race.officeName.replace(' ','_').toLowerCase()}-${race.designation.replace(" ","_")}`;
     default:
         return `unknown`;
   }
@@ -203,15 +187,18 @@ export function getOfficeTypeFromOfficeURL(officeUrl: string){
   else if (officeUrl.includes("president")) return OfficeType.President;
   else if (officeUrl.includes("governor")) return OfficeType.Governor;
   else if (officeUrl.includes("house")) return OfficeType.House;
-  else if (officeUrl.includes("issue")) return OfficeType.BallotMeasure;
   else {
-    return null;
+    return OfficeType.BallotMeasure;
   }
 }
 
 
 export function getRaceURL(year: string, race: Race) {
   let r = getOfficeURL(race);
+
+  if(race.officeID == OfficeType.President && race.seatNum > 0){
+    r +='-'+race.seatNum;
+  }
 
   let s = "";
   if(race.raceType?.includes("Special")){
@@ -220,3 +207,215 @@ export function getRaceURL(year: string, race: Race) {
 
   return `/results/${year}/${race.state?.name?.toLowerCase().replace(' ','-')}/${r}${s}`;
 }
+
+export const hasKey = (object: {[key: string]: any}, key: string) => {
+  if (!Object.keys(object).includes(key)) return null;
+  else return object[key];
+}
+
+export const keys = (object: {[key: string]: any}) => {
+  return Object.keys(object);
+}
+
+export const setKeyDefault = <T>(object: {[key: string]: T}, key: string, value: T) => {
+  if(!hasKey(object, key)){
+      object[key] = value;
+  }
+}
+
+export const redisToArray = (documents: any[]) => {
+  return documents.map(document => document.value);
+}
+
+export const keyBy = <T>(objects: any[], key: T) =>{
+  let obj: any = {};
+  for(let o of objects) {
+      obj[o[key]] = o;
+  }
+  return obj;
+}
+
+export const getVotes = (race: HasResults, candidate: Candidate) => {
+
+  if(hasKey(race.results, candidate.polID)){
+    return race.results[candidate.polID].vote;
+  }
+  return 0;
+}
+export const getProbability = (race: HasResults, candidate: Candidate) => {
+  if (hasKey(race.results, candidate.polID)) {
+    return race.results[candidate.polID].probability || 0;
+  }
+  return 0;
+}
+
+export const getTopReportingUnit = (race: Race) => {
+  return Object.values(race.reportingUnits)[0];
+}
+
+export function getDemAndGOP(race: Race){
+
+  let topTwo = race.candidates.slice(0, 2);
+
+
+  if(topTwo[0].party.partyID != 'GOP'){
+    return {
+      dem: topTwo[0],
+      gop: topTwo[1]
+    }
+  } else {
+    return {
+      dem: topTwo[1],
+      gop: topTwo[0]
+    }
+  }
+}
+
+const OFFICE_HIERARCHY = [OfficeType.President, OfficeType.Governor, OfficeType.Senate, OfficeType.House, OfficeType.BallotMeasure];
+
+export const sortRaces = (races: Race[]) => {
+
+  return races.sort((a,b) => {
+
+    if(a.state.name > b.state.name) return 1;
+    if(a.state.name < b.state.name) return -1;
+
+    if(!OFFICE_HIERARCHY.includes(a.officeID as OfficeType)) return 1;
+    if(!OFFICE_HIERARCHY.includes(b.officeID as OfficeType)) return -1;
+
+    if(OFFICE_HIERARCHY.indexOf(a.officeID as OfficeType) > OFFICE_HIERARCHY.indexOf(b.officeID as OfficeType)) return 1;
+    if(OFFICE_HIERARCHY.indexOf(a.officeID as OfficeType) < OFFICE_HIERARCHY.indexOf(b.officeID as OfficeType)) return -1;
+
+    if(a.officeID == b.officeID && a.officeID == OfficeType.House){
+      if(a.seatNum > b.seatNum) return 1;
+      if(a.seatNum < b.seatNum) return -1;
+    }
+    else if(a.officeID == b.officeID && a.officeID == OfficeType.BallotMeasure){
+
+      let aNumber = Number(a.designation);
+      let bNumber = Number(b.designation);
+
+      if(aNumber && bNumber){
+        if(aNumber > bNumber) return 1;
+        if(aNumber < bNumber) return -1;
+        return 0;
+      }
+      else if(aNumber && !bNumber) return 1;
+      else if(!aNumber && bNumber) return -1;
+      else {
+        if(a.designation < b.designation) return -1;
+        if(a.designation < b.designation) return 1;
+      }
+
+    }
+
+    return 0;
+
+  });
+
+}
+
+export const parseDateString = (dateStr: any) => {
+  let date;
+
+  let num = Number(dateStr);
+
+  if(isNaN(num)){
+    date = new Date(dateStr);
+  }
+  else {
+    date = new Date(num * 1000);
+  }
+
+  return moment.tz(date, "America/New_York").format("MM/DD @ hh:mmA z")
+
+}
+
+
+export const getCallText = (race: Race) => {
+  if(!race.call.winner) return {
+    caller: "",
+    calls: {},
+    decisionDesk: false,
+  };
+
+  const call = race.call;
+  let agencies = keys(call.calls);
+
+  let caller = agencies.includes('LTE') ? 'LTE' : 'AP'
+  let callerLabel = caller;
+
+  if(caller == 'LTE') callerLabel = 'LTE Decision Desk';
+
+  return {
+    callerLabel: callerLabel,
+    caller: caller,
+    calls: call.calls,
+  }
+
+}
+
+export function redisReplace(value: string) {
+  const replacements: {[key: string]: string} = {
+    ',': '\\,',
+    '<': '\\<',
+    '>': '\\>',
+    '{': '\\{',
+    '}': '\\}',
+    '[': '\\[',
+    ']': '\\]',
+    '"': '\\"',
+    "'": "\\'",
+    ':': '\\:',
+    ';': '\\;',
+    '!': '\\!',
+    '@': '\\@',
+    '#': '\\#',
+    '$': '\\$',
+    '%': '\\%',
+    '^': '\\^',
+    '&': '\\&',
+    '*': '\\*',
+    '(': '\\(',
+    ')': '\\)',
+    '-': '\\-',
+    '+': '\\+',
+    '=': '\\=',
+    '~': '\\~',
+  }
+
+  return value.replace(/,|\.|<|>|\{|\}|\[|\]|"|'|:|;|!|@|#|\$|%|\^|&|\*|\(|\)|-|\+|=|~/g, function (x: string) {
+    return replacements[x]
+  })
+}
+
+export const getTitle = (race: Race) => {
+
+  if(!race) return "";
+  let officeID = race.officeID;
+
+  let stateName = race.state.name;
+
+  let raceLabel;
+
+  if(officeID == OfficeType.Senate) raceLabel = `Senate`;
+  else if(officeID == OfficeType.President) {
+    raceLabel = `Presidential`
+
+    if(race.seatNum > 0){
+      raceLabel = `CD Presidential`;
+      stateName += `'s ${race.seatNum}${nth(Number(race.seatNum))}`
+    }
+  }
+  else if(officeID == OfficeType.House) {
+    raceLabel = `District`;
+    stateName += `'s ${race.seatNum}${nth(Number(race.seatNum))}`
+  }
+  else if(officeID == OfficeType.Governor) raceLabel = `Governor`;
+  else if(officeID == OfficeType.BallotMeasure) raceLabel = `${race.officeName} ${race.designation}`;
+
+  let s = race.raceType?.includes('Special') ? " Special" : ""
+
+  return `${stateName} ${raceLabel}${s} Election Results`;
+
+};

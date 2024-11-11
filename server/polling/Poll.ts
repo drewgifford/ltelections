@@ -32,8 +32,4 @@ export type Poll = BasicPoll & {
     results: PollCandidate[]
 }
 
-class PollAverage {
-
-}
-
 export default Poll;

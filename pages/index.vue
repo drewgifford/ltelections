@@ -135,7 +135,7 @@ const mockSenateRace = computed(() => {
                 <div class="card p-4">
                   <PartyBattle :gop-number="homeDashboard.values.senate.GOP" :dem-number="homeDashboard.values.senate.Dem" :label="'Senate'" :needed="50" />
 
-                  <Projectomatic class="mt-4" v-if="mockSenateRace != null" :plural="true" :race="mockSenateRace" :force-small="false"/>
+                  <!--<Projectomatic class="mt-4" v-if="mockSenateRace != null" :plural="true" :race="mockSenateRace" :force-small="false"/>-->
                     <!--<SenateDashboard :races="senateRaces"/>-->
                 </div>
 
